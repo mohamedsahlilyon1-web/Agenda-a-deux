@@ -27,6 +27,9 @@ service cloud.firestore {
       match /{collection}/{docId} {
         allow read, write: if isMember(coupleId);
       }
+      match /{collection}/{docId}/{sub}/{subId} {
+        allow read, write: if isMember(coupleId);
+      }
     }
   }
 }
