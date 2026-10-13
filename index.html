@@ -215,7 +215,7 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .go-t{font-weight:800;font-size:1.6rem;letter-spacing:-.02em;line-height:1.1}
 .go-btn{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:72px;height:64px;border-radius:16px;background:var(--go);color:#fff;font-weight:800;text-decoration:none}
 .go-btn svg{width:22px;height:22px;display:block}
-.rmap svg{display:block;width:100%;height:auto}
+.rmap:not(.lmap) svg{display:block;width:100%;height:auto}
 .pchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
 .pchip{border:1px solid var(--hair);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.86rem;font-weight:700;color:var(--ink)}
 .pchip.on{background:var(--line);border-color:var(--line);color:var(--line-ink)}
@@ -247,7 +247,14 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .rs-row input{width:20px;height:20px;accent-color:var(--line);flex:none}
 .rs-txt{display:flex;flex-direction:column;min-width:0;flex:1}
 .rs-txt span{font-size:.9rem;color:var(--muted);overflow-wrap:anywhere}
-.rs-row.off .rs-txt{opacity:.45;text-decoration:line-through}
+.rs-row.off .rs-txt{opacity:.5}
+.rs-row.main:not(.off){border-color:var(--sun);box-shadow:0 0 0 1px var(--sun) inset}
+.rem-custom{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center}
+.rem-custom .rc-lab{grid-column:1 / -1;font-size:.8rem;font-weight:700;color:var(--muted)}
+.tag.past{opacity:.45;text-decoration:line-through}
+.cal-banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--sun);color:var(--sun-ink);border-radius:16px;padding:12px 14px}
+.cal-txt{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:.9rem}
+.cal-banner .btn{flex:none}
 .rs-kind{font-size:.76rem;font-weight:700;background:var(--sun);color:var(--sun-ink);border-radius:999px;padding:2px 8px}
 .sheet-foot.sticky{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));background:var(--bg);padding:12px 0 calc(6px + env(safe-area-inset-bottom,0px));margin-top:4px;border-top:1px solid var(--hair);z-index:4}
 @media (prefers-reduced-motion:reduce){.disc-chev{transition:none}}
@@ -480,6 +487,11 @@ async function render(){
   const list=$("#list");list.textContent="";openFront=null;
   const who=id=>({name:id===myId?"toi":((ps[id]&&ps[id].name)||"l'autre"),color:(ps[id]&&ps[id].color)||"var(--muted)"});
   renderNext(upcoming);
+  const pend=calPending();
+  if(pend.length&&myId) list.append(el("div",{class:"cal-banner"},
+    el("div",{class:"cal-txt"},el("strong",{},pend.length>1?pend.length+" évènements ne sont pas dans ton calendrier":"1 évènement n'est pas dans ton calendrier"),
+      el("span",{},"Sans ça, leurs rappels ne sonneront pas quand l'app est fermée.")),
+    el("button",{class:"btn primary",type:"button",onclick:()=>addManyToCalendar(pend)},pend.length>1?"Tout ajouter":"Ajouter")));
   if(!shown.length){
     list.append(el("div",{class:"empty"},el("strong",{},"Rien de prévu pour l'instant"),
       el("p",{},"Écris un rendez-vous, une sortie ou des courses : l'app calcule le trajet, l'heure de départ et propose les rappels."),
@@ -517,7 +529,7 @@ function gcalUrl(ev){
   const z=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
   let det="";
   if((+ev.travelMin||0)>0) det+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+" et "+(ev.marginMin||0)+" min de marge)\nItinéraire : "+mapsUrl(ev)+"\n\n";
-  if((ev.reminders||[]).length) det+="Rappels prévus :\n"+ev.reminders.map(r=>"- "+remLabel(ev,r)+" : "+(r.label||"Rappel")+(r.kind==="alarme"?" (alarme)":"")).join("\n")+"\n\n";
+  if(liveReminders(ev).length) det+="Rappels prévus :\n"+liveReminders(ev).map(r=>"- "+remChip(ev,r)).join("\n")+"\n\n";
   if(ev.notes) det+=ev.notes+"\n\n";
   det+="Ajouté depuis Agenda à Deux";
   return "https://calendar.google.com/calendar/render?"+new URLSearchParams({action:"TEMPLATE",text:ev.title||"Évènement",dates:z(s)+"/"+z(e),details:det,location:ev.location||""});
@@ -535,13 +547,13 @@ function stop(ev,who){
       el("div",{class:"small"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode],el("span",{class:"more-info"},", "+(ev.marginMin||0)+" min de marge")))));
 
   const tags=el("div",{class:"tags more-info"});
-  for(const r of (ev.reminders||[])) tags.append(el("span",{class:"tag num"+(r.kind==="alarme"?" alarm":"")},(r.kind==="alarme"?"Alarme ":"Rappel ")+remLabel(ev,r)));
+  for(const r of liveReminders(ev)){const past=remWhen(ev,r).getTime()<Date.now();tags.append(el("span",{class:"tag num"+(presetOf(r)==="leave"?" alarm":"")+(past?" past":"")},remChip(ev,r)));}
   const added=ev.calendarAdded||{};
   if(myId&&added[myId]) tags.append(added[myId]>=ev.updatedAt?el("span",{class:"tag ok"},"Dans ton agenda"):el("span",{class:"tag stale"},"Modifié depuis ton ajout à l'agenda"));
   for(const o of Object.keys(added).filter(id=>id!==myId)) tags.append(el("span",{class:"tag"+(added[o]>=ev.updatedAt?" ok":" stale")},(added[o]>=ev.updatedAt?"Dans l'agenda de ":"À mettre à jour chez ")+who(o).name));
 
   const links=el("div",{class:"links more-info"});
-  links.append(el("button",{class:"btn",type:"button",onclick:()=>addToCalendar(ev)},"Calendrier iPhone"),el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
+  links.append(el("button",{class:"btn"+((ev.calendarAdded||{})[myId]>=ev.updatedAt?"":" primary"),type:"button",onclick:()=>addToCalendar(ev)},(ev.calendarAdded||{})[myId]>=ev.updatedAt?"Déjà dans le calendrier":"Ajouter au calendrier"),el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
 
   const author=who(ev.createdBy), editor=ev.updatedBy&&ev.updatedBy!==ev.createdBy?who(ev.updatedBy):null;
@@ -1046,37 +1058,57 @@ function placeByTitle(t){
   }
   return best;
 }
-// rappels relatifs : day/at = "la veille à 20:00", auto="leave" = « il faut partir », sinon min fixe
+// Rappels : préréglages calculés depuis l'heure de départ (ou le début s'il n'y a pas de trajet)
+const REM_PRESETS=[
+  {id:"eve",name:"La veille à 20h",nameNoTrip:"La veille à 20h"},
+  {id:"h1",name:"1 h avant de partir",nameNoTrip:"1 h avant"},
+  {id:"m15",name:"15 min avant de partir",nameNoTrip:"15 min avant"},
+  {id:"leave",name:"À l'heure de partir",nameNoTrip:"À l'heure du rendez-vous",main:true},
+];
+const hasTrip=x=>(+x.travelMin||0)>0;
+const depOff=x=>hasTrip(x)?(+x.travelMin||0)+(+x.marginMin||0):0;
+function presetOf(r){if(!r)return null;if(r.preset)return r.preset;if(r.auto==="leave")return "leave";return null;}
 function remMinFor(x,r){
-  const s=startOf(x);
-  if(r.auto==="leave") return (+x.travelMin||0)+(+x.marginMin||0)+10;
-  if(r.at&&(+r.day||0)>=1){const [h,m]=String(r.at).split(":").map(Number);const t=new Date(s);t.setDate(t.getDate()-(+r.day));t.setHours(h,m,0,0);return Math.round((s-t)/60000);}
-  return +r.min||0;
+  const p=presetOf(r),s=startOf(x);
+  if(p==="leave") return depOff(x);
+  if(p==="m15") return depOff(x)+15;
+  if(p==="h1") return depOff(x)+60;
+  const day=p==="eve"?1:(+r.day||0),at=p==="eve"?"20:00":r.at;
+  if(at&&day>=1){const [h,m]=String(at).split(":").map(Number);const t=new Date(s);t.setDate(t.getDate()-day);t.setHours(h,m,0,0);return Math.round((s-t)/60000);}
+  return Math.max(0,Math.round(+r.min||0));
+}
+function remWhen(x,r){return new Date(startOf(x).getTime()-remMinFor(x,r)*60000);}
+function remName(x,r){const P=REM_PRESETS.find(q=>q.id===presetOf(r));if(P)return hasTrip(x)?P.name:P.nameNoTrip;return "Rappel";}
+function remChip(x,r){const p=presetOf(r);if(p==="eve")return "La veille à 20h";if(p)return remName(x,r)+" ("+hhmm(remWhen(x,r))+")";return "Rappel "+remLabel(x,{min:remMinFor(x,r)});}
+function remText(x,r){
+  const p=presetOf(r),t=x.title||"Évènement",w=x.location?" ("+shortAddr(x.location)+")":"";
+  if(p==="leave") return hasTrip(x)?"C'est l'heure de partir : "+t+" à "+x.time+w:"C'est maintenant : "+t+w;
+  if(p==="m15") return (hasTrip(x)?"Départ dans 15 min : ":"Dans 15 min : ")+t+" à "+x.time;
+  if(p==="h1") return hasTrip(x)?"Départ dans 1 h, à "+hhmm(departOf(x))+" : "+t:"Dans 1 h : "+t;
+  if(p==="eve") return "Demain à "+x.time+" : "+t+(hasTrip(x)?". Départ à "+hhmm(departOf(x)):"")+(x.category==="medecin"?". Prépare carte Vitale et ordonnance.":".");
+  return (r.label&&r.label!=="Rappel"?r.label+" : ":"Rappel : ")+t+" à "+x.time;
 }
 function suggestReminders(x){
-  const c=x.category, out=[];
-  const at=(day,hm,label)=>({day,at:hm,kind:"notification",label});
-  if(c==="medecin") out.push(at(1,"20:00","Préparer carte Vitale, mutuelle et ordonnance"));
-  else if(c==="rdv") out.push(at(1,"20:00","Rendez-vous demain"));
-  else if(c==="travail") out.push(at(1,"21:00","Demain : "+(x.title||"travail")));
-  else if(c==="sortie") out.push({min:120,kind:"notification",label:"Commencer à se préparer"});
-  else if(c==="courses") out.push({min:60,kind:"notification",label:"Prendre la liste et les sacs"});
-  else out.push({min:60,kind:"notification",label:"Dans 1 heure : "+(x.title||"évènement")});
-  out.push({auto:"leave",kind:"alarme",label:"Il faut partir dans 10 min"});
+  const out=[];
+  if(["medecin","rdv","travail"].includes(x.category)) out.push({preset:"eve"}); else out.push({preset:"h1"});
+  out.push({preset:"leave"});
   return out;
 }
 function relReminders(ev){
   const s=startOf(ev);
   return (ev.reminders||[]).map(r=>{
-    if(r.auto||r.at) return {...r};
-    if(/partir/i.test(r.label||"")&&r.kind==="alarme") return {auto:"leave",kind:"alarme",label:r.label};
+    const p=presetOf(r);if(p)return {preset:p};
+    if(r.at&&(+r.day||0)>=1) return {day:+r.day,at:r.at,label:r.label||""};
+    if(/partir/i.test(r.label||"")&&r.kind==="alarme") return {preset:"leave"};
     const w=new Date(s.getTime()-(+r.min||0)*60000);
     const dd=Math.round((new Date(s).setHours(0,0,0,0)-new Date(w).setHours(0,0,0,0))/86400000);
-    return dd>=1?{day:dd,at:hhmm(w),kind:r.kind,label:r.label}:{min:r.min,kind:r.kind,label:r.label};
+    return dd>=1?{day:dd,at:hhmm(w),label:r.label||""}:{min:+r.min||0,label:r.label||""};
   });
 }
 function liveReminders(x){
-  return (x.reminders||[]).filter(r=>!r.off&&!(r.auto==="leave"&&!((+x.travelMin||0)>0))).map(r=>({...r,min:remMinFor(x,r)})).filter(r=>r.min>0).sort((a,b)=>b.min-a.min);
+  const seen=new Set();
+  return (x.reminders||[]).filter(r=>r&&!r.off).map(r=>({...r,min:remMinFor(x,r)}))
+    .filter(r=>r.min>=0&&!seen.has(r.min)&&seen.add(r.min)).sort((a,b)=>b.min-a.min);
 }
 function nextDate(daysAhead){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+daysAhead);return d;}
 function draftFromEvent(ev){
@@ -1101,7 +1133,7 @@ function buildBody(x,d,overrides){
   return {title:y.title,category:y.category,date:y.date,time:y.time,durationMin:y.durationMin||60,location:y.location||"",origin:y.origin||"",mode:y.mode||"car",
     travelMin:+y.travelMin||0,marginMin:+y.marginMin||0,travelNote:y.travelNote||"",notes:y.notes||"",
     route:y.location?(y.route||[]):[],routeVia:y.location?(y.routeVia||""):"",routeGeo:y.location?(y.routeGeo||null):null,
-    reminders:liveReminders(y).map(r=>{const o={min:r.min,kind:r.kind==="alarme"?"alarme":"notification",label:String(r.label||"").slice(0,120)};if(r.auto)o.auto=r.auto;if(r.at){o.at=r.at;o.day=+r.day;}return o;}),
+    reminders:liveReminders(y).map(r=>{const o={min:r.min};const pr=presetOf(r);if(pr)o.preset=pr;else{if(r.at&&(+r.day||0)>=1){o.at=r.at;o.day=+r.day;}if(r.label)o.label=String(r.label).slice(0,120);}return o;}),
     startTs:startOf(y).getTime(),createdBy:d.createdBy||myId,createdAt:d.createdAt||now,updatedBy:myId,updatedAt:now,calendarAdded:d.calendarAdded||{},
     ...(d.seriesId||y.seriesId?{seriesId:d.seriesId||y.seriesId}:{})};
 }
@@ -1153,7 +1185,10 @@ function whenChips(dateInput,timeInput){
 function remSummary(x){
   const live=liveReminders(x);
   if(!live.length) return "Aucun rappel";
-  return live.length+" rappel"+(live.length>1?"s":"")+" : "+live.map(r=>remLabel(x,r)+(r.kind==="alarme"?" (alarme)":"")).join(", ");
+  const now=Date.now();
+  const fut=live.filter(r=>remWhen(x,r).getTime()>now);
+  if(!fut.length) return "Heures de rappel déjà passées";
+  return fut.length+" rappel"+(fut.length>1?"s":"")+" : "+fut.map(r=>presetOf(r)==="eve"?"la veille à 20h":(presetOf(r)==="leave"?(hasTrip(x)?"départ ":"début ")+hhmm(remWhen(x,r)):remLabel(x,{min:r.min}))).join(", ");
 }
 
 /* ---------- Confirmation en un toucher ---------- */
@@ -1227,7 +1262,7 @@ function openEditor(d,info){
   const depOut=el("span",{class:"dep num"}),depMeta=el("span",{class:"note"});
   const tripNote=el("div",{class:"note"},d.travelNote||"");
   const recalc=el("button",{class:"btn",type:"button"},"Recalculer le trajet");
-  const rems=el("div",{class:"rems"}),remsSimple=el("div",{class:"rem-simple"});
+  const remsPanel=el("div",{class:"rem-simple"});
   let remAuto=isNew&&!(Array.isArray(d.reminders)&&d.reminders.length);
   let reminders=remAuto?suggestReminders(d):(d.reminders||[]).map(r=>({...r}));
   let repeat="none";
@@ -1239,8 +1274,7 @@ function openEditor(d,info){
     travelNote:tripNote.textContent,notes:notes.value.trim(),reminders,route,routeVia,routeGeo});
 
   function updateCalc(){
-    if(remAuto){const off=new Set(reminders.filter(r=>r.off).map(r=>r.label));reminders=suggestReminders(read());reminders.forEach(r=>{if(off.has(r.label))r.off=true;});}
-    reminders.forEach(r=>{r.min=remMinFor(read(),r);});
+    if(remAuto) reminders=suggestReminders(read());
     const x=read();
     if(!x.date||!x.time){depOut.textContent="";depOut.className="dep";depMeta.textContent="Indique la date et l'heure";renderRems();return;}
     if(x.travelMin>0){depOut.textContent="Partir à "+hhmm(departOf(x));depOut.className="dep num has";depMeta.textContent="pour arriver à "+x.time;}
@@ -1250,38 +1284,35 @@ function openEditor(d,info){
     renderRems();
   }
   function renderRems(){
-    rems.textContent="";const x=read();
+    const x=read(),now=Date.now();
     remsLine.textContent=remSummary(x);
+    remsPanel.textContent="";
+    for(const P of REM_PRESETS){
+      const fake={preset:P.id},on=reminders.some(r=>presetOf(r)===P.id&&!r.off);
+      const w=remWhen(x,fake),past=w.getTime()<now;
+      const cb=el("input",{type:"checkbox",id:"rp-"+P.id});cb.checked=on;
+      cb.onchange=()=>{remAuto=false;reminders=reminders.filter(r=>presetOf(r)!==P.id);if(cb.checked)reminders.push({preset:P.id});renderRems();};
+      remsPanel.append(el("label",{class:"rs-row"+(on?"":" off")+(P.main?" main":""),for:cb.id},cb,
+        el("span",{class:"rs-txt"},el("strong",{},remName(x,fake)),el("span",{class:"num"},past?"Heure déjà passée":(P.id==="eve"?(w.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"}).replace(/^./,c=>c.toUpperCase())+" à "+hhmm(w)):"À "+hhmm(w)))),
+        P.main?el("span",{class:"rs-kind"},"Le plus utile"):null));
+    }
     reminders.forEach((r,i)=>{
-      if(r.auto==="leave"&&!(x.travelMin>0)) return;
-      const s=startOf(x),w=new Date(s.getTime()-r.min*60000);
-      const dd=Math.max(0,Math.round((new Date(s).setHours(0,0,0,0)-new Date(w).setHours(0,0,0,0))/86400000));
-      const day=el("select",{id:"r-day-"+i,"aria-label":"Jour du rappel"});
+      if(presetOf(r)) return;
+      const s=startOf(x),wv=remWhen(x,r);
+      const dd=Math.max(0,Math.round((new Date(s).setHours(0,0,0,0)-new Date(wv).setHours(0,0,0,0))/86400000));
+      const day=el("select",{id:"rc-day-"+i,"aria-label":"Jour du rappel"});
       [[0,"Le jour même"],[1,"La veille"],[2,"2 jours avant"],[7,"1 semaine avant"]].forEach(([v,l])=>day.append(el("option",{value:v,selected:v===dd},l)));
-      const t=el("input",{id:"r-time-"+i,type:"time",value:hhmm(w),"aria-label":"Heure du rappel"});
-      const kind=el("select",{id:"r-kind-"+i,"aria-label":"Mode de rappel"});
-      [["notification","Notification"],["alarme","Alarme"]].forEach(([v,l])=>kind.append(el("option",{value:v,selected:v===r.kind},l)));
-      const lab=el("input",{id:"r-lab-"+i,class:"rl",type:"text",value:r.label||"",placeholder:"Texte du rappel"});
-      const recompute=()=>{remAuto=false;const [h,m]=(t.value||"00:00").split(":").map(Number);const dd2=+day.value;delete r.auto;
-        if(dd2>=1){r.day=dd2;r.at=t.value;}else{delete r.day;delete r.at;}
-        const tg=new Date(s);tg.setDate(tg.getDate()-dd2);tg.setHours(h,m,0,0);r.min=Math.round((s-tg)/60000);remsLine.textContent=remSummary(read());};
-      day.onchange=()=>{recompute();renderRems();};t.onchange=()=>{recompute();renderRems();};kind.onchange=()=>{remAuto=false;r.kind=kind.value;renderRems();};lab.oninput=()=>{remAuto=false;r.label=lab.value;};
-      rems.append(el("div",{class:"rem"},day,t,kind,el("button",{class:"x",type:"button","aria-label":"Retirer ce rappel",onclick:()=>{remAuto=false;reminders.splice(i,1);renderRems();}},"×"),lab));
+      const t=el("input",{id:"rc-time-"+i,type:"time",value:hhmm(wv),"aria-label":"Heure du rappel"});
+      const apply=()=>{remAuto=false;const d2=+day.value;const [h,m]=(t.value||"09:00").split(":").map(Number);
+        delete r.day;delete r.at;delete r.min;
+        if(d2>=1){r.day=d2;r.at=pad(h)+":"+pad(m);}else{const tg=new Date(s);tg.setHours(h,m,0,0);r.min=Math.max(0,Math.round((s-tg)/60000));}
+        renderRems();};
+      day.onchange=apply;t.onchange=apply;
+      remsPanel.append(el("div",{class:"rem rem-custom"},el("span",{class:"rc-lab"},"Autre rappel"),day,t,
+        el("button",{class:"x",type:"button","aria-label":"Retirer ce rappel",onclick:()=>{remAuto=false;reminders.splice(i,1);renderRems();}},"×")));
     });
-    if(!reminders.length) rems.append(el("div",{class:"note"},"Aucun rappel pour l'instant."));
-    // vue simple : une case à cocher par rappel proposé
-    remsSimple.textContent="";
-    const xs={...x};
-    reminders.forEach((r,i)=>{
-      if(r.auto==="leave"&&!(x.travelMin>0)) return;
-      const cb=el("input",{type:"checkbox",id:"rs-"+i});cb.checked=!r.off;
-      cb.onchange=()=>{r.off=!cb.checked;row.classList.toggle("off",!!r.off);remsLine.textContent=remSummary(read());};
-      const row=el("label",{class:"rs-row"+(r.off?" off":""),for:"rs-"+i},cb,
-        el("span",{class:"rs-txt"},el("strong",{class:"num"},remLabel(xs,r)),el("span",{},r.label||"Rappel")),
-        r.kind==="alarme"?el("span",{class:"rs-kind"},"Alarme"):null);
-      remsSimple.append(row);
-    });
-    if(!reminders.length) remsSimple.append(el("div",{class:"note"},"Les rappels sont proposés automatiquement quand tu prépares un évènement. Touche Personnaliser pour en ajouter."));
+    remsPanel.append(el("button",{class:"btn quiet",type:"button",onclick:()=>{remAuto=false;reminders.push({min:Math.max(30,depOff(read())+30)});renderRems();}},"+ Autre rappel"),
+      el("p",{class:"note"},"Les rappels sonnent sur chaque iPhone via son calendrier : une fois l'évènement enregistré, touche « Ajouter au calendrier »."));
   }
   [date,time,travel,margin].forEach(x=>x.addEventListener("input",updateCalc));
 
@@ -1348,10 +1379,7 @@ function openEditor(d,info){
     const b=el("button",{type:"button",class:"disc"+(open?" open":""),"aria-expanded":open?"true":"false",onclick:()=>{box.hidden=!box.hidden;b.classList.toggle("open",!box.hidden);b.setAttribute("aria-expanded",box.hidden?"false":"true");}},el("span",{},label),el("span",{class:"disc-chev","aria-hidden":"true"},"▾"));
     return el("div",{class:"disc-wrap"},b,box);
   };
-  const remsDetail=el("div",{class:"disc-box",hidden:true},rems,
-    el("button",{class:"btn quiet",type:"button",onclick:()=>{remAuto=false;const x=read();reminders.push({min:Math.max(15,(x.travelMin||0)+(x.marginMin||0)+10),kind:"notification",label:"Rappel"});renderRems();}},"Ajouter un rappel"));
-  const detailLink=el("button",{type:"button",class:"btn quiet",onclick:()=>{remsDetail.hidden=!remsDetail.hidden;detailLink.textContent=remsDetail.hidden?"Régler les heures":"Masquer les réglages";}},"Régler les heures");
-  const remsMore=el("div",{class:"disc-box",hidden:true},remsSimple,detailLink,remsDetail);
+  const remsMore=el("div",{class:"disc-box",hidden:true},remsPanel);
   const remsToggle=el("button",{type:"button",class:"btn quiet",onclick:()=>{remsMore.hidden=!remsMore.hidden;remsToggle.textContent=remsMore.hidden?"Modifier":"Terminé";}},"Modifier");
 
   root.append(sheetShell(isNew?"Nouvel évènement":"Modifier l'évènement",[
@@ -1369,7 +1397,7 @@ function openEditor(d,info){
       el("div",{class:"from-row"},fromLine),
       fixBox,mapBox),
     el("div",{class:"rem-simple-wrap"},
-      el("div",{class:"rem-head"},el("div",{class:"rem-head-l"},el("span",{class:"lab"},"Rappels sur vos deux téléphones"),remsLine),remsToggle),
+      el("div",{class:"rem-head"},el("div",{class:"rem-head-l"},el("span",{class:"lab"},"Rappels"),remsLine),remsToggle),
       remsMore),
     disc("Plus d'options",[
       isNew?el("div",{class:"field"},el("span",{class:"lab"},"Répéter"),repeatChips):null,
@@ -1717,33 +1745,57 @@ return parseText;
 })();
 
 /* ---------- Calendrier de l'iPhone (.ics avec alarmes) ---------- */
-function icsFor(ev){
+function calPending(){
+  const now=Date.now();
+  return [...events.values()].filter(e=>startOf(e).getTime()>now&&liveReminders(e).some(r=>remWhen(e,r).getTime()>now)&&!((e.calendarAdded||{})[myId]>=e.updatedAt))
+    .sort((a,b)=>startOf(a)-startOf(b));
+}
+function vevent(ev){
   const s=startOf(ev),e=new Date(s.getTime()+(+ev.durationMin||60)*60000);
   const z=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
-  const esc=t=>String(t||"").replace(/\\/g,"\\\\").replace(/\r?\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
+  const esc=t=>String(t||"").replace(/\\/g,"\\\\").replace(/\r?\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\;");
   let desc="";
-  if((+ev.travelMin||0)>0) desc+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+")\nItinéraire : "+appleUrl(ev)+"\n";
+  if(hasTrip(ev)) desc+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+")\nItinéraire : "+appleUrl(ev)+"\n";
   if(ev.notes) desc+=ev.notes+"\n";
   desc+="Agenda à Deux";
-  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Agenda a Deux//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT",
-    "UID:"+(ev.id||Date.now())+"@agenda-a-deux","DTSTAMP:"+z(new Date()),"DTSTART:"+z(s),"DTEND:"+z(e),
+  const L=["BEGIN:VEVENT","UID:"+(ev.id||Date.now())+"@agenda-a-deux","SEQUENCE:"+Math.floor((ev.updatedAt||Date.now())/1000),"DTSTAMP:"+z(new Date()),"DTSTART:"+z(s),"DTEND:"+z(e),
     "SUMMARY:"+esc(ev.title),"LOCATION:"+esc(ev.location),"DESCRIPTION:"+esc(desc)];
-  for(const r of liveReminders(ev)) L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+esc(r.label||ev.title),"TRIGGER:-PT"+Math.max(0,Math.round(r.min))+"M","END:VALARM");
-  L.push("END:VEVENT","END:VCALENDAR");
-  return L.join("\r\n");
+  const now=Date.now();
+  for(const r of liveReminders(ev)){ if(remWhen(ev,r).getTime()<=now) continue;
+    L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+esc(remText(ev,r)),"TRIGGER:"+(r.min>0?"-PT"+r.min+"M":"PT0M"),"END:VALARM"); }
+  L.push("END:VEVENT");
+  return L;
 }
-async function addToCalendar(ev){
-  const ics=icsFor(ev);
-  const name=(norm(ev.title).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"evenement")+".ics";
-  const file=new File([ics],name,{type:"text/calendar"});
-  markAdded(ev);
-  try{
-    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:ev.title});return;}
-  }catch(e){if(e&&e.name==="AbortError")return;}
-  const url=URL.createObjectURL(file);
+function icsFor(ev){return icsOf([ev]);}
+function icsOf(list){return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Agenda a Deux//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH",...list.flatMap(vevent),"END:VCALENDAR"].join("\r\n");}
+function openIcs(ics,name){
+  if(IS_IOS){
+    const url="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics);
+    const w=window.open(url,"_blank");
+    if(!w) location.href=url;
+    return;
+  }
+  const blob=new Blob([ics],{type:"text/calendar"});const url=URL.createObjectURL(blob);
   const a=document.createElement("a");a.href=url;a.download=name;a.rel="noopener";document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
+function addToCalendar(ev){
+  openIcs(icsFor(ev),(norm(ev.title).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"evenement")+".ics");
+  markAdded(ev);
+  toast("Dans la fenêtre du calendrier, touche « Ajouter » pour activer les rappels");
+}
+function addManyToCalendar(list){
+  openIcs(icsOf(list),"agenda-a-deux.ics");
+  list.forEach(markAdded);
+  toast("Dans la fenêtre du calendrier, touche « Tout ajouter »");
+}
+/* Rappels affichés dans l'app quand elle est ouverte */
+let lastRemCheck=Date.now();
+setInterval(()=>{
+  const now=Date.now();
+  for(const e of events.values()) for(const r of liveReminders(e)){const t=remWhen(e,r).getTime();if(t>lastRemCheck&&t<=now)toast(remText(e,r));}
+  lastRemCheck=now;
+},20000);
 
 /* ---------- Synchronisation Firebase et jumelage du couple ---------- */
 const CFG_KEY="a2.fbconfig",COUPLE_KEY="a2.couple";
