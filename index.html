@@ -1,0 +1,2029 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Agenda à Deux">
+<meta name="theme-color" content="#1C7C6B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%}
+img{max-width:100%}[hidden]{display:none!important}
+.lmap{height:210px;cursor:pointer}
+.lmap .leaflet-control-attribution{font-size:9px}
+.dur-bubble span{display:inline-block;transform:translate(10px,-34px);background:var(--route);color:#fff;font:800 13px var(--f);padding:4px 10px;border-radius:13px;box-shadow:0 2px 6px rgba(0,0,0,.25);white-space:nowrap}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .lmap .leaflet-tile{filter:brightness(.75) contrast(1.1) saturate(.7)}}
+.setup{display:flex;flex-direction:column;gap:14px;padding-block:8px}
+.setup h2{font-size:1.6rem;font-weight:800;margin:0;letter-spacing:-.02em}
+.setup p{margin:0;font-size:1rem}
+.pair-card{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--hair);border-radius:18px;padding:14px}
+.pair-in{border:1px solid var(--hair);background:var(--surface);border-radius:12px;padding:12px;font-size:1.05rem;width:100%;min-width:0;color:var(--ink)}
+.pair-in.code{text-transform:uppercase;letter-spacing:.3em;text-align:center;font-weight:800}
+.big-code{font-size:2.6rem;font-weight:800;letter-spacing:.25em;text-align:center;color:var(--line);border:2px dashed var(--line);border-radius:18px;padding:14px 8px}
+</style>
+<script src="config.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<title>Agenda à Deux</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: a transit-line timeline. Each outing is a stop on a vertical line: a yellow "départ" stop, then the arrival stop. Rows slide left to reveal Modifier / Supprimer. */
+:root{
+  --bg:#EFF3F0; --surface:#FFFFFF; --ink:#15231E; --muted:#5C6C66; --hair:#D6DFDA;
+  --line:#1C7C6B; --line-ink:#FFFFFF; --sun:#F4C02B; --sun-ink:#1E1A06;
+  --danger:#C23A2F; --danger-ink:#FFFFFF; --ok:#1C7C6B; --ok-soft:#DCEFE9; --warn:#A85A12;
+  --scrim:rgba(12,22,18,.42);
+  --map:#EAEFE4; --map-grid:#DEE6D7; --map-text:#56645C; --road:#2D6BD6; --route:#2B7FEA; --route-case:#FFFFFF; --go:#2FA84F;
+  --f:"Schibsted Grotesk", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --c-rdv:#3F67D6; --c-sortie:#A64BC4; --c-medecin:#D2455A; --c-courses:#1F9A5E; --c-travail:#677580; --c-autre:#C98A12;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1714; --surface:#17221E; --ink:#E5EEEA; --muted:#94A49D; --hair:#26352F;
+  --line:#3FB59C; --line-ink:#06150F; --sun:#F5C431; --sun-ink:#1E1A06;
+  --danger:#E5614F; --danger-ink:#1A0604; --ok:#4CC9AC; --ok-soft:#163029; --warn:#E5A15A;
+  --scrim:rgba(0,0,0,.55); color-scheme:dark;
+  --map:#1B2421; --map-grid:#232F2A; --map-text:#A3B2AB; --road:#3D7BE0; --route:#4A94F5; --route-case:#0E1512; --go:#2FA84F}}
+:root[data-theme="dark"]{
+  --bg:#0F1714; --surface:#17221E; --ink:#E5EEEA; --muted:#94A49D; --hair:#26352F;
+  --line:#3FB59C; --line-ink:#06150F; --sun:#F5C431; --sun-ink:#1E1A06;
+  --danger:#E5614F; --danger-ink:#1A0604; --ok:#4CC9AC; --ok-soft:#163029; --warn:#E5A15A;
+  --scrim:rgba(0,0,0,.55); color-scheme:dark;
+  --map:#1B2421; --map-grid:#232F2A; --map-text:#A3B2AB; --road:#3D7BE0; --route:#4A94F5; --route-case:#0E1512; --go:#2FA84F}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 110px;display:flex;flex-direction:column;gap:22px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--line);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:30px;height:30px;flex:none}
+h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height:1}
+.round{border:1px solid var(--hair);background:var(--surface);border-radius:50%;width:42px;height:42px;display:grid;place-items:center;color:var(--ink)}
+.round svg{width:20px;height:20px}
+
+/* composer */
+.composer{background:var(--surface);border-radius:20px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--hair)}
+.composer textarea{width:100%;min-height:64px;resize:none;border:none;background:transparent;font-size:1.08rem;outline:none;line-height:1.4}
+.composer textarea::placeholder{color:var(--muted)}
+.composer .row{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--hair);background:var(--surface);border-radius:999px;padding:9px 15px;font-weight:700;font-size:.92rem;display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--ink);line-height:1.2}
+.btn.primary{background:var(--line);border-color:var(--line);color:var(--line-ink)}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--muted);padding-inline:6px}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:var(--danger-ink)}
+.btn:disabled{opacity:.55;cursor:default}
+.notice{border-radius:14px;padding:10px 14px;font-size:.9rem;background:var(--ok-soft);color:var(--ink)}
+
+/* next departure sign */
+.sign{background:var(--sun);color:var(--sun-ink);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:2px 14px;align-items:end}
+.sign .k{font-size:.88rem;font-weight:500}
+.sign .what{font-weight:700;font-size:1.05rem;min-width:0;overflow-wrap:anywhere}
+.sign .big{grid-column:2;grid-row:1 / span 2;font-weight:800;font-size:2.4rem;letter-spacing:-.03em;line-height:1;text-align:right}
+.sign .in{grid-column:1 / -1;font-size:.86rem}
+
+/* day + timeline */
+.days{display:flex;flex-direction:column;gap:26px}
+.day h2{font-size:1.2rem;font-weight:800;letter-spacing:-.015em;margin:0 0 10px}
+.day h2 span{font-weight:500;color:var(--muted)}
+.stops{display:flex;flex-direction:column;gap:10px}
+
+.swipe{position:relative;border-radius:18px;overflow:hidden;background:var(--surface);border:1px solid var(--hair)}
+.behind{position:absolute;inset:0 0 0 auto;display:flex;width:172px}
+.behind button{flex:1;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;font-size:.85rem}
+.behind svg{width:20px;height:20px}
+.b-edit{background:var(--line);color:var(--line-ink)}
+.b-del{background:var(--danger);color:var(--danger-ink)}
+.front{position:relative;background:var(--surface);touch-action:pan-y;transition:transform .22s ease;will-change:transform}
+.front.dragging{transition:none}
+
+.leg{display:grid;grid-template-columns:52px 22px 1fr;column-gap:8px;padding:0 12px 0 12px}
+.leg .t{font-weight:800;font-size:1.02rem;padding-top:12px;text-align:right;letter-spacing:-.01em}
+.leg .rail{position:relative}
+.leg .rail::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;background:var(--line)}
+.leg.first .rail::before{top:20px}
+.leg.last .rail::before{bottom:auto;height:20px}
+.leg.solo .rail::before{display:none}
+.node{position:absolute;left:50%;top:13px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--surface);border:4px solid var(--line)}
+.node.dep{background:var(--sun);border-color:var(--line)}
+.node.arr{border-color:var(--cat,var(--line));background:var(--cat,var(--line))}
+.leg .body{padding:10px 0 12px;min-width:0}
+.dep-line{font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{background:var(--sun);color:var(--sun-ink);border-radius:999px;padding:2px 10px;font-weight:700;font-size:.82rem}
+.small{font-size:.86rem;color:var(--muted)}
+.ev-title{font-weight:800;font-size:1.12rem;letter-spacing:-.01em;overflow-wrap:anywhere;display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
+.ev-title .more{flex:none;border:none;background:transparent;color:var(--muted);width:34px;height:30px;border-radius:10px;margin:-4px -4px 0 0;display:grid;place-items:center}
+.ev-title .more:hover{background:var(--bg)}
+.ev-title .more svg{width:20px;height:20px}
+.where{color:var(--muted);font-size:.92rem;overflow-wrap:anywhere;margin-top:2px}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.tag{font-size:.8rem;border-radius:999px;padding:3px 10px;background:var(--bg);color:var(--ink)}
+.tag.alarm{background:var(--sun);color:var(--sun-ink)}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.stale{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.links{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.links .btn{padding:7px 12px;font-size:.84rem}
+.by{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);margin-top:10px}
+.by i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.hint-swipe{font-size:.82rem;color:var(--muted);text-align:center;margin-top:-8px}
+
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;color:var(--muted);padding:30px 14px;border:2px dashed var(--hair);border-radius:20px}
+.empty strong{color:var(--ink);font-size:1.15rem;font-weight:800}
+.empty p{margin:0;max-width:34ch}
+
+/* floating add */
+.fab{position:fixed;right:18px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:15;height:58px;padding:0 22px 0 18px;border-radius:999px;border:none;background:var(--line);color:var(--line-ink);font-weight:800;font-size:1rem;display:flex;align-items:center;gap:8px;box-shadow:0 8px 22px rgba(20,60,50,.32)}
+.fab svg{width:22px;height:22px}
+
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:24px 24px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.grab{width:44px;height:5px;border-radius:9px;background:var(--hair);align-self:center}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sheet-h h2{margin:0;font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label,.lab{font-size:.86rem;font-weight:700;color:var(--muted)}
+.field input,.field select,.field textarea,.rem select,.rem input{border:1px solid var(--hair);background:var(--surface);border-radius:12px;padding:10px 11px;width:100%;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}
+.calc{background:var(--surface);border:1px solid var(--hair);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.calc .out{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.calc .dep{font-weight:800;font-size:1.6rem;letter-spacing:-.02em}
+.calc .dep.has{background:var(--sun);color:var(--sun-ink);border-radius:12px;padding:2px 10px}
+.note{font-size:.86rem;color:var(--muted)}
+.rems{display:flex;flex-direction:column;gap:8px}
+.rem{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:center;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:8px}
+.rem .rl{grid-column:1 / -1}
+.rem .x{border:none;background:none;color:var(--muted);font-size:1.3rem;width:34px;height:34px}
+.sheet-foot{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.confirm{background:var(--surface);border:1px solid var(--danger);border-radius:14px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.toast{position:fixed;left:16px;right:16px;margin:0 auto;max-width:440px;bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 12px 11px 16px;border-radius:14px;font-size:.92rem;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.toast button{border:none;background:transparent;color:var(--sun);font-weight:800;padding:4px 6px}
+
+/* address suggestions */
+.ac{position:relative;min-width:0}
+.ac-list{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--hair);border-radius:14px;box-shadow:0 10px 28px rgba(10,30,24,.18);z-index:5;max-height:300px;overflow-y:auto}
+.ac-item{display:grid;grid-template-columns:1fr auto;gap:0 8px;width:100%;text-align:left;border:none;background:none;padding:10px 12px;border-bottom:1px solid var(--hair)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item:focus-visible{background:var(--bg)}
+.ac-main{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.ac-sub{grid-column:1;font-size:.84rem;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.ac-tag{grid-column:2;grid-row:1;font-size:.76rem;color:var(--line);font-weight:700;align-self:center}
+.ac-load{padding:10px 12px;font-size:.86rem;color:var(--muted);display:flex;gap:8px;align-items:center}
+
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation:none}.front{transition:none}}
+.toggle-past{align-self:center}
+.route{border-top:1px dashed var(--hair);margin:0 12px;padding:12px 0 14px;display:flex;flex-direction:column;gap:10px}
+.route-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.route-steps{list-style:none;margin:0;padding:0 0 0 4px;display:flex;flex-direction:column}
+.route-steps li{position:relative;padding:0 0 9px 24px;font-size:.92rem;overflow-wrap:anywhere}
+.route-steps li::before{content:"";position:absolute;left:4px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--surface);border:2px solid var(--line)}
+.route-steps li::after{content:"";position:absolute;left:8px;top:17px;bottom:-1px;width:2px;margin-left:-1px;background:repeating-linear-gradient(var(--line) 0 4px,transparent 4px 7px)}
+.route-steps li:last-child{padding-bottom:0}
+.route-steps li:last-child::after{display:none}
+.route-steps li.from,.route-steps li.to{font-weight:700}
+.route-steps li.from::before{background:var(--sun)}
+.route-steps li.to::before{background:var(--cat,var(--line));border-color:var(--cat,var(--line))}
+.route .links{margin-top:0}
+.swipe:not(.open) .more-info{display:none}
+.front{cursor:pointer}
+.front:focus-visible{outline:2px solid var(--line);outline-offset:-2px}
+.ev-right{display:flex;align-items:center;gap:2px;flex:none}
+.chev{width:26px;height:26px;display:grid;place-items:center;color:var(--muted);transition:transform .2s ease}
+.chev svg{width:20px;height:20px}
+.swipe.open .chev{transform:rotate(180deg)}
+.swipe:not(.open) .leg .body{padding-bottom:10px}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+.rmap{border-radius:18px;overflow:hidden;border:1px solid var(--hair)}
+.go{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);border-radius:18px;padding:12px 12px 12px 16px}
+.go-l{min-width:0}
+.go-t{font-weight:800;font-size:1.6rem;letter-spacing:-.02em;line-height:1.1}
+.go-btn{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:72px;height:64px;border-radius:16px;background:var(--go);color:#fff;font-weight:800;text-decoration:none}
+.go-btn svg{width:22px;height:22px;display:block}
+.rmap svg{display:block;width:100%;height:auto}
+.pchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.pchip{border:1px solid var(--hair);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.86rem;font-weight:700;color:var(--ink)}
+.pchip.on{background:var(--line);border-color:var(--line);color:var(--line-ink)}
+.pchip.add{border-style:dashed;border-color:var(--line);color:var(--line);background:transparent}
+.psave{display:grid;grid-template-columns:1fr auto;gap:6px;width:100%;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:8px}
+.psave-act{display:flex;gap:6px;justify-content:flex-end;grid-column:1 / -1}
+.psave input,.psave select,.pform input,.pform select{border:1px solid var(--hair);background:var(--surface);border-radius:12px;padding:10px 11px;width:100%;min-width:0}
+.plist{display:flex;flex-direction:column;gap:8px}
+.prow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:10px 6px 10px 12px}
+.pdot{width:12px;height:12px;border-radius:50%;background:var(--c-autre)}
+.pdot.home{background:var(--sun);box-shadow:0 0 0 3px var(--line) inset}
+.pdot.work{background:var(--line)}
+.pinfo{min-width:0}
+.pname{font-weight:800}
+.pinfo .small{overflow-wrap:anywhere}
+.pform{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
+.ac-search .ac-main{color:var(--line)}
+.sheet input.big-title{font-size:1.45rem;font-weight:800;letter-spacing:-.02em;border:none;border-bottom:2px solid var(--hair);border-radius:0;background:transparent;padding:6px 2px;width:100%}
+.sheet input.big-title:focus{outline:none;border-bottom-color:var(--line)}
+.from-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.disc-wrap{display:flex;flex-direction:column;gap:10px}
+.disc{display:flex;justify-content:space-between;align-items:center;width:100%;border:1px solid var(--hair);background:var(--surface);border-radius:14px;padding:12px 14px;font-weight:700;color:var(--ink);text-align:left}
+.disc-chev{color:var(--muted);transition:transform .2s ease}
+.disc.open .disc-chev{transform:rotate(180deg)}
+.disc-box{display:flex;flex-direction:column;gap:12px}
+.rem-simple-wrap{display:flex;flex-direction:column;gap:8px}
+.rem-simple{display:flex;flex-direction:column;gap:6px}
+.rs-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:11px 12px;cursor:pointer}
+.rs-row input{width:20px;height:20px;accent-color:var(--line);flex:none}
+.rs-txt{display:flex;flex-direction:column;min-width:0;flex:1}
+.rs-txt span{font-size:.9rem;color:var(--muted);overflow-wrap:anywhere}
+.rs-row.off .rs-txt{opacity:.45;text-decoration:line-through}
+.rs-kind{font-size:.76rem;font-weight:700;background:var(--sun);color:var(--sun-ink);border-radius:999px;padding:2px 8px}
+.sheet-foot.sticky{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));background:var(--bg);padding:12px 0 calc(6px + env(safe-area-inset-bottom,0px));margin-top:4px;border-top:1px solid var(--hair);z-index:4}
+@media (prefers-reduced-motion:reduce){.disc-chev{transition:none}}
+.pgroup-h{font-weight:800;font-size:1.02rem;margin-top:8px}
+.pbadge{display:inline-block;margin-left:8px;font-size:.72rem;font-weight:700;background:var(--sun);color:var(--sun-ink);border-radius:999px;padding:2px 8px;vertical-align:middle}
+.btn.padd{align-self:flex-start;border-style:dashed;color:var(--line);border-color:var(--line);background:transparent}
+.brand-wrap{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.brand-lab{font-size:.8rem;font-weight:700;color:var(--muted);align-self:center;margin-right:2px}
+.pchip.brand{border-color:var(--line);color:var(--line)}
+.pchip.brand.on{color:var(--line-ink)}
+.brand-panel{background:var(--surface);border:1px solid var(--hair);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.brand-panel .note{padding:10px 12px}
+.brand-add{display:grid;grid-template-columns:1fr auto;gap:8px}
+.brand-add input{border:1px solid var(--hair);background:var(--surface);border-radius:12px;padding:10px 11px;min-width:0}
+.pchip:disabled{opacity:.6}
+.when-chips .pchip{min-width:44px;text-align:center}
+.when-exact{opacity:.85}
+.when-exact label{font-size:.72rem}
+.rem-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.rem-head-l{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rem-line{font-size:.92rem;color:var(--ink);overflow-wrap:anywhere}
+.tpl-chips .pchip.tpl{font-size:.95rem;padding:9px 14px;background:var(--ok-soft);border-color:transparent;color:var(--ink)}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--hair)}
+.cf{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--hair);border-radius:16px;overflow:hidden}
+.cf-row{display:grid;grid-template-columns:76px 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--hair);align-items:baseline}
+.cf-row:last-child{border-bottom:none}
+.cf-k{font-size:.82rem;font-weight:700;color:var(--muted)}
+.cf-v{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.cf-v.muted{color:var(--muted);font-weight:400}
+.cf-save{flex:1;justify-content:center;padding:13px 18px;font-size:1rem}
+.q-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:stretch}
+.mic-btn{border:none;border-radius:16px;background:var(--line);color:var(--line-ink);width:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:800;font-size:.82rem}
+.mic-btn svg{width:26px;height:26px}
+.mic-btn.on{background:var(--danger);color:var(--danger-ink)}
+.mic-help{display:flex;gap:12px;align-items:center;background:var(--ok-soft);border-radius:14px;padding:12px 14px}
+.mic-help>div:last-child{display:flex;flex-direction:column;gap:2px;font-size:.9rem;min-width:0}
+.mic-help-icon{width:38px;height:38px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--line);flex:none}
+.mic-help-icon svg{width:20px;height:20px}
+.mic-wave{display:flex;gap:3px;align-items:center;height:28px;flex:none}
+.mic-wave i{width:4px;height:10px;border-radius:2px;background:var(--danger);animation:wave 1s ease-in-out infinite}
+.mic-wave i:nth-child(2){animation-delay:.15s}.mic-wave i:nth-child(3){animation-delay:.3s}.mic-wave i:nth-child(4){animation-delay:.45s}
+@keyframes wave{50%{height:26px}}
+@media (prefers-reduced-motion:reduce){.mic-wave i{animation:none;height:18px}}
+.fab-mic{position:fixed;right:150px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:15;width:58px;height:58px;border-radius:50%;border:none;background:var(--surface);color:var(--line);box-shadow:0 8px 22px rgba(20,60,50,.25);display:grid;place-items:center;border:1px solid var(--hair)}
+.fab-mic svg{width:26px;height:26px}
+.q-input{width:100%;border:1px solid var(--hair);background:var(--surface);border-radius:16px;padding:14px;font-size:1.1rem;resize:none;color:var(--ink)}
+.q-input:focus{outline:2px solid var(--line);outline-offset:0}
+.fixes{display:flex;flex-direction:column;gap:8px}
+.fixes:empty{display:none}
+.fix{background:var(--ok-soft);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.fix strong{font-weight:800}
+.fix .small{color:var(--ink);overflow-wrap:anywhere}
+.fix-act{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Thèmes choisis par chaque personne (data-skin sur la racine) */
+:root[data-skin="lavande"]{--bg:#F3F0F8;--surface:#FFFFFF;--hair:#DDD6EA;--line:#6A4FC9;--line-ink:#FFFFFF;--sun:#F6B6D3;--sun-ink:#2A0F22;--ok-soft:#ECE6FA;--ok:#5A3FB8;--route:#6A4FC9;--map:#ECE8F3;--map-grid:#E0DAEC}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-skin="lavande"]{--bg:#120F1A;--surface:#1C1827;--hair:#2E2842;--line:#A592F2;--line-ink:#140B2E;--sun:#F2A7C9;--sun-ink:#2A0F22;--ok-soft:#251E3A;--ok:#B9A9FF;--route:#A592F2;--map:#1A1724;--map-grid:#24203A}}
+:root[data-theme="dark"][data-skin="lavande"]{--bg:#120F1A;--surface:#1C1827;--hair:#2E2842;--line:#A592F2;--line-ink:#140B2E;--sun:#F2A7C9;--sun-ink:#2A0F22;--ok-soft:#251E3A;--ok:#B9A9FF;--route:#A592F2;--map:#1A1724;--map-grid:#24203A}
+:root[data-skin="ocean"]{--bg:#EDF3F7;--surface:#FFFFFF;--hair:#D3DFE8;--line:#1F5FA8;--line-ink:#FFFFFF;--sun:#5ED3C7;--sun-ink:#06231F;--ok-soft:#DDEBF7;--ok:#1F5FA8;--route:#1F7BEA;--map:#E6EEF3;--map-grid:#D9E4EC}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-skin="ocean"]{--bg:#0C141C;--surface:#132030;--hair:#22344A;--line:#5E9EEA;--line-ink:#06121F;--sun:#4FC9BC;--sun-ink:#04201C;--ok-soft:#15263A;--ok:#7DB4F2;--route:#5E9EEA;--map:#111C27;--map-grid:#1A2836}}
+:root[data-theme="dark"][data-skin="ocean"]{--bg:#0C141C;--surface:#132030;--hair:#22344A;--line:#5E9EEA;--line-ink:#06121F;--sun:#4FC9BC;--sun-ink:#04201C;--ok-soft:#15263A;--ok:#7DB4F2;--route:#5E9EEA;--map:#111C27;--map-grid:#1A2836}
+:root[data-skin="corail"]{--bg:#FBF1EE;--surface:#FFFFFF;--hair:#EED9D2;--line:#C9473A;--line-ink:#FFFFFF;--sun:#FFC26B;--sun-ink:#2B1700;--ok-soft:#FBE3DD;--ok:#B33E32;--route:#2B7FEA;--map:#F4ECE7;--map-grid:#EBDFD8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-skin="corail"]{--bg:#1A1110;--surface:#261918;--hair:#3D2826;--line:#F07F6F;--line-ink:#2A0905;--sun:#FFB75A;--sun-ink:#2B1700;--ok-soft:#36201D;--ok:#F59A8C;--route:#4A94F5;--map:#211716;--map-grid:#2E201E}}
+:root[data-theme="dark"][data-skin="corail"]{--bg:#1A1110;--surface:#261918;--hair:#3D2826;--line:#F07F6F;--line-ink:#2A0905;--sun:#FFB75A;--sun-ink:#2B1700;--ok-soft:#36201D;--ok:#F59A8C;--route:#4A94F5;--map:#211716;--map-grid:#2E201E}
+:root[data-skin="graphite"]{--bg:#F1F1F0;--surface:#FFFFFF;--hair:#DCDCDA;--line:#24272B;--line-ink:#FFFFFF;--sun:#FFD43B;--sun-ink:#1E1A00;--ok-soft:#E6E6E3;--ok:#24272B;--route:#2B7FEA;--map:#EBEBE8;--map-grid:#E0E0DC}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-skin="graphite"]{--bg:#0F1012;--surface:#1A1C1F;--hair:#2C2F33;--line:#E8E8E6;--line-ink:#111214;--sun:#FFD43B;--sun-ink:#1E1A00;--ok-soft:#24272B;--ok:#E8E8E6;--route:#4A94F5;--map:#16181B;--map-grid:#202326}}
+:root[data-theme="dark"][data-skin="graphite"]{--bg:#0F1012;--surface:#1A1C1F;--hair:#2C2F33;--line:#E8E8E6;--line-ink:#111214;--sun:#FFD43B;--sun-ink:#1E1A00;--ok-soft:#24272B;--ok:#E8E8E6;--route:#4A94F5;--map:#16181B;--map-grid:#202326}
+.skins{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.skin{border:2px solid var(--hair);background:var(--surface);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;text-align:left;color:var(--ink)}
+.skin.on{border-color:var(--line);box-shadow:0 0 0 2px var(--line) inset}
+.skin-prev{height:56px;border-radius:10px;position:relative;overflow:hidden}
+.skin-prev i{position:absolute;left:12px;top:10px;bottom:10px;width:5px;border-radius:3px}
+.skin-prev b{position:absolute;left:8px;top:8px;width:13px;height:13px;border-radius:50%;border:3px solid}
+.skin-prev u{position:absolute;left:28px;top:12px;height:8px;width:55%;border-radius:4px}
+.skin-prev s{position:absolute;left:28px;bottom:12px;height:8px;width:35%;border-radius:4px;opacity:.5}
+.skin-name{font-weight:800}
+.skin-sub{font-size:.8rem;color:var(--muted)}
+</style>
+<script>try{var _sk=localStorage.getItem('a2.skin');if(_sk&&_sk!=='metro')document.documentElement.setAttribute('data-skin',_sk);}catch(_){}</script>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 30 30" aria-hidden="true"><path d="M6 4v22" stroke="var(--line)" stroke-width="4" stroke-linecap="round"/><circle cx="6" cy="9" r="4.5" fill="var(--sun)" stroke="var(--line)" stroke-width="3"/><circle cx="6" cy="21" r="4.5" fill="var(--line)"/><path d="M14 9h12M14 21h9" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/></svg>
+      <h1>Agenda à Deux</h1>
+    </div>
+    <div style="display:flex;gap:8px"><button class="round" id="btn-theme" aria-label="Thème"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor"/></svg></button>
+    <button class="round" id="btn-settings" aria-label="Réglages communs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>
+  </header>
+
+  <div id="notice" class="notice" hidden></div>
+
+  <section class="composer" aria-label="Ajouter un évènement">
+    <textarea id="input" placeholder="Qu'est-ce que vous avez prévu ? Ex. : dentiste vendredi 14h30 rue de la République à Lyon"></textarea>
+    <div class="row">
+      <button class="btn quiet" id="btn-manual">Remplir moi-même</button>
+      <button class="btn primary" id="btn-analyze">Préparer l'évènement</button>
+    </div>
+  </section>
+
+  <div id="next" class="sign" hidden></div>
+
+  <main id="list" class="days">
+    <div class="empty"><strong>Chargement de votre agenda</strong><p>Vos évènements partagés vont apparaître ici.</p></div>
+  </main>
+  <button class="btn quiet toggle-past" id="btn-past" hidden>Voir les évènements passés</button>
+</div>
+
+<button class="fab-mic" id="fab-mic" aria-label="Dicter un évènement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+<button class="fab" id="fab" aria-label="Ajouter un évènement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ajouter</button>
+<div id="sheet-root"></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+const CATS = {rdv:"Rendez-vous",sortie:"Sortie",medecin:"Médecin, santé",courses:"Courses",travail:"Travail",autre:"Autre"};
+const MODES = {car:"Voiture",transit:"Transports",bike:"Vélo",walk:"À pied"};
+const MODE_IN = {car:"en voiture",transit:"en transports",bike:"à vélo",walk:"à pied"};
+const GMODE = {car:"driving",transit:"transit",bike:"bicycling",walk:"walking"};
+const ICON = {
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>'
+};
+
+let db=null, user=null, sample=null, myId=null;
+let events=new Map(), places=new Map(), settings={home:"",mode:"car"};
+let firstSnap=true, showPast=false, canWrite=true;
+const expanded=new Set();
+
+const $=s=>document.querySelector(s);
+function el(tag,attrs,...kids){
+  const e=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs||{})){
+    if(v==null||v===false) continue;
+    if(k.startsWith("on")) e.addEventListener(k.slice(2),v);
+    else if(k==="class") e.className=v;
+    else if(k==="style") e.setAttribute("style",v);
+    else if(k==="html") e.innerHTML=v;
+    else e.setAttribute(k,v===true?"":v);
+  }
+  for(const k of kids.flat()) if(k!=null&&k!==false) e.append(k instanceof Node?k:document.createTextNode(String(k)));
+  return e;
+}
+const pad=n=>String(n).padStart(2,"0");
+const hhmm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const startOf=ev=>new Date(ev.date+"T"+(ev.time||"09:00")+":00");
+const departOf=ev=>new Date(startOf(ev).getTime()-((+ev.travelMin||0)+(+ev.marginMin||0))*60000);
+function fmtDur(m){m=Math.round(m);if(m<60)return m+" min";const h=Math.floor(m/60),r=m%60;return h+" h"+(r?" "+pad(r):"");}
+function dayParts(d){
+  const t=new Date();t.setHours(0,0,0,0);const x=new Date(d);x.setHours(0,0,0,0);
+  const diff=Math.round((x-t)/86400000);
+  const full=d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  if(diff===0) return ["Aujourd'hui",full];
+  if(diff===1) return ["Demain",full];
+  if(diff===-1) return ["Hier",full];
+  return [full.charAt(0).toUpperCase()+full.slice(1),""];
+}
+function remWhen(ev,r){return new Date(startOf(ev).getTime()-r.min*60000);}
+function remLabel(ev,r){
+  const w=remWhen(ev,r),s=startOf(ev);
+  const dd=Math.round((new Date(s).setHours(0,0,0,0)-new Date(w).setHours(0,0,0,0))/86400000);
+  return (dd===0?"":dd===1?"la veille ":dd+" jours avant ")+hhmm(w);
+}
+
+function toast(msg,actionLabel,action){
+  const t=$("#toast");t.textContent="";
+  t.append(el("span",{},msg));
+  if(actionLabel) t.append(el("button",{type:"button",onclick:()=>{t.hidden=true;action();}},actionLabel));
+  t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,actionLabel?6000:3500);
+}
+function notice(msg){const n=$("#notice");n.textContent=msg||"";n.hidden=!msg;}
+
+/* ---------- Swipe ---------- */
+let openFront=null;
+function closeOpen(except){ if(openFront&&openFront!==except){openFront.style.transform="";openFront.dataset.open="";openFront=null;} }
+function setOpen(front,open){
+  closeOpen(front);
+  front.style.transform=open?"translateX(-172px)":"";
+  front.dataset.open=open?"1":"";
+  openFront=open?front:null;
+}
+function makeSwipe(front){
+  let sx=0,sy=0,dx=0,active=false,decided=false,horiz=false,base=0,pid=null;
+  front.addEventListener("pointerdown",e=>{
+    if(e.pointerType==="mouse"&&e.button!==0) return;
+    if(e.target.closest("a,button,input,select")) return;
+    sx=e.clientX;sy=e.clientY;dx=0;active=true;decided=false;horiz=false;pid=e.pointerId;
+    base=front.dataset.open?-172:0;
+  });
+  front.addEventListener("pointermove",e=>{
+    if(!active||e.pointerId!==pid) return;
+    const mx=e.clientX-sx,my=e.clientY-sy;
+    if(!decided){ if(Math.abs(mx)<8&&Math.abs(my)<8) return; decided=true; horiz=Math.abs(mx)>Math.abs(my);
+      if(horiz){front.classList.add("dragging");try{front.setPointerCapture(pid);}catch(_){}} }
+    if(!horiz) return;
+    dx=mx;const x=Math.max(-200,Math.min(0,base+dx));
+    front.style.transform="translateX("+x+"px)";
+  });
+  const end=()=>{
+    if(!active) return; active=false;
+    front.classList.remove("dragging");
+    if(!horiz){ if(!decided&&front.dataset.open){ setOpen(front,false); front.dataset.justClosed="1"; } return; }
+    const x=base+dx; setOpen(front,x<-60);
+  };
+  front.addEventListener("pointerup",end);
+  front.addEventListener("pointercancel",end);
+  front.addEventListener("click",e=>{ if(horiz){e.preventDefault();e.stopImmediatePropagation();horiz=false;} },true);
+}
+document.addEventListener("pointerdown",e=>{ if(openFront&&!e.target.closest(".swipe")) closeOpen(); });
+
+/* ---------- Rendering ---------- */
+let renderSeq=0;
+async function render(){
+  const seq=++renderSeq;
+  const now=Date.now();
+  const all=[...events.values()].sort((a,b)=>startOf(a)-startOf(b));
+  const upcoming=all.filter(e=>startOf(e).getTime()>now-3*3600000);
+  const past=all.filter(e=>startOf(e).getTime()<=now-3*3600000).reverse();
+  $("#btn-past").hidden=past.length===0;
+  $("#btn-past").textContent=showPast?"Masquer les évènements passés":"Voir les évènements passés ("+past.length+")";
+  const shown=showPast?upcoming.concat(past):upcoming;
+  const ids=[...new Set(all.flatMap(e=>[e.createdBy,e.updatedBy,...Object.keys(e.calendarAdded||{})]).filter(Boolean))];
+  const ps=(user&&ids.length)?await user.profiles(ids):{};
+  if(seq!==renderSeq) return;
+  const list=$("#list");list.textContent="";openFront=null;
+  const who=id=>({name:id===myId?"toi":((ps[id]&&ps[id].name)||"l'autre"),color:(ps[id]&&ps[id].color)||"var(--muted)"});
+  renderNext(upcoming);
+  if(!shown.length){
+    list.append(el("div",{class:"empty"},el("strong",{},"Rien de prévu pour l'instant"),
+      el("p",{},"Écris un rendez-vous, une sortie ou des courses : l'app calcule le trajet, l'heure de départ et propose les rappels."),
+      el("button",{class:"btn primary",onclick:focusComposer},"Ajouter un évènement")));
+    return;
+  }
+  let cur=null,box=null;
+  for(const ev of shown){
+    const s=startOf(ev),key=ymd(s);
+    if(key!==cur){cur=key;const [a,b]=dayParts(s);
+      box=el("div",{class:"stops"});
+      list.append(el("section",{class:"day"},el("h2",{},a,b?el("span",{}," "+b):null),box));}
+    box.append(stop(ev,who));
+  }
+  if(canWrite && !hintShown()) list.append(el("p",{class:"hint-swipe"},"Astuce : glisse un évènement vers la gauche pour le modifier ou le supprimer."));
+}
+function hintShown(){try{const v=localStorage.getItem("ad-hint")||"0";localStorage.setItem("ad-hint",String(+v+1));return +v>4;}catch(_){return false;}}
+
+function renderNext(upcoming){
+  const n=$("#next"),now=Date.now();
+  const ev=upcoming.find(e=>departOf(e).getTime()>now-15*60000&&(+e.travelMin||0)>0);
+  if(!ev||departOf(ev)-now>24*3600000){n.hidden=true;return;}
+  const mins=Math.round((departOf(ev)-now)/60000);
+  n.textContent="";n.hidden=false;
+  n.append(el("div",{class:"k"},mins>0?"Prochain départ":"C'est l'heure de partir"),
+    el("div",{class:"big num"},hhmm(departOf(ev))),
+    el("div",{class:"what"},ev.title),
+    el("div",{class:"in"},mins>0?"Dans "+fmtDur(mins)+", "+MODE_IN[ev.mode]:"Arrivée prévue à "+ev.time));
+}
+
+function mapsUrl(ev){const p=new URLSearchParams({api:"1",destination:ev.location||"",travelmode:GMODE[ev.mode]||"driving"});if(ev.origin)p.set("origin",ev.origin);return "https://www.google.com/maps/dir/?"+p;}
+function wazeUrl(ev){return "https://waze.com/ul?q="+encodeURIComponent(ev.location||"")+"&navigate=yes";}
+function gcalUrl(ev){
+  const s=startOf(ev),e=new Date(s.getTime()+(+ev.durationMin||60)*60000);
+  const z=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+  let det="";
+  if((+ev.travelMin||0)>0) det+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+" et "+(ev.marginMin||0)+" min de marge)\nItinéraire : "+mapsUrl(ev)+"\n\n";
+  if((ev.reminders||[]).length) det+="Rappels prévus :\n"+ev.reminders.map(r=>"- "+remLabel(ev,r)+" : "+(r.label||"Rappel")+(r.kind==="alarme"?" (alarme)":"")).join("\n")+"\n\n";
+  if(ev.notes) det+=ev.notes+"\n\n";
+  det+="Ajouté depuis Agenda à Deux";
+  return "https://calendar.google.com/calendar/render?"+new URLSearchParams({action:"TEMPLATE",text:ev.title||"Évènement",dates:z(s)+"/"+z(e),details:det,location:ev.location||""});
+}
+
+function stop(ev,who){
+  const hasTrip=(+ev.travelMin||0)>0;
+  const front=el("div",{class:"front",style:"--cat:var(--c-"+(CATS[ev.category]?ev.category:"autre")+")"});
+
+  if(hasTrip) front.append(el("div",{class:"leg first"},
+    el("div",{class:"t num"},hhmm(departOf(ev))),
+    el("div",{class:"rail"},el("span",{class:"node dep"})),
+    el("div",{class:"body"},
+      el("div",{class:"dep-line"},el("span",{class:"pill"},"Départ"),ev.origin?"de "+shortAddr(ev.origin):""),
+      el("div",{class:"small"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode],el("span",{class:"more-info"},", "+(ev.marginMin||0)+" min de marge")))));
+
+  const tags=el("div",{class:"tags more-info"});
+  for(const r of (ev.reminders||[])) tags.append(el("span",{class:"tag num"+(r.kind==="alarme"?" alarm":"")},(r.kind==="alarme"?"Alarme ":"Rappel ")+remLabel(ev,r)));
+  const added=ev.calendarAdded||{};
+  if(myId&&added[myId]) tags.append(added[myId]>=ev.updatedAt?el("span",{class:"tag ok"},"Dans ton agenda"):el("span",{class:"tag stale"},"Modifié depuis ton ajout à l'agenda"));
+  for(const o of Object.keys(added).filter(id=>id!==myId)) tags.append(el("span",{class:"tag"+(added[o]>=ev.updatedAt?" ok":" stale")},(added[o]>=ev.updatedAt?"Dans l'agenda de ":"À mettre à jour chez ")+who(o).name));
+
+  const links=el("div",{class:"links more-info"});
+  links.append(el("button",{class:"btn",type:"button",onclick:()=>addToCalendar(ev)},"Calendrier iPhone"),el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
+  if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
+
+  const author=who(ev.createdBy), editor=ev.updatedBy&&ev.updatedBy!==ev.createdBy?who(ev.updatedBy):null;
+  const moreBtn=canWrite?el("button",{class:"more",type:"button","aria-label":"Modifier ou supprimer",html:ICON.more,onclick:()=>setOpen(front,!front.dataset.open)}):null;
+
+  front.append(el("div",{class:"leg "+(hasTrip?"last":"solo")},
+    el("div",{class:"t num"},ev.time||""),
+    el("div",{class:"rail"},el("span",{class:"node arr"})),
+    el("div",{class:"body"},
+      el("div",{class:"ev-title"},el("span",{},ev.title||"Sans titre"),el("span",{class:"ev-right"},moreBtn,el("span",{class:"chev","aria-hidden":"true",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'}))),
+      el("div",{class:"where"},[CATS[ev.category]||"Autre",ev.location].filter(Boolean).join(", ")),
+      tags.childNodes.length?tags:null,
+      links,
+      el("div",{class:"by more-info"},el("i",{style:"background:"+author.color}),"Ajouté par "+author.name+(editor?", modifié par "+editor.name:"")))));
+
+  if(ev.location&&expanded.has(ev.id)) front.append(routeBlock(ev));
+
+  const isOpen=expanded.has(ev.id);
+  const wrap=el("article",{class:"swipe"+(isOpen?" open":"")});
+  front.setAttribute("tabindex","0");front.setAttribute("role","button");front.setAttribute("aria-expanded",isOpen?"true":"false");
+  const toggle=()=>{
+    if(expanded.has(ev.id)) expanded.delete(ev.id); else expanded.add(ev.id);
+    const now=expanded.has(ev.id);
+    wrap.classList.toggle("open",now);front.setAttribute("aria-expanded",now?"true":"false");
+    const r=front.querySelector(":scope > .route");
+    if(now&&!r&&ev.location) front.append(routeBlock(events.get(ev.id)||ev));
+    if(!now&&r) r.remove();
+  };
+  front.addEventListener("click",e=>{
+    if(e.target.closest("a,button,input,select,.route")) return;
+    if(front.dataset.justClosed){delete front.dataset.justClosed;return;}
+    toggle();
+  });
+  front.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target===front){e.preventDefault();toggle();}});
+  if(canWrite){
+    wrap.append(el("div",{class:"behind"},
+      el("button",{class:"b-edit",type:"button",html:ICON.edit+"<span>Modifier</span>",onclick:()=>{closeOpen();openEditor({...ev});}}),
+      el("button",{class:"b-del",type:"button",html:ICON.del+"<span>Supprimer</span>",onclick:()=>removeEvent(ev)})));
+    makeSwipe(front);
+  }
+  wrap.append(front);
+  return wrap;
+}
+function routeBlock(ev){
+  const steps=Array.isArray(ev.route)?ev.route.filter(Boolean).slice(0,6):[];
+  const geo=ev.routeGeo&&ev.routeGeo.from?ev.routeGeo:null;
+  const box=el("div",{class:"route"});
+  const km=geo?routeKm(geo):0;
+  box.append(el("div",{class:"route-h"},el("span",{class:"lab"},"Itinéraire "+MODE_IN[ev.mode])));
+
+  const fix=ev.addrFix||{};
+  for(const key of ["origin","location"]){
+    if(!fix[key]||norm(fix[key])===norm(ev[key])) continue;
+    const b=el("div",{class:"fix"},
+      el("div",{},el("strong",{},key==="origin"?"Adresse de départ complétée":"Adresse d'arrivée complétée"),el("div",{class:"small"},"Tu voulais dire : "+fix[key]+" ?")),
+      el("div",{class:"fix-act"},
+        canWrite?el("button",{class:"btn primary",type:"button",onclick:()=>applyFix(ev,key,fix[key])},"Oui, utiliser"):null,
+        canWrite?el("button",{class:"btn quiet",type:"button",onclick:()=>openEditor({...ev})},"Corriger"):null));
+    box.append(b);
+  }
+  if(ev.routeProblem){
+    box.append(el("div",{class:"fix"},
+      el("div",{},el("strong",{},"Trajet impossible à tracer"),el("div",{class:"small"},ev.routeProblem)),
+      canWrite?el("div",{class:"fix-act"},el("button",{class:"btn primary",type:"button",onclick:()=>openEditor({...ev})},"Corriger les adresses")):null));
+  }
+
+  if(geo) box.append(routeMap(geo,ev));
+  if(!ev.routeProblem) box.append(goBar(ev,km));
+  if(geo) box.append(el("div",{class:"note"},"Aperçu indicatif. « Aller » ouvre le GPS avec le trafic en direct."));
+  if(!ev.routeProblem&&!geo&&canWrite&&db){
+    const b=el("button",{class:"btn",type:"button"},"Afficher le plan du trajet");
+    b.onclick=async()=>{
+      b.disabled=true;b.textContent="";b.append(el("span",{class:"spinner"}),"Calcul de l'itinéraire…");
+      try{await computeRoute(ev);}
+      catch(e){const m=sampleErr(e);if(m)toast(m);b.disabled=false;b.textContent="Réessayer";}
+    };
+    box.append(el("div",{},b));
+  }
+  const links=el("div",{class:"links"},
+    el("a",{class:"btn",href:appleUrl(ev),target:"_blank",rel:"noopener"},"Plans"),
+    el("a",{class:"btn",href:mapsUrl(ev),target:"_blank",rel:"noopener"},"Google Maps"));
+  if(ev.mode==="car") links.append(el("a",{class:"btn",href:wazeUrl(ev),target:"_blank",rel:"noopener"},"Waze"));
+  box.append(links);
+  return box;
+}
+const BAD_STEP=/v[ée]rifi|adresse|gps|code postal|incompl|impossible|en attendant/i;
+function cleanSteps(a){return cleanRoute(a).filter(s=>!BAD_STEP.test(s));}
+function fixesFrom(r,ev){
+  const f={};
+  const need=a=>a&&!placeFor(a)&&!/\b\d{5}\b/.test(a);
+  if(r&&r.from&&need(ev.origin)&&norm(r.from)!==norm(ev.origin)) f.origin=String(r.from).slice(0,200);
+  if(r&&r.to&&need(ev.location)&&norm(r.to)!==norm(ev.location)) f.location=String(r.to).slice(0,200);
+  return f;
+}
+function docBody(ev){const {id,...body}=ev;return body;}
+async function computeRoute(ev){
+  const r=await estimateTrip(ev);
+  const cur=events.get(ev.id)||ev;
+  const nx={...docBody(cur)};
+  if(r.ok){nx.routeGeo=cleanGeo(r.geo);nx.travelMin=r.travelMin;nx.travelNote=r.travelNote;nx.routeProblem="";nx.addrFix=fixesFrom(r,ev);}
+  else {nx.routeGeo=null;nx.routeProblem=r.problem;nx.addrFix={};}
+  nx.reminders=(nx.reminders||[]).map(x=>({...x,min:remMinFor(nx,x)}));
+  await db.doc("events/"+ev.id).set(nx);
+}
+async function applyFix(ev,key,val){
+  const cur=events.get(ev.id)||ev;
+  const f={...(cur.addrFix||{})};delete f[key];
+  try{await db.doc("events/"+ev.id).set({...docBody(cur),[key]:val,addrFix:f,updatedBy:myId,updatedAt:Date.now()});}
+  catch(e){toast("Mise à jour impossible. Réessaie.");return;}
+  if(key==="origin"&&!placesSorted().some(p=>p.kind==="home"))
+    toast("Adresse mise à jour","Enregistrer comme Maison",()=>savePlace({name:"Maison",address:val,kind:"home"}));
+  else toast("Adresse mise à jour");
+}
+function cleanRoute(a){return (Array.isArray(a)?a:[]).map(s=>String(s).slice(0,90)).filter(Boolean).slice(0,6);}
+function shortAddr(a){const p=placeFor(a);return p?p.name:a;}
+
+async function removeEvent(ev){
+  if(!db) return;
+  const {id,...body}=ev;
+  try{
+    await db.doc("events/"+id).delete();
+    toast("« "+(ev.title||"Évènement")+" » supprimé pour vous deux","Annuler",async()=>{
+      try{await db.doc("events/"+id).set({...body,updatedBy:myId,updatedAt:Date.now()});toast("Évènement rétabli");}catch(e){toast("Impossible de le rétablir.");}
+    });
+  }catch(e){toast("Suppression impossible. Réessaie.");}
+}
+async function markAdded(ev){
+  if(!db||!myId) return;
+  try{await db.doc("events/"+ev.id).update({["calendarAdded."+myId]:ev.updatedAt});}catch(e){}
+}
+function focusComposer(){openQuickAdd();}
+
+/* ---------- Services réels : adresses (BAN / IGN), itinéraires (IGN), magasins (OpenStreetMap) ---------- */
+const GEO="https://data.geopf.fr/geocodage", BAN="https://api-adresse.data.gouv.fr", ROUTE="https://data.geopf.fr/navigation/itineraire";
+const DEF_MARGIN={medecin:15,rdv:10,travail:10,sortie:5,courses:0,autre:5};
+const DEF_DUR={medecin:45,rdv:60,travail:60,sortie:120,courses:60,autre:60};
+function sampleErr(e){return (e&&e.name==="AbortError")?"":"Service indisponible. Vérifie ta connexion internet et réessaie.";}
+async function getJson(url,signal,ms=12000,opts){
+  const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),ms);
+  if(signal){if(signal.aborted)ctl.abort();else signal.addEventListener("abort",()=>ctl.abort());}
+  try{const r=await fetch(url,{...(opts||{}),signal:ctl.signal,headers:{Accept:"application/json",...((opts&&opts.headers)||{})}});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json();}
+  finally{clearTimeout(t);}
+}
+const geoCache=new Map();
+function rememberGeo(label,lat,lon){if(label&&Number.isFinite(+lat)&&Number.isFinite(+lon))geoCache.set(norm(label),{lat:+lat,lon:+lon,label});}
+function featLabel(f){const p=f.properties||{};const city=[p.postcode,p.city].filter(Boolean).join(" ");if(p.type==="municipality")return p.label;return p.name&&city?p.name+", "+city:p.label;}
+let homeGeo=null;
+async function homeCoords(){
+  const h=homeAddr();if(!h)return null;
+  const p=defaultHome();if(p&&p.lat)return {lat:p.lat,lon:p.lon};
+  if(homeGeo&&homeGeo.addr===h)return homeGeo;
+  const r=await searchAddresses(h,null,null).catch(()=>[]);
+  if(r.length){homeGeo={lat:r[0].lat,lon:r[0].lon,addr:h};return homeGeo;}
+  return null;
+}
+async function searchAddresses(q,signal,near){
+  q=String(q||"").trim();if(q.length<3)return [];
+  if(near===undefined) near=await homeCoords().catch(()=>null);
+  const bias=near?`&lat=${near.lat}&lon=${near.lon}`:"";const enc=encodeURIComponent(q);
+  const a=getJson(`${GEO}/search?q=${enc}&limit=5&autocomplete=1${bias}`,signal)
+    .catch(()=>getJson(`${BAN}/search/?q=${enc}&limit=5&autocomplete=1${bias}`,signal))
+    .then(j=>(j.features||[]).map(f=>({address:featLabel(f),name:"",lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0]}))).catch(()=>[]);
+  const p=getJson(`${GEO}/completion?text=${enc}&type=PositionOfInterest&maximumResponses=4${near?`&lonlat=${near.lon},${near.lat}`:""}`,signal)
+    .then(j=>(j.results||[]).filter(r=>r.kind!=="street"&&r.fulltext).map(r=>({address:r.fulltext,name:"",lat:r.y,lon:r.x}))).catch(()=>[]);
+  const [x,y]=await Promise.all([a,p]);
+  const seen=new Set();
+  const out=[...x,...y].filter(r=>{const k=norm(r.address);if(!r.address||!Number.isFinite(r.lat)||seen.has(k))return false;seen.add(k);return true;}).slice(0,7);
+  out.forEach(r=>rememberGeo(r.address,r.lat,r.lon));
+  return out;
+}
+async function geocode(text){
+  const k=norm(text);if(!k)return null;
+  if(geoCache.has(k))return geoCache.get(k);
+  const p=placeFor(text);if(p&&p.lat){rememberGeo(p.address,p.lat,p.lon);return geoCache.get(k);}
+  const r=await searchAddresses(text);
+  if(!r.length)return null;
+  const g={lat:r[0].lat,lon:r[0].lon,label:r[0].address};geoCache.set(k,g);return g;
+}
+function decodePolyline(str){
+  const pts=[];let i=0,lat=0,lng=0;
+  while(str&&i<str.length){
+    let b,shift=0,res=0;do{b=str.charCodeAt(i++)-63;res|=(b&0x1f)<<shift;shift+=5;}while(b>=0x20);lat+=res&1?~(res>>1):res>>1;
+    shift=0;res=0;do{b=str.charCodeAt(i++)-63;res|=(b&0x1f)<<shift;shift+=5;}while(b>=0x20);lng+=res&1?~(res>>1):res>>1;
+    pts.push({lat:lat/1e5,lon:lng/1e5});
+  }
+  return pts;
+}
+function thin(pts,max){if(pts.length<=max)return pts;const step=(pts.length-1)/(max-1);const out=[];for(let i=0;i<max;i++)out.push(pts[Math.round(i*step)]);return out;}
+function isRush(d){if(!d)return false;const wd=d.getDay();if(wd===0||wd===6)return false;const m=d.getHours()*60+d.getMinutes();return (m>=450&&m<=570)||(m>=990&&m<=1140);}
+async function computeTrip(from,to,mode,arriveAt){
+  const profile=mode==="walk"||mode==="bike"?"pedestrian":"car";
+  let path=[],km=0,base=0;
+  try{
+    const j=await getJson(`${ROUTE}?resource=bdtopo-osrm&start=${from.lon},${from.lat}&end=${to.lon},${to.lat}&profile=${profile}&optimization=fastest&geometryFormat=polyline&getSteps=false&distanceUnit=kilometer&timeUnit=minute`,null,15000);
+    path=decodePolyline(j.geometry||"");km=+j.distance||0;base=+j.duration||0;
+  }catch(e){
+    const srv=mode==="walk"?"https://routing.openstreetmap.de/routed-foot":mode==="bike"?"https://routing.openstreetmap.de/routed-bike":"https://router.project-osrm.org";
+    const j=await getJson(`${srv}/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=polyline`,null,15000);
+    const r=(j.routes||[])[0];if(!r)throw new Error("no route");
+    path=decodePolyline(r.geometry);km=r.distance/1000;base=r.duration/60;
+  }
+  let min;
+  if(mode==="car") min=base*(isRush(arriveAt)?1.25:1)+5;
+  else if(mode==="transit") min=base*1.6+10;
+  else if(mode==="bike") min=km/15*60+3;
+  else min=base||km/4.8*60;
+  return {travelMin:Math.max(1,Math.round(min)),distanceKm:Math.round(km*10)/10,path:thin(path,160)};
+}
+async function estimateTrip(d){
+  const [o,t]=await Promise.all([geocode(d.origin||homeAddr()),geocode(d.location)]);
+  if(!t) return {ok:false,problem:"Adresse d'arrivée introuvable. Choisis une suggestion dans la liste."};
+  if(!o) return {ok:false,problem:"Adresse de départ introuvable. Choisis un domicile enregistré ou une suggestion."};
+  rememberGeo(t.label,t.lat,t.lon);rememberGeo(o.label,o.lat,o.lon);
+  const r=await computeTrip(o,t,d.mode||"car",startOf(d));
+  const note=String(r.distanceKm).replace(".",",")+" km"+(d.mode==="car"?(isRush(startOf(d))?", heure de pointe et stationnement inclus":", stationnement inclus"):d.mode==="transit"?", durée estimée en transports":"");
+  return {ok:true,travelMin:r.travelMin,distanceKm:r.distanceKm,travelNote:note,route:[],routeVia:"",geo:{from:{lat:o.lat,lon:o.lon},to:{lat:t.lat,lon:t.lon},path:r.path,marks:[]},from:o.label,to:t.label};
+}
+
+/* ---------- Address suggestions ---------- */
+const norm=s=>(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+const KIND_LABEL={home:"Maison",work:"Travail",place:"Lieu"};
+function placesSorted(order){
+  const o=order||{home:0,work:1,place:2};
+  return [...places.values()].sort((a,b)=>(o[a.kind]??2)-(o[b.kind]??2)||String(a.name).localeCompare(String(b.name),"fr"));
+}
+function defaultHome(){const hs=placesSorted().filter(p=>p.kind==="home");return hs.find(p=>p.isDefault)||hs[0]||null;}
+function isDefaultHome(p){const h=defaultHome();return !!h&&h.id===p.id;}
+function homeAddr(){const h=defaultHome();return h?h.address:(settings.home||"");}
+function placeFor(addr){const n=norm(addr);return n?placesSorted().find(p=>norm(p.address)===n):null;}
+function knownPlaces(){
+  const m=new Map();
+  for(const p of placesSorted()) m.set(norm(p.address),{address:p.address,label:p.name,tag:p.kind==="place"?"Enregistrée":KIND_LABEL[p.kind]});
+  if(settings.home&&!m.has(norm(settings.home))) m.set(norm(settings.home),{address:settings.home,label:"",tag:"Maison"});
+  for(const e of [...events.values()].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)))
+    for(const a of [e.location,e.origin]) if(a&&!m.has(norm(a))) m.set(norm(a),{address:a,label:"",tag:"Récente"});
+  return [...m.values()];
+}
+function autocomplete(input,onPick){
+  const list=el("div",{class:"ac-list",role:"listbox",hidden:true});
+  const wrap=el("div",{class:"ac"},input,list);
+  input.setAttribute("autocomplete","off");input.setAttribute("enterkeyhint","search");
+  let ctl=null,picked=input.value.trim(),remote=null,remoteQ="";
+  const item=it=>el("button",{type:"button",class:"ac-item",role:"option",onpointerdown:e=>e.preventDefault(),onclick:()=>pick(it)},
+    el("span",{class:"ac-main"},it.label||it.address),it.label?el("span",{class:"ac-sub"},it.address):null,it.tag?el("span",{class:"ac-tag"},it.tag):null);
+  function show(){
+    const q=input.value.trim(),nq=norm(q);
+    list.textContent="";
+    const local=knownPlaces().filter(p=>!nq||norm(p.address+" "+(p.label||"")).includes(nq)).slice(0,5);
+    local.forEach(it=>list.append(item(it)));
+    const haveRemote=Array.isArray(remote)&&remoteQ===q;
+    if(remote==="loading") list.append(el("div",{class:"ac-load"},el("span",{class:"spinner"}),"Recherche de « "+remoteQ+" »…"));
+    else if(haveRemote){
+      remote.filter(x=>!local.some(l=>norm(l.address)===norm(x.address))).forEach(it=>list.append(item(it)));
+      if(!remote.length) list.append(el("div",{class:"ac-load"},"Aucune adresse trouvée. Ajoute la ville ou le code postal."));
+    }
+    if(false)
+      list.append(el("button",{type:"button",class:"ac-item ac-search",onpointerdown:e=>e.preventDefault(),onclick:search},
+        el("span",{class:"ac-main"},"Chercher « "+q+" »"),el("span",{class:"ac-sub"},"Trouver l'adresse complète, même avec une faute ou un nom de lieu")));
+    list.hidden=!list.childNodes.length;
+  }
+  async function search(){
+    const q=input.value.trim();if(q.length<3)return;
+    ctl&&ctl.abort();const my=ctl=new AbortController();
+    remote="loading";remoteQ=q;show();
+    try{
+      const r=await searchAddresses(q,my.signal);
+      if(my.signal.aborted)return;
+      const arr=Array.isArray(r)?r:(r&&(r.suggestions||r.results||r.adresses||r.addresses))||[];
+      remote=arr.filter(x=>x&&x.address).slice(0,7).map(x=>({address:String(x.address),label:String(x.name||""),tag:"",lat:x.lat,lon:x.lon}));
+    }catch(e){if(my.signal.aborted)return;remote=null;const m=sampleErr(e);if(m)toast(m);}
+    if(document.activeElement===input) show(); else list.hidden=true;
+  }
+  function pick(it){if(it.lat)rememberGeo(it.address,it.lat,it.lon);input.value=it.address;picked=it.address;list.hidden=true;ctl&&ctl.abort();remote=null;input.dispatchEvent(new Event("change"));onPick&&onPick(it.address);}
+  input.addEventListener("input",()=>{if(remote==="loading"){ctl&&ctl.abort();remote=null;}const q=input.value.trim();clearTimeout(input._st);if(q&&q===picked){list.hidden=true;return;}show();if(q.length>=3)input._st=setTimeout(search,280);});
+  input.addEventListener("focus",()=>{const q=input.value.trim();if(q&&q===picked){list.hidden=true;return;}show();});
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();search();}});
+  input.addEventListener("blur",()=>setTimeout(()=>{if(document.activeElement!==input)list.hidden=true;},200));
+  return wrap;
+}
+
+/* ---------- Saved places ---------- */
+const chipBoxes=new Set();
+function placeChips(input,origin,after){
+  const box=el("div",{class:"pchips"});
+  const order=origin?{home:0,work:1,place:2}:{place:0,work:1,home:2};
+  function draw(){
+    box.textContent="";
+    const val=input.value.trim();
+    for(const p of placesSorted(order)) box.append(el("button",{type:"button",class:"pchip"+(norm(p.address)===norm(val)?" on":""),
+      onclick:()=>{input.value=p.address;input.dispatchEvent(new Event("change"));after&&after();}},p.name));
+    if(val&&!placeFor(val)&&db&&canWrite) box.append(el("button",{type:"button",class:"pchip add",onclick:openSave},"Enregistrer cette adresse"));
+  }
+  function openSave(){
+    box.textContent="";
+    const name=el("input",{type:"text",placeholder:"Nom, ex. Dentiste","aria-label":"Nom de l'adresse"});
+    const kind=el("select",{"aria-label":"Type d'adresse"});
+    [["place","Lieu"],["home","Maison"],["work","Travail"]].forEach(([v,l])=>kind.append(el("option",{value:v},l)));
+    kind.onchange=()=>{if(!name.value.trim()&&kind.value!=="place")name.value=KIND_LABEL[kind.value];};
+    const ok=el("button",{type:"button",class:"btn primary"},"Enregistrer");
+    ok.onclick=async()=>{ok.disabled=true;if(!(await savePlace({name:name.value.trim(),address:input.value.trim(),kind:kind.value})))ok.disabled=false;};
+    box.append(el("div",{class:"psave"},name,kind,el("div",{class:"psave-act"},el("button",{type:"button",class:"btn quiet",onclick:draw},"Annuler"),ok)));
+    name.focus();
+  }
+  input.addEventListener("change",draw);
+  input.addEventListener("input",()=>{clearTimeout(box._t);box._t=setTimeout(draw,250);});
+  box.refresh=draw;chipBoxes.add(box);draw();
+  return box;
+}
+function refreshPlaceUI(){
+  for(const b of chipBoxes){if(b.isConnected)b.refresh();else chipBoxes.delete(b);}
+  if(placesListRefresh)placesListRefresh();
+}
+let placesListRefresh=null;
+async function savePlace({id,name,address,kind,isDefault}){
+  if(!db){toast("Synchronisation indisponible.");return false;}
+  if(!address){toast("Indique une adresse.");return false;}
+  kind=["home","work"].includes(kind)?kind:"place";
+  if(!name) name=kind==="place"?"":KIND_LABEL[kind];
+  if(!name){toast("Donne un nom à cette adresse, par exemple Dentiste.");return false;}
+  const docId=id||db.collection("places").doc().id;
+  const prev=id?places.get(id):null;
+  const def=kind==="home"&&(isDefault===undefined?!!(prev&&prev.isDefault):!!isDefault);
+  try{
+    if(def) for(const p of placesSorted()) if(p.id!==docId&&p.isDefault) await db.doc("places/"+p.id).update({isDefault:false});
+    const g=await geocode(address).catch(()=>null);
+    await db.doc("places/"+docId).set({name:name.slice(0,40),address:address.slice(0,200),kind,isDefault:def,...(g?{lat:g.lat,lon:g.lon}:{}),updatedBy:myId,updatedAt:Date.now()});
+    toast("« "+name+" » enregistrée pour vous deux");return true;
+  }catch(e){toast("Enregistrement impossible. Réessaie.");return false;}
+}
+
+/* ---------- Enseignes ---------- */
+const BRAND_CATALOG=["Action","Carrefour","E.Leclerc","Auchan","Lidl","Intermarché","Super U","Aldi","Grand Frais","Picard","Monoprix","Casino","Décathlon","IKEA","Leroy Merlin","Castorama","Gifi","Kiabi","Primark","Fnac","Darty","Boulanger","Norauto","McDonald's","Burger King","KFC","La Poste","Pharmacie"];
+let brands=[];
+const brandBoxes=new Set();
+function refreshBrandUI(){for(const b of brandBoxes){if(b.isConnected)b.refresh();else brandBoxes.delete(b);}if(brandsRefresh)brandsRefresh();}
+async function saveBrands(list){
+  if(!db){toast("Synchronisation indisponible.");return;}
+  brands=list.slice(0,40);refreshBrandUI();
+  try{await db.doc("config/brands").set({list:brands,updatedBy:myId,updatedAt:Date.now()});}catch(e){toast("Enregistrement impossible. Réessaie.");}
+}
+function brandCache(b,home,val){
+  const k="a2.brand."+norm(b)+"|"+norm(home);
+  try{
+    if(val!==undefined){localStorage.setItem(k,JSON.stringify({at:Date.now(),val}));return val;}
+    const c=JSON.parse(localStorage.getItem(k)||"null");
+    return c&&Date.now()-c.at<30*86400000?c.val:null;
+  }catch(_){return null;}
+}
+async function brandStores(b,home,signal){
+  const c=await homeCoords();if(!c)return [];
+  const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/"/g,'\\"');
+  const nb=norm(b);
+  let sel;
+  if(nb==="pharmacie") sel=`nwr["amenity"="pharmacy"](around:8000,${c.lat},${c.lon});`;
+  else if(nb==="la poste") sel=`nwr["amenity"="post_office"](around:10000,${c.lat},${c.lon});`;
+  else sel=`nwr["brand"~"^${esc(b)}$",i](around:30000,${c.lat},${c.lon});nwr["name"~"^${esc(b)}",i]["shop"](around:30000,${c.lat},${c.lon});nwr["name"~"^${esc(b)}",i]["amenity"](around:30000,${c.lat},${c.lon});`;
+  const q=`[out:json][timeout:20];(${sel});out center tags 60;`;
+  let j;
+  try{j=await getJson("https://overpass-api.de/api/interpreter",signal,25000,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}});}
+  catch(e){j=await getJson("https://overpass.kumi.systems/api/interpreter",signal,25000,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}});}
+  const seen=new Set();
+  let list=(j.elements||[]).map(e=>{const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);return {e,lat,lon};})
+    .filter(x=>Number.isFinite(x.lat)).map(x=>({...x,km:kmBetween(c,{lat:x.lat,lon:x.lon})})).sort((a,b2)=>a.km-b2.km)
+    .filter(x=>{const k=x.lat.toFixed(3)+","+x.lon.toFixed(3);if(seen.has(k))return false;seen.add(k);return true;}).slice(0,6);
+  list=await Promise.all(list.map(async x=>{
+    const t=x.e.tags||{};
+    let address="",city=t["addr:city"]||"";
+    if(t["addr:street"]&&(t["addr:postcode"]||city)) address=[[t["addr:housenumber"],t["addr:street"]].filter(Boolean).join(" "),[t["addr:postcode"],city].filter(Boolean).join(" ")].join(", ");
+    if(!address||!city){
+      try{const r=await getJson(`${BAN}/reverse/?lon=${x.lon}&lat=${x.lat}`,signal,8000);const f=(r.features||[])[0];if(f){if(!address)address=featLabel(f);if(!city)city=(f.properties||{}).city||"";}}catch(_){}
+    }
+    if(!address) address=x.lat.toFixed(5)+", "+x.lon.toFixed(5);
+    let name=t.name||b;if(city&&!norm(name).includes(norm(city)))name+=" "+city;
+    rememberGeo(address,x.lat,x.lon);
+    return {name:name.slice(0,40),address:address.slice(0,200),km:Math.round(x.km*1.3*10)/10,lat:x.lat,lon:x.lon};
+  }));
+  return list;
+}
+function brandChips(input,after){
+  const wrap=el("div",{class:"brand-wrap"});
+  const row=el("div",{class:"pchips"}),panel=el("div",{class:"brand-panel",hidden:true});
+  let current=null,ctl=null;
+  function draw(){
+    row.textContent="";
+    if(!brands.length){row.append(el("span",{class:"note"},"Astuce : coche vos enseignes (Action, Carrefour…) dans les réglages pour retrouver leurs magasins ici."));return;}
+    row.append(el("span",{class:"brand-lab"},"Enseignes"));
+    for(const b of brands) row.append(el("button",{type:"button",class:"pchip brand"+(current===b?" on":""),onclick:()=>pick(b)},b));
+  }
+  async function pick(b){
+    if(current===b&&!panel.hidden){panel.hidden=true;current=null;draw();return;}
+    current=b;draw();panel.hidden=false;panel.textContent="";
+    const home=homeAddr();
+    if(!home){panel.append(el("div",{class:"note"},"Enregistre d'abord un domicile dans les réglages : l'app cherchera les magasins près de chez vous."));return;}
+    const cached=brandCache(b,home);
+    if(cached){show(b,cached);return;}
+    
+    panel.append(el("div",{class:"ac-load"},el("span",{class:"spinner"}),"Magasins "+b+" près de chez vous…"));
+    ctl&&ctl.abort();const my=ctl=new AbortController();
+    try{
+      const r=await brandStores(b,home,my.signal);
+      if(my.signal.aborted)return;
+      const arr=Array.isArray(r)?r:(r&&(r.stores||r.magasins||r.results))||[];
+      const list=arr.filter(x=>x&&x.address).slice(0,6).map(x=>({name:String(x.name||b).slice(0,40),address:String(x.address).slice(0,200),km:Number.isFinite(+x.km)&&+x.km>0?Math.round(+x.km*10)/10:null}));
+      brandCache(b,home,list);
+      if(current===b) show(b,list);
+    }catch(e){if(my.signal.aborted)return;panel.textContent="";panel.append(el("div",{class:"note"},sampleErr(e)||"Recherche impossible. Réessaie."));}
+  }
+  function show(b,list){
+    panel.textContent="";list.forEach(st=>st.lat&&rememberGeo(st.address,st.lat,st.lon));
+    if(!list.length){panel.append(el("div",{class:"note"},"Aucun magasin "+b+" trouvé près de chez vous."));return;}
+    for(const st of list){
+      const saved=placeFor(st.address);
+      panel.append(el("button",{type:"button",class:"ac-item",onclick:()=>{
+        input.value=st.address;input.dispatchEvent(new Event("change"));panel.hidden=true;current=null;draw();after&&after();
+        if(!saved&&canWrite) toast("« "+st.name+" » choisi","Enregistrer l'adresse",()=>savePlace({name:st.name,address:st.address,kind:"place"}));
+      }},el("span",{class:"ac-main"},saved?saved.name:st.name),el("span",{class:"ac-sub"},st.address),el("span",{class:"ac-tag"},st.km?"environ "+String(st.km).replace(".",",")+" km":"")));
+    }
+    panel.append(el("div",{class:"note"},"Magasins trouvés sur OpenStreetMap, du plus proche au plus loin."));
+  }
+  wrap.append(row,panel);
+  wrap.refresh=draw;brandBoxes.add(wrap);draw();
+  return wrap;
+}
+
+/* ---------- Route map (schematic) ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function sv(tag,attrs,...kids){const e=document.createElementNS(SVGNS,tag);for(const[k,v]of Object.entries(attrs||{}))e.setAttribute(k,v);for(const k of kids)if(k!=null)e.append(k instanceof Node?k:document.createTextNode(String(k)));return e;}
+function kmBetween(a,b){const t=Math.PI/180,dl=(b.lat-a.lat)*t,dn=(b.lon-a.lon)*t;const h=Math.sin(dl/2)**2+Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(dn/2)**2;return 2*6371*Math.asin(Math.sqrt(h));}
+function cleanGeo(g){
+  const pt=a=>{let la,lo;if(Array.isArray(a)){la=+a[0];lo=+a[1];}else if(a&&typeof a==="object"){la=+(a.lat??a.latitude);lo=+(a.lon??a.lng??a.longitude);}else return null;
+    return Number.isFinite(la)&&Number.isFinite(lo)&&Math.abs(la)<=90&&Math.abs(lo)<=180?{lat:+la.toFixed(5),lon:+lo.toFixed(5)}:null;};
+  if(!g||typeof g!=="object")return null;
+  const from=pt(g.from),to=pt(g.to);if(!from||!to||kmBetween(from,to)>800)return null;
+  const path=(Array.isArray(g.path)?g.path:[]).map(pt).filter(p=>p&&kmBetween(p,from)<900).slice(0,400);
+  const marks=(Array.isArray(g.marks)?g.marks:[]).map(m=>m&&pt(m.at)&&m.name?{name:String(m.name).slice(0,28),at:pt(m.at)}:null).filter(m=>m&&kmBetween(m.at,from)<300).slice(0,6);
+  return {from,to,path,marks};
+}
+function routeKm(g){const pts=[g.from,...g.path,g.to];let d=0;for(let i=1;i<pts.length;i++)d+=kmBetween(pts[i-1],pts[i]);return d;}
+function routeMap(g,ev){
+  const box=el("div",{class:"rmap lmap"});
+  if(!window.L){box.append(el("div",{class:"note",style:"padding:14px"},"Carte indisponible sans connexion."));return box;}
+  let tries=0;
+  const draw=()=>{
+    if(!box.isConnected||!box.offsetWidth){if(++tries<40)setTimeout(draw,100);return;}
+    const cs=getComputedStyle(document.documentElement);
+    const route=(cs.getPropertyValue("--route")||"#2B7FEA").trim();
+    const cat=(cs.getPropertyValue("--c-"+(CATS[ev.category]?ev.category:"autre"))||"#C23A2F").trim();
+    const sun=(cs.getPropertyValue("--sun")||"#F4C02B").trim();
+    const m=L.map(box,{zoomControl:false,attributionControl:true,dragging:false,touchZoom:false,doubleClickZoom:false,scrollWheelZoom:false,boxZoom:false,keyboard:false,tap:false});
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(m);
+    const pts=[g.from,...(g.path||[]),g.to].filter(Boolean).map(p=>[p.lat,p.lon]);
+    if(pts.length>1){
+      L.polyline(pts,{color:"#ffffff",weight:10,opacity:.9}).addTo(m);
+      L.polyline(pts,{color:route,weight:6,opacity:1}).addTo(m);
+    }
+    L.circleMarker([g.from.lat,g.from.lon],{radius:8,color:"#fff",weight:3,fillColor:sun,fillOpacity:1}).addTo(m);
+    L.circleMarker([g.to.lat,g.to.lon],{radius:9,color:"#fff",weight:3,fillColor:cat,fillOpacity:1}).addTo(m);
+    if((+ev.travelMin||0)>0&&pts.length>2){
+      const mid=pts[Math.floor(pts.length/2)];
+      L.marker(mid,{icon:L.divIcon({className:"dur-bubble",html:"<span>"+fmtDur(ev.travelMin)+"</span>",iconSize:null}),interactive:false}).addTo(m);
+    }
+    m.fitBounds(L.latLngBounds(pts),{padding:[34,34]});
+    box.addEventListener("click",()=>{window.open(IS_IOS?appleUrl(ev):mapsUrl(ev),"_blank");});
+  };
+  setTimeout(draw,30);
+  return box;
+}
+const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent||"");
+function appleUrl(ev){const p=new URLSearchParams({daddr:ev.location||"",dirflg:{car:"d",transit:"r",walk:"w",bike:"c"}[ev.mode]||"d"});if(ev.origin)p.set("saddr",ev.origin);return "https://maps.apple.com/?"+p;}
+function goBar(ev,km){
+  const t=(+ev.travelMin||0)>0?fmtDur(ev.travelMin):"";
+  const sub=["Arrivée à "+(ev.time||"—"),km>0.3?(km<10?km.toFixed(1).replace(".",","):Math.round(km))+" km":"",ev.routeVia].filter(Boolean).join(", ");
+  return el("div",{class:"go"},
+    el("div",{class:"go-l"},t?el("div",{class:"go-t num"},t):null,el("div",{class:"small"},sub)),
+    el("a",{class:"go-btn",href:IS_IOS?appleUrl(ev):mapsUrl(ev),target:"_blank",rel:"noopener"},
+      el("span",{html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13l6-6 6 6M6 19l6-6 6 6"/></svg>'}),"Aller"));
+}
+
+/* ---------- Saisie simplifiée : helpers ---------- */
+const DEFAULT_TEMPLATES=[
+  {id:"t-courses",name:"Courses",title:"Courses",category:"courses",time:"10:00",durationMin:60,marginMin:0},
+  {id:"t-dentiste",name:"Dentiste",title:"Dentiste",category:"medecin",time:"09:00",durationMin:45,marginMin:15},
+  {id:"t-medecin",name:"Médecin",title:"Médecin",category:"medecin",time:"09:00",durationMin:30,marginMin:15},
+  {id:"t-resto",name:"Resto",title:"Resto",category:"sortie",time:"20:00",durationMin:120,marginMin:5},
+  {id:"t-sport",name:"Sport",title:"Sport",category:"autre",time:"18:00",durationMin:60,marginMin:5},
+];
+let templates=null; // null = modèles par défaut
+const tplList=()=>templates||DEFAULT_TEMPLATES;
+async function saveTemplates(list){
+  if(!db){toast("Synchronisation indisponible.");return false;}
+  templates=list.slice(0,30);
+  try{await db.doc("config/templates").set({list:templates,updatedBy:myId,updatedAt:Date.now()});return true;}
+  catch(e){toast("Enregistrement impossible. Réessaie.");return false;}
+}
+function placeByTitle(t){
+  const nt=norm(t);if(nt.length<3)return null;
+  let best=null;
+  for(const p of placesSorted()){
+    if(p.kind==="home")continue;
+    const n=norm(p.name);if(n.length<3)continue;
+    if((nt.includes(n)||n.includes(nt))&&(!best||n.length>norm(best.name).length))best=p;
+  }
+  return best;
+}
+// rappels relatifs : day/at = "la veille à 20:00", auto="leave" = « il faut partir », sinon min fixe
+function remMinFor(x,r){
+  const s=startOf(x);
+  if(r.auto==="leave") return (+x.travelMin||0)+(+x.marginMin||0)+10;
+  if(r.at&&(+r.day||0)>=1){const [h,m]=String(r.at).split(":").map(Number);const t=new Date(s);t.setDate(t.getDate()-(+r.day));t.setHours(h,m,0,0);return Math.round((s-t)/60000);}
+  return +r.min||0;
+}
+function suggestReminders(x){
+  const c=x.category, out=[];
+  const at=(day,hm,label)=>({day,at:hm,kind:"notification",label});
+  if(c==="medecin") out.push(at(1,"20:00","Préparer carte Vitale, mutuelle et ordonnance"));
+  else if(c==="rdv") out.push(at(1,"20:00","Rendez-vous demain"));
+  else if(c==="travail") out.push(at(1,"21:00","Demain : "+(x.title||"travail")));
+  else if(c==="sortie") out.push({min:120,kind:"notification",label:"Commencer à se préparer"});
+  else if(c==="courses") out.push({min:60,kind:"notification",label:"Prendre la liste et les sacs"});
+  else out.push({min:60,kind:"notification",label:"Dans 1 heure : "+(x.title||"évènement")});
+  out.push({auto:"leave",kind:"alarme",label:"Il faut partir dans 10 min"});
+  return out;
+}
+function relReminders(ev){
+  const s=startOf(ev);
+  return (ev.reminders||[]).map(r=>{
+    if(r.auto||r.at) return {...r};
+    if(/partir/i.test(r.label||"")&&r.kind==="alarme") return {auto:"leave",kind:"alarme",label:r.label};
+    const w=new Date(s.getTime()-(+r.min||0)*60000);
+    const dd=Math.round((new Date(s).setHours(0,0,0,0)-new Date(w).setHours(0,0,0,0))/86400000);
+    return dd>=1?{day:dd,at:hhmm(w),kind:r.kind,label:r.label}:{min:r.min,kind:r.kind,label:r.label};
+  });
+}
+function liveReminders(x){
+  return (x.reminders||[]).filter(r=>!r.off&&!(r.auto==="leave"&&!((+x.travelMin||0)>0))).map(r=>({...r,min:remMinFor(x,r)})).filter(r=>r.min>0).sort((a,b)=>b.min-a.min);
+}
+function nextDate(daysAhead){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+daysAhead);return d;}
+function draftFromEvent(ev){
+  const d=blankDraft();
+  for(const k of ["title","category","location","origin","mode","travelMin","marginMin","durationMin","notes","route","routeVia","routeGeo","time"]) if(ev[k]!==undefined) d[k]=ev[k];
+  d.reminders=relReminders(ev);
+  return d;
+}
+function draftFromTemplate(t){
+  const d=blankDraft();
+  Object.assign(d,{title:t.title||t.name,category:CATS[t.category]?t.category:"autre",time:t.time||"10:00",durationMin:+t.durationMin||60,marginMin:t.marginMin??10});
+  if(t.mode&&MODES[t.mode]) d.mode=t.mode;
+  if(t.location) d.location=t.location; else {const p=placeByTitle(d.title);if(p)d.location=p.address;}
+  if(t.origin) d.origin=t.origin;
+  d.reminders=Array.isArray(t.reminders)&&t.reminders.length?t.reminders.map(r=>({...r})):null;
+  return d;
+}
+const REPEATS={none:["Une fois",0,0],week:["Chaque semaine",7,8],week2:["Toutes les 2 semaines",14,6],month:["Chaque mois",0,6]};
+function buildBody(x,d,overrides){
+  const now=Date.now();
+  const y={...x,...(overrides||{})};
+  return {title:y.title,category:y.category,date:y.date,time:y.time,durationMin:y.durationMin||60,location:y.location||"",origin:y.origin||"",mode:y.mode||"car",
+    travelMin:+y.travelMin||0,marginMin:+y.marginMin||0,travelNote:y.travelNote||"",notes:y.notes||"",
+    route:y.location?(y.route||[]):[],routeVia:y.location?(y.routeVia||""):"",routeGeo:y.location?(y.routeGeo||null):null,
+    reminders:liveReminders(y).map(r=>{const o={min:r.min,kind:r.kind==="alarme"?"alarme":"notification",label:String(r.label||"").slice(0,120)};if(r.auto)o.auto=r.auto;if(r.at){o.at=r.at;o.day=+r.day;}return o;}),
+    startTs:startOf(y).getTime(),createdBy:d.createdBy||myId,createdAt:d.createdAt||now,updatedBy:myId,updatedAt:now,calendarAdded:d.calendarAdded||{},
+    ...(d.seriesId||y.seriesId?{seriesId:d.seriesId||y.seriesId}:{})};
+}
+async function saveEventDraft(x,d,repeat){
+  if(!x.title){toast("Donne un titre à l'évènement.");return false;}
+  if(!x.date||!x.time){toast("Indique la date et l'heure.");return false;}
+  if(!db){toast("Synchronisation indisponible. Vérifie ta connexion.");return false;}
+  const isNew=!d.id;
+  try{
+    const rp=REPEATS[repeat]||REPEATS.none;
+    if(isNew&&rp[2]>0){
+      const seriesId="s"+Date.now().toString(36);
+      const base=startOf(x);
+      for(let i=0;i<rp[2];i++){
+        const dt=new Date(base);
+        if(repeat==="month") dt.setMonth(dt.getMonth()+i); else dt.setDate(dt.getDate()+rp[1]*i);
+        await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId}));
+      }
+      toast(rp[2]+" évènements créés ("+rp[0].toLowerCase()+")");
+    }else{
+      await db.doc("events/"+(d.id||db.collection("events").doc().id)).set(buildBody(x,d));
+      toast(isNew?"Enregistré, visible sur vos deux téléphones":"Modifications enregistrées pour vous deux");
+    }
+    $("#input").value="";
+    return true;
+  }catch(e){toast(e&&e.code==="invalid_argument"?"Enregistrement refusé. Vérifie que tu as bien rejoint l'agenda.":"Enregistrement impossible. Réessaie.");return false;}
+}
+function dayChipLabel(d){
+  const diff=Math.round((d-nextDate(0))/86400000);
+  if(diff===0)return "Aujourd'hui"; if(diff===1)return "Demain";
+  const w=d.toLocaleDateString("fr-FR",{weekday:"short"}).replace(".","");
+  return w.charAt(0).toUpperCase()+w.slice(1)+" "+d.getDate();
+}
+function whenChips(dateInput,timeInput){
+  const days=el("div",{class:"pchips when-chips"}),hours=el("div",{class:"pchips when-chips"});
+  const HOURS=["08:00","09:00","10:00","12:00","14:00","16:00","18:00","20:00"];
+  function draw(){
+    days.textContent="";hours.textContent="";
+    for(let i=0;i<7;i++){const d=nextDate(i),v=ymd(d);
+      days.append(el("button",{type:"button",class:"pchip"+(dateInput.value===v?" on":""),onclick:()=>{dateInput.value=v;dateInput.dispatchEvent(new Event("input"));draw();}},dayChipLabel(d)));}
+    const inList=[...Array(7)].some((_,i)=>ymd(nextDate(i))===dateInput.value);
+    if(!inList&&dateInput.value){const [y,m,dd]=dateInput.value.split("-").map(Number);days.append(el("span",{class:"pchip on"},dayChipLabel(new Date(y,m-1,dd))));}
+    for(const h of HOURS) hours.append(el("button",{type:"button",class:"pchip num"+(timeInput.value===h?" on":""),onclick:()=>{timeInput.value=h;timeInput.dispatchEvent(new Event("input"));draw();}},h.replace(":00","h")));
+  }
+  dateInput.addEventListener("input",draw);timeInput.addEventListener("input",draw);dateInput.addEventListener("change",draw);timeInput.addEventListener("change",draw);
+  draw();
+  return {days,hours};
+}
+function remSummary(x){
+  const live=liveReminders(x);
+  if(!live.length) return "Aucun rappel";
+  return live.length+" rappel"+(live.length>1?"s":"")+" : "+live.map(r=>remLabel(x,r)+(r.kind==="alarme"?" (alarme)":"")).join(", ");
+}
+
+/* ---------- Confirmation en un toucher ---------- */
+function openConfirm(d,info){
+  const root=$("#sheet-root");root.textContent="";
+  const s=startOf(d);
+  const dayTxt=s.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  const hasTrip=(+d.travelMin||0)>0;
+  const lines=[
+    el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Quand"),el("span",{class:"cf-v"},dayTxt.charAt(0).toUpperCase()+dayTxt.slice(1)+" à "+d.time)),
+    d.location?el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Où"),el("span",{class:"cf-v"},shortAddr(d.location),placeFor(d.location)?null:el("span",{class:"small"}," "))):el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Où"),el("span",{class:"cf-v muted"},"Pas de lieu")),
+    hasTrip?el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Départ"),el("span",{class:"cf-v"},el("span",{class:"pill"},hhmm(departOf(d))),"  depuis "+(d.origin?shortAddr(d.origin):"la maison")+", "+fmtDur(d.travelMin)+" "+MODE_IN[d.mode])):null,
+    el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Rappels"),el("span",{class:"cf-v"},remSummary(d))),
+  ];
+  const save=el("button",{class:"btn primary cf-save",type:"button"},"Enregistrer");
+  save.onclick=async()=>{save.disabled=true;if(await saveEventDraft(d,d))closeSheet();else save.disabled=false;};
+  root.append(sheetShell("Vérifier l'évènement",[
+    el("div",{class:"sheet-h"},el("h2",{},d.title||"Évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    info?el("div",{class:"notice"},info):null,
+    el("div",{class:"cf"},...lines),
+    d.routeGeo&&d.location&&hasTrip?routeMap(d.routeGeo,d):null,
+    el("div",{class:"sheet-foot"},el("button",{class:"btn",type:"button",onclick:()=>openEditor(d,info)},"Modifier"),save)
+  ]));
+}
+
+/* ---------- Nos modèles (réglages) ---------- */
+function templatesSection(){
+  const box=el("div",{class:"plist"});
+  function draw(){
+    box.textContent="";
+    for(const t of tplList()){
+      box.append(el("div",{class:"prow"},el("span",{class:"pdot",style:"background:var(--c-"+(CATS[t.category]?t.category:"autre")+")"}),
+        el("div",{class:"pinfo"},el("div",{class:"pname"},t.name),el("div",{class:"small"},[CATS[t.category],t.time&&t.time.replace(":00","h"),t.location?shortAddr(t.location):""].filter(Boolean).join(", "))),
+        canWrite?el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)",onclick:async()=>{if(await saveTemplates(tplList().filter(x=>x.id!==t.id))){toast("Modèle « "+t.name+" » supprimé");draw();}}},"Supprimer"):null));
+    }
+    if(!tplList().length) box.append(el("p",{class:"note"},"Aucun modèle. Crée-en un depuis un évènement : Plus d'options, puis Enregistrer comme modèle."));
+  }
+  templatesRefresh=draw;draw();
+  return box;
+}
+let templatesRefresh=null;
+
+/* ---------- Editor sheet ---------- */
+function blankDraft(){
+  const d=new Date(Date.now()+86400000);
+  return {title:"",category:"rdv",date:ymd(d),time:"10:00",durationMin:60,location:"",origin:homeAddr(),mode:settings.mode||"car",travelMin:0,marginMin:10,travelNote:"",reminders:[],notes:""};
+}
+function closeSheet(){$("#sheet-root").textContent="";}
+function sheetShell(label,children){
+  return el("div",{class:"sheet-bg",onclick:e=>{if(e.target===e.currentTarget)closeSheet();}},
+    el("div",{class:"sheet",role:"dialog","aria-modal":"true","aria-label":label},el("div",{class:"grab"}),...children));
+}
+
+function openEditor(d,info){
+  const isNew=!d.id;
+  const root=$("#sheet-root");root.textContent="";
+  const f=(id,label,input)=>el("div",{class:"field"},el("label",{for:id},label),input);
+  const inp=(id,val,type="text",extra={})=>el("input",{id,type,value:val??"",...extra});
+  const sel=(id,opts,val)=>{const s=el("select",{id});for(const[k,v]of Object.entries(opts))s.append(el("option",{value:k,selected:k===val},v));return s;};
+
+  const title=inp("e-title",d.title,"text",{placeholder:"Ex. : Dentiste"});
+  const cat=sel("e-cat",CATS,CATS[d.category]?d.category:"autre");
+  const date=inp("e-date",d.date,"date"),time=inp("e-time",d.time,"time");
+  const dur=inp("e-dur",d.durationMin||60,"number",{min:"5",step:"5",inputmode:"numeric"});
+  const loc=inp("e-loc",d.location,"text",{placeholder:"Adresse ou nom du lieu"});
+  const origin=inp("e-origin",d.origin,"text",{placeholder:"Adresse de départ"});
+  const mode=sel("e-mode",MODES,d.mode||"car");
+  const travel=inp("e-travel",d.travelMin||0,"number",{min:"0",step:"1",inputmode:"numeric"});
+  const margin=inp("e-margin",d.marginMin||0,"number",{min:"0",step:"5",inputmode:"numeric"});
+  const notes=el("textarea",{id:"e-notes",rows:"2",placeholder:"Code d'entrée, documents à prendre…"});notes.value=d.notes||"";
+  const depOut=el("span",{class:"dep num"}),depMeta=el("span",{class:"note"});
+  const tripNote=el("div",{class:"note"},d.travelNote||"");
+  const recalc=el("button",{class:"btn",type:"button"},"Recalculer le trajet");
+  const rems=el("div",{class:"rems"}),remsSimple=el("div",{class:"rem-simple"});
+  let remAuto=isNew&&!(Array.isArray(d.reminders)&&d.reminders.length);
+  let reminders=remAuto?suggestReminders(d):(d.reminders||[]).map(r=>({...r}));
+  let repeat="none";
+  let route=cleanRoute(d.route), routeVia=d.routeVia||"", routeGeo=d.routeGeo||null;
+  const mapBox=el("div"),fixBox=el("div",{class:"fixes"});
+
+  const read=()=>({...d,title:title.value.trim(),category:cat.value,date:date.value,time:time.value,durationMin:+dur.value||60,
+    location:loc.value.trim(),origin:origin.value.trim(),mode:mode.value,travelMin:Math.max(0,+travel.value||0),marginMin:Math.max(0,+margin.value||0),
+    travelNote:tripNote.textContent,notes:notes.value.trim(),reminders,route,routeVia,routeGeo});
+
+  function updateCalc(){
+    if(remAuto){const off=new Set(reminders.filter(r=>r.off).map(r=>r.label));reminders=suggestReminders(read());reminders.forEach(r=>{if(off.has(r.label))r.off=true;});}
+    reminders.forEach(r=>{r.min=remMinFor(read(),r);});
+    const x=read();
+    if(!x.date||!x.time){depOut.textContent="";depOut.className="dep";depMeta.textContent="Indique la date et l'heure";renderRems();return;}
+    if(x.travelMin>0){depOut.textContent="Partir à "+hhmm(departOf(x));depOut.className="dep num has";depMeta.textContent="pour arriver à "+x.time;}
+    else{depOut.textContent="Pas de trajet";depOut.className="dep";depMeta.textContent="Choisis un lieu pour calculer le départ";}
+    mapBox.textContent="";
+    if(routeGeo&&x.location&&x.travelMin>0) mapBox.append(routeMap(routeGeo,x));
+    renderRems();
+  }
+  function renderRems(){
+    rems.textContent="";const x=read();
+    remsLine.textContent=remSummary(x);
+    reminders.forEach((r,i)=>{
+      if(r.auto==="leave"&&!(x.travelMin>0)) return;
+      const s=startOf(x),w=new Date(s.getTime()-r.min*60000);
+      const dd=Math.max(0,Math.round((new Date(s).setHours(0,0,0,0)-new Date(w).setHours(0,0,0,0))/86400000));
+      const day=el("select",{id:"r-day-"+i,"aria-label":"Jour du rappel"});
+      [[0,"Le jour même"],[1,"La veille"],[2,"2 jours avant"],[7,"1 semaine avant"]].forEach(([v,l])=>day.append(el("option",{value:v,selected:v===dd},l)));
+      const t=el("input",{id:"r-time-"+i,type:"time",value:hhmm(w),"aria-label":"Heure du rappel"});
+      const kind=el("select",{id:"r-kind-"+i,"aria-label":"Mode de rappel"});
+      [["notification","Notification"],["alarme","Alarme"]].forEach(([v,l])=>kind.append(el("option",{value:v,selected:v===r.kind},l)));
+      const lab=el("input",{id:"r-lab-"+i,class:"rl",type:"text",value:r.label||"",placeholder:"Texte du rappel"});
+      const recompute=()=>{remAuto=false;const [h,m]=(t.value||"00:00").split(":").map(Number);const dd2=+day.value;delete r.auto;
+        if(dd2>=1){r.day=dd2;r.at=t.value;}else{delete r.day;delete r.at;}
+        const tg=new Date(s);tg.setDate(tg.getDate()-dd2);tg.setHours(h,m,0,0);r.min=Math.round((s-tg)/60000);remsLine.textContent=remSummary(read());};
+      day.onchange=()=>{recompute();renderRems();};t.onchange=()=>{recompute();renderRems();};kind.onchange=()=>{remAuto=false;r.kind=kind.value;renderRems();};lab.oninput=()=>{remAuto=false;r.label=lab.value;};
+      rems.append(el("div",{class:"rem"},day,t,kind,el("button",{class:"x",type:"button","aria-label":"Retirer ce rappel",onclick:()=>{remAuto=false;reminders.splice(i,1);renderRems();}},"×"),lab));
+    });
+    if(!reminders.length) rems.append(el("div",{class:"note"},"Aucun rappel pour l'instant."));
+    // vue simple : une case à cocher par rappel proposé
+    remsSimple.textContent="";
+    const xs={...x};
+    reminders.forEach((r,i)=>{
+      if(r.auto==="leave"&&!(x.travelMin>0)) return;
+      const cb=el("input",{type:"checkbox",id:"rs-"+i});cb.checked=!r.off;
+      cb.onchange=()=>{r.off=!cb.checked;row.classList.toggle("off",!!r.off);remsLine.textContent=remSummary(read());};
+      const row=el("label",{class:"rs-row"+(r.off?" off":""),for:"rs-"+i},cb,
+        el("span",{class:"rs-txt"},el("strong",{class:"num"},remLabel(xs,r)),el("span",{},r.label||"Rappel")),
+        r.kind==="alarme"?el("span",{class:"rs-kind"},"Alarme"):null);
+      remsSimple.append(row);
+    });
+    if(!reminders.length) remsSimple.append(el("div",{class:"note"},"Les rappels sont proposés automatiquement quand tu prépares un évènement. Touche Personnaliser pour en ajouter."));
+  }
+  [date,time,travel,margin].forEach(x=>x.addEventListener("input",updateCalc));
+
+  recalc.onclick=async()=>{
+    const x=read();
+    if(!x.location){toast("Indique d'abord un lieu.");return;}
+    
+    recalc.disabled=true;recalc.textContent="";recalc.append(el("span",{class:"spinner"}),"Calcul du trajet…");
+    try{const r=await estimateTrip(x);
+      fixBox.textContent="";
+      if(r&&r.ok===false){tripNote.textContent=String(r.problem||"Corrige l'adresse de départ ou d'arrivée.");route=[];routeGeo=null;}
+      else if(r&&Number.isFinite(+r.travelMin)){travel.value=Math.round(+r.travelMin);tripNote.textContent=r.travelNote||"";route=cleanSteps(r.route);routeVia=String(r.routeVia||"").slice(0,80);routeGeo=cleanGeo(r.geo);
+        const fx=fixesFrom(r,x);
+        for(const [key,val] of Object.entries(fx)){const target=key==="origin"?origin:loc;
+          fixBox.append(el("div",{class:"fix"},el("div",{},el("strong",{},key==="origin"?"Départ complété":"Arrivée complétée"),el("div",{class:"small"},"Tu voulais dire : "+val+" ?")),
+            el("div",{class:"fix-act"},el("button",{class:"btn primary",type:"button",onclick:e=>{target.value=val;target.dispatchEvent(new Event("change"));e.currentTarget.closest(".fix").remove();}},"Oui, utiliser"))));}
+      }
+      updateCalc();}
+    catch(e){const m=sampleErr(e);if(m)toast(m);}
+    recalc.disabled=false;recalc.textContent="Recalculer le trajet";
+  };
+  function autoTrip(){if(loc.value.trim()&&!recalc.disabled) recalc.onclick();}
+  mode.addEventListener("change",autoTrip);
+
+  const confirmBox=el("div",{class:"confirm",hidden:true},el("span",{},"Supprimer cet évènement pour vous deux ?"),
+    el("button",{class:"btn danger",type:"button",onclick:()=>{closeSheet();removeEvent(d);}},"Supprimer"),
+    el("button",{class:"btn quiet",type:"button",onclick:()=>confirmBox.hidden=true},"Garder"));
+
+  const save=el("button",{class:"btn primary",type:"button"},isNew?"Enregistrer pour nous deux":"Enregistrer les modifications");
+  save.onclick=async()=>{
+    const x=read();
+    if(!x.title){toast("Donne un titre à l'évènement.");title.focus();return;}
+    save.disabled=true;
+    if(await saveEventDraft(x,d,isNew?repeat:"none")) closeSheet(); else save.disabled=false;
+  };
+  // Lieu deviné à partir du titre
+  const guessLoc=()=>{if(loc.value.trim())return;const p=placeByTitle(title.value);if(p){loc.value=p.address;loc.dispatchEvent(new Event("change"));autoTrip();}};
+  title.addEventListener("input",()=>{clearTimeout(title._t);title._t=setTimeout(guessLoc,500);});
+  // Répéter
+  const repeatChips=el("div",{class:"pchips"});
+  const drawRepeat=()=>{repeatChips.textContent="";for(const[k,v]of Object.entries(REPEATS))repeatChips.append(el("button",{type:"button",class:"pchip"+(repeat===k?" on":""),onclick:()=>{repeat=k;drawRepeat();}},v[0]+(v[2]?" ("+v[2]+" fois)":"")));};
+  drawRepeat();
+  // Enregistrer comme modèle
+  const tplBtn=el("button",{type:"button",class:"btn"},"Enregistrer comme modèle");
+  tplBtn.onclick=async()=>{
+    const x=read();if(!x.title){toast("Donne d'abord un titre.");return;}
+    const t={id:"t"+Date.now().toString(36),name:x.title.slice(0,30),title:x.title,category:x.category,time:x.time,durationMin:x.durationMin,marginMin:x.marginMin,mode:x.mode,
+      location:x.location||"",origin:x.origin&&x.origin!==homeAddr()?x.origin:"",reminders:relReminders({...x,reminders:liveReminders(x)}).map(r=>{const o={...r};delete o.off;return o;})};
+    if(await saveTemplates([...tplList().filter(o=>norm(o.name)!==norm(t.name)),t])) toast("Modèle « "+t.name+" » enregistré");
+  };
+  const remsLine=el("span",{class:"rem-line"});
+  const wc=whenChips(date,time);
+
+  // --- disposition simplifiée : l'essentiel visible, le reste replié ---
+  title.classList.add("big-title");title.setAttribute("aria-label","Quoi");title.placeholder="Quoi ? Ex. : Dentiste";
+  const modeChips=el("div",{class:"pchips"});
+  const drawModes=()=>{modeChips.textContent="";for(const[k,v]of Object.entries(MODES))modeChips.append(el("button",{type:"button",class:"pchip"+(mode.value===k?" on":""),onclick:()=>{mode.value=k;drawModes();updateCalc();autoTrip();}},v));};
+  drawModes();
+  const fromLine=el("span",{class:"note"});
+  const updFrom=()=>{const o=origin.value.trim();fromLine.textContent=(o?"Depuis "+shortAddr(o):"Départ non indiqué")+", "+MODE_IN[mode.value];};
+  origin.addEventListener("change",updFrom);origin.addEventListener("input",updFrom);updFrom();
+  const disc=(label,content,open)=>{
+    const box=el("div",{class:"disc-box",hidden:!open},...content);
+    const b=el("button",{type:"button",class:"disc"+(open?" open":""),"aria-expanded":open?"true":"false",onclick:()=>{box.hidden=!box.hidden;b.classList.toggle("open",!box.hidden);b.setAttribute("aria-expanded",box.hidden?"false":"true");}},el("span",{},label),el("span",{class:"disc-chev","aria-hidden":"true"},"▾"));
+    return el("div",{class:"disc-wrap"},b,box);
+  };
+  const remsDetail=el("div",{class:"disc-box",hidden:true},rems,
+    el("button",{class:"btn quiet",type:"button",onclick:()=>{remAuto=false;const x=read();reminders.push({min:Math.max(15,(x.travelMin||0)+(x.marginMin||0)+10),kind:"notification",label:"Rappel"});renderRems();}},"Ajouter un rappel"));
+  const detailLink=el("button",{type:"button",class:"btn quiet",onclick:()=>{remsDetail.hidden=!remsDetail.hidden;detailLink.textContent=remsDetail.hidden?"Régler les heures":"Masquer les réglages";}},"Régler les heures");
+  const remsMore=el("div",{class:"disc-box",hidden:true},remsSimple,detailLink,remsDetail);
+  const remsToggle=el("button",{type:"button",class:"btn quiet",onclick:()=>{remsMore.hidden=!remsMore.hidden;remsToggle.textContent=remsMore.hidden?"Modifier":"Terminé";}},"Modifier");
+
+  root.append(sheetShell(isNew?"Nouvel évènement":"Modifier l'évènement",[
+    el("div",{class:"sheet-h"},el("h2",{},isNew?"Nouvel évènement":"Modifier l'évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    info?el("div",{class:"notice"},info):null,
+    title,
+    el("div",{class:"field"},el("span",{class:"lab"},"Quel jour"),wc.days),
+    el("div",{class:"field"},el("span",{class:"lab"},"À quelle heure"),wc.hours),
+    el("div",{class:"grid2 when-exact"},f("e-date","Autre date",date),f("e-time","Heure précise",time)),
+    el("div",{class:"field"},el("label",{for:"e-loc"},"Où"),autocomplete(loc,autoTrip),placeChips(loc,false,autoTrip),brandChips(loc,autoTrip)),
+    el("div",{class:"field"},el("label",{for:"e-origin"},"Départ de"),autocomplete(origin,autoTrip),placeChips(origin,true,autoTrip)),
+    el("div",{class:"field"},el("span",{class:"lab"},"Transport"),modeChips),
+    el("div",{class:"calc"},
+      el("div",{class:"out"},depOut,depMeta),
+      el("div",{class:"from-row"},fromLine),
+      fixBox,mapBox),
+    el("div",{class:"rem-simple-wrap"},
+      el("div",{class:"rem-head"},el("div",{class:"rem-head-l"},el("span",{class:"lab"},"Rappels sur vos deux téléphones"),remsLine),remsToggle),
+      remsMore),
+    disc("Plus d'options",[
+      isNew?el("div",{class:"field"},el("span",{class:"lab"},"Répéter"),repeatChips):null,
+      f("e-cat","Type",cat),
+      el("div",{class:"grid3"},f("e-travel","Trajet (min)",travel),f("e-margin","Marge (min)",margin),f("e-dur","Durée (min)",dur)),
+      tripNote,el("div",{},recalc),
+      f("e-notes","Notes",notes),
+      canWrite?el("div",{},tplBtn):null],false),
+    confirmBox,
+    el("div",{class:"sheet-foot sticky"},!isNew?el("button",{class:"btn quiet",style:"color:var(--danger)",type:"button",onclick:()=>confirmBox.hidden=false},"Supprimer"):el("span"),save)
+  ]));
+  mode.addEventListener("change",()=>{drawModes();updFrom();});
+  cat.addEventListener("change",updateCalc);
+  updateCalc();
+  if(isNew&&!title.value) setTimeout(()=>title.focus(),60);
+  if(isNew){guessLoc();if(loc.value.trim()&&!routeGeo&&!(+travel.value>0))autoTrip();}
+}
+
+/* ---------- Settings ---------- */
+function placeForm(p,done,presetKind){
+  const k0=p?p.kind:(presetKind||"place");
+  const name=el("input",{type:"text",value:p?p.name:(k0==="home"&&!placesSorted().some(x=>x.kind==="home")?"Maison":""),placeholder:k0==="home"?"Nom, ex. Maison, Chez mes parents":k0==="work"?"Nom, ex. Travail, Bureau de Léa":"Nom, ex. Dentiste, Action Pérols","aria-label":"Nom"});
+  const addr=el("input",{type:"text",value:p?p.address:"",placeholder:"Adresse ou nom du lieu","aria-label":"Adresse"});
+  const kind=el("select",{"aria-label":"Type"});
+  [["place","Destination"],["home","Domicile"],["work","Travail"]].forEach(([v,l])=>kind.append(el("option",{value:v,selected:k0===v},l)));
+  const defCb=el("input",{type:"checkbox",id:"pf-def-"+(p?p.id:"new")});defCb.checked=p?!!p.isDefault:!placesSorted().some(x=>x.kind==="home");
+  const defRow=el("label",{class:"rs-row",for:defCb.id,hidden:kind.value!=="home"},defCb,el("span",{class:"rs-txt"},el("strong",{},"Départ par défaut"),el("span",{},"Les trajets partent d'ici si rien d'autre n'est indiqué")));
+  kind.onchange=()=>{defRow.hidden=kind.value!=="home";if(!name.value.trim()&&kind.value!=="place")name.value=KIND_LABEL[kind.value];};
+  const form=el("div",{class:"pform"});
+  const save=el("button",{type:"button",class:"btn primary"},"Enregistrer");
+  save.onclick=async()=>{save.disabled=true;if(await savePlace({id:p&&p.id,name:name.value.trim(),address:addr.value.trim(),kind:kind.value,isDefault:kind.value==="home"?defCb.checked:false}))done(form);else save.disabled=false;};
+  const del=p?el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)",onclick:async()=>{
+    try{await db.doc("places/"+p.id).delete();toast("« "+p.name+" » supprimée");done(form);}catch(e){toast("Suppression impossible. Réessaie.");}}},"Supprimer"):el("span");
+  form.append(el("div",{class:"grid2"},name,kind),autocomplete(addr),defRow,
+    el("div",{class:"sheet-foot"},del,el("div",{class:"psave-act"},el("button",{type:"button",class:"btn quiet",onclick:()=>done(form)},"Annuler"),save)));
+  setTimeout(()=>(p?addr:name).focus(),50);
+  return form;
+}
+function openSettings(){
+  const root=$("#sheet-root");root.textContent="";
+  const listBox=el("div",{class:"plist"});
+  let editing=false;
+  const GROUPS=[["home","Nos domiciles","Ajouter un domicile"],["work","Travail","Ajouter un lieu de travail"],["place","Nos destinations","Ajouter une destination"]];
+  function drawList(){
+    if(editing||!listBox.isConnected&&listBox.childNodes.length) return;
+    listBox.textContent="";
+    const ps=placesSorted();
+    for(const [k,title,addLabel] of GROUPS){
+      const items=ps.filter(p=>p.kind===k);
+      listBox.append(el("div",{class:"pgroup-h"},title,el("span",{class:"note"},items.length?" ("+items.length+")":"")));
+      if(!items.length) listBox.append(el("p",{class:"note"},k==="home"?"Ajoute la maison, et d'autres domiciles si besoin (chez tes parents, résidence secondaire…).":k==="work"?"Le travail de chacun, pour « depuis le boulot ».":"Dentiste, magasins, amis… autant que vous voulez."));
+      for(const p of items){
+        const row=el("div",{class:"prow"},
+          el("span",{class:"pdot "+p.kind}),
+          el("div",{class:"pinfo"},el("div",{class:"pname"},p.name,p.kind==="home"&&isDefaultHome(p)?el("span",{class:"pbadge"},"Départ par défaut"):null),el("div",{class:"small"},p.address)),
+          canWrite?el("button",{type:"button",class:"btn quiet",onclick:()=>{editing=true;row.replaceWith(placeForm(p,()=>{editing=false;drawList();}));}},"Modifier"):null);
+        listBox.append(row);
+      }
+      if(canWrite){
+        const add=el("button",{type:"button",class:"btn padd"},"+ "+addLabel);
+        add.onclick=()=>{editing=true;add.replaceWith(placeForm(null,()=>{editing=false;drawList();},k));};
+        listBox.append(add);
+      }
+    }
+  }
+  placesListRefresh=drawList;
+  const mode=el("select",{id:"s-mode"});for(const[k,v]of Object.entries(MODES))mode.append(el("option",{value:k,selected:k===settings.mode},v));
+  mode.onchange=async()=>{
+    if(!db)return;
+    try{await db.doc("config/home").set({home:settings.home||"",mode:mode.value,updatedBy:myId,updatedAt:Date.now()});toast("Transport habituel enregistré");}
+    catch(e){toast("Enregistrement impossible. Réessaie.");}
+  };
+  root.append(sheetShell("Réglages communs",[
+    el("div",{class:"sheet-h"},el("h2",{},"Réglages communs"),el("button",{class:"btn quiet",type:"button",onclick:()=>{placesListRefresh=null;brandsRefresh=null;closeSheet();}},"Fermer")),
+    el("p",{class:"note"},"Les adresses enregistrées apparaissent en raccourci quand vous créez un évènement. Écrivez simplement « dentiste mardi 9h » : l'app reconnaît vos lieux."),
+    listBox,
+    el("div",{class:"pgroup-h"},"Nos modèles"),
+    el("p",{class:"note"},"Ils apparaissent quand tu touches Ajouter. Pour en créer un, ouvre un évènement, puis Plus d'options et Enregistrer comme modèle."),
+    templatesSection(),
+    el("div",{class:"pgroup-h"},"Nos enseignes"),
+    el("p",{class:"note"},"Coche les magasins où vous allez. En remplissant « Où », touche une enseigne : l'app propose ses magasins les plus proches de chez vous."),
+    brandsSection(),
+    el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
+    el("div",{class:"field"},el("label",{for:"s-mode"},"Transport habituel"),mode),
+    el("p",{class:"note"},"Pour que les rappels sonnent même app fermée : ouvre un évènement et touche « Calendrier iPhone », chacun sur son téléphone.")]));
+  drawList();
+}
+let brandsRefresh=null;
+function brandsSection(){
+  const box=el("div",{class:"pchips"});
+  const custom=el("input",{type:"text",placeholder:"Autre enseigne, ex. Biocoop","aria-label":"Autre enseigne"});
+  const addB=el("button",{type:"button",class:"btn"},"Ajouter");
+  addB.onclick=()=>{const v=custom.value.trim().slice(0,30);if(!v)return;if(!brands.includes(v))saveBrands([...brands,v]);custom.value="";};
+  custom.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addB.click();}});
+  function draw(){
+    box.textContent="";
+    const all=[...new Set([...brands,...BRAND_CATALOG])];
+    for(const b of all){
+      const on=brands.includes(b);
+      box.append(el("button",{type:"button",class:"pchip"+(on?" on":""),"aria-pressed":on?"true":"false",disabled:!canWrite,onclick:()=>saveBrands(on?brands.filter(x=>x!==b):[...brands,b])},(on?"✓ ":"")+b));
+    }
+  }
+  brandsRefresh=draw;draw();
+  return el("div",{class:"disc-box"},box,canWrite?el("div",{class:"brand-add"},custom,addB):null);
+}
+
+
+/* ---------- Thème ---------- */
+const SKINS=[
+  {id:"metro",name:"Métro",sub:"Vert et jaune",c:["#EFF3F0","#1C7C6B","#F4C02B"]},
+  {id:"lavande",name:"Lavande",sub:"Violet et rose",c:["#F3F0F8","#6A4FC9","#F6B6D3"]},
+  {id:"ocean",name:"Océan",sub:"Bleu et turquoise",c:["#EDF3F7","#1F5FA8","#5ED3C7"]},
+  {id:"corail",name:"Corail",sub:"Rouge corail et abricot",c:["#FBF1EE","#C9473A","#FFC26B"]},
+  {id:"graphite",name:"Graphite",sub:"Noir et jaune",c:["#F1F1F0","#24272B","#FFD43B"]},
+];
+function currentSkin(){return document.documentElement.getAttribute("data-skin")||"metro";}
+function applySkin(id){
+  if(id==="metro") document.documentElement.removeAttribute("data-skin"); else document.documentElement.setAttribute("data-skin",id);
+  try{localStorage.setItem("a2.skin",id);}catch(_){}
+}
+function openTheme(){
+  const root=$("#sheet-root");root.textContent="";
+  const grid=el("div",{class:"skins"});
+  function draw(){
+    grid.textContent="";
+    for(const k of SKINS){
+      const on=currentSkin()===k.id;
+      grid.append(el("button",{type:"button",class:"skin"+(on?" on":""),"aria-pressed":on?"true":"false",onclick:()=>{applySkin(k.id);draw();toast("Thème « "+k.name+" » appliqué");}},
+        el("span",{class:"skin-prev",style:"background:"+k.c[0]},el("i",{style:"background:"+k.c[1]}),el("b",{style:"background:"+k.c[2]+";border-color:"+k.c[1]}),el("u",{style:"background:"+k.c[1]}),el("s",{style:"background:"+k.c[1]})),
+        el("span",{class:"skin-name"},(on?"✓ ":"")+k.name),el("span",{class:"skin-sub"},k.sub)));
+    }
+  }
+  draw();
+  root.append(sheetShell("Thème",[
+    el("div",{class:"sheet-h"},el("h2",{},"Thème"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("p",{class:"note"},"Chacun choisit le sien : le thème ne change que sur ce téléphone. Le mode clair ou sombre suit le réglage de l'iPhone."),
+    grid]));
+}
+$("#btn-theme").onclick=openTheme;
+
+/* ---------- Lecture des phrases en français (sans connexion) ---------- */
+const parseText=(()=>{
+// Lecture d'une phrase en français : "Dentiste vendredi 14h30 12 rue de la République à Lyon"
+// -> { title, category, date, time, location, origin, ... }. Aucune connexion nécessaire.
+
+const DEFAULT_TIME = { medecin: '09:00', rdv: '10:00', travail: '09:00', sortie: '20:00', courses: '10:00', autre: '10:00' };
+
+const strip = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+
+const WEEKDAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+const MONTHS = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
+const STREET = '(?:rue|avenue|av\\.?|boulevard|bd|place|pl\\.|chemin|allee|impasse|quai|route|rte|cours|square|residence|rond-point|lotissement|faubourg|passage|esplanade|promenade)';
+
+const CAT_WORDS = {
+  medecin: ['medecin', 'docteur', 'dr ', 'dentiste', 'kine', 'osteo', 'ophtalmo', 'dermato', 'gyneco', 'pediatre', 'hopital', 'clinique', 'pharmacie', 'radio', 'irm', 'scanner', 'analyse', 'prise de sang', 'labo', 'vaccin', 'orthodontiste', 'psy', 'veterinaire', 'veto', 'sage-femme', 'echographie'],
+  courses: ['courses', 'supermarche', 'carrefour', 'leclerc', 'auchan', 'lidl', 'intermarche', 'monoprix', 'casino', 'franprix', 'marche', 'drive', 'boulangerie', 'ikea', 'magasin', 'shopping'],
+  sortie: ['resto', 'restaurant', 'cinema', 'cine', 'bar', 'concert', 'soiree', 'anniversaire', 'anniv', 'apero', 'theatre', 'musee', 'balade', 'diner', 'dejeuner', 'brunch', 'spectacle', 'match', 'piscine', 'plage', 'zoo', 'expo', 'mariage', 'bowling', 'sport', 'salle de sport'],
+  travail: ['reunion', 'travail', 'boulot', 'bureau', 'entretien', 'rendez-vous client', 'formation', 'seminaire'],
+  rdv: ['rdv', 'rendez-vous', 'rendez vous', 'banque', 'notaire', 'mairie', 'prefecture', 'garage', 'coiffeur', 'controle technique', 'avocat', 'assurance', 'poste'],
+};
+
+function guessCategory(low) {
+  for (const cat of ['medecin', 'courses', 'sortie', 'travail', 'rdv']) {
+    if (CAT_WORDS[cat].some((w) => new RegExp('(^|[^a-z])' + w.replace(/[-]/g, '[- ]').trim() + '([^a-z]|$)').test(low))) return cat;
+  }
+  return 'autre';
+}
+
+function nextWeekday(now, wd, allowToday) {
+  const d = new Date(now); d.setHours(0, 0, 0, 0);
+  let diff = (wd - d.getDay() + 7) % 7;
+  if (diff === 0 && !allowToday) diff = 7;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function parseText(text, opts = {}) {
+  const now = opts.now ? new Date(opts.now) : new Date();
+  const places = opts.places || [];
+  const orig = String(text || '').replace(/\s+/g, ' ').trim();
+  const low = strip(orig);
+  const spans = []; // [start, end) to remove from the title
+  const take = (m, idx) => { spans.push([idx, idx + m.length]); };
+  const blockedSpan = (i) => spans.some(([a, b]) => i >= a && i < b);
+
+  // ---------- heure ----------
+  let time = null, timeIdx = -1;
+  let m = /(?:\b(?:a|vers|pour|des)\s+)?\b([01]?\d|2[0-3])\s*(?:h|:)\s*([0-5]\d)?(?![\d/])/.exec(low);
+  if (m) { time = pad(+m[1]) + ':' + pad(m[2] ? +m[2] : 0); timeIdx = m.index; take(m[0], m.index); }
+  if (!time && (m = /\b(?:a\s+)?midi\b/.exec(low)) && !/apres-?\s?midi/.test(low.slice(Math.max(0, m.index - 6), m.index + 5))) { time = '12:00'; timeIdx = m.index; take(m[0], m.index); }
+  if (!time && (m = /\b(?:a\s+)?minuit\b/.exec(low))) { time = '23:59'; timeIdx = m.index; take(m[0], m.index); }
+
+  // ---------- date ----------
+  let date = null, dateIdx = -1;
+  const today = new Date(now); today.setHours(0, 0, 0, 0);
+  const plus = (n) => { const d = new Date(today); d.setDate(d.getDate() + n); return d; };
+  const tryDate = (re, fn) => {
+    if (date) return;
+    const r = re.exec(low);
+    if (r) { const d = fn(r); if (d && !isNaN(d)) { date = d; dateIdx = r.index; take(r[0], r.index); } }
+  };
+  tryDate(/\bapres[- ]demain\b/, () => plus(2));
+  tryDate(/\bdemain\b/, () => plus(1));
+  tryDate(/\bdans\s+(\d{1,2})\s+jours?\b/, (r) => plus(+r[1]));
+  tryDate(/\b(?:dans\s+une\s+semaine|la\s+semaine\s+prochaine)\b/, () => plus(7));
+  tryDate(/\b(?:le\s+)?(\d{1,2})[/.](\d{1,2})(?:[/.](\d{2,4}))?\b/, (r) => {
+    let y = r[3] ? +r[3] : now.getFullYear(); if (y < 100) y += 2000;
+    let d = new Date(y, +r[2] - 1, +r[1]);
+    if (!r[3] && d < today) d = new Date(y + 1, +r[2] - 1, +r[1]);
+    return d;
+  });
+  tryDate(new RegExp('\\b(?:(?:' + WEEKDAYS.join('|') + ')\\s+)?(?:le\\s+)?(1er|\\d{1,2})\\s+(' + MONTHS.join('|') + ')(?:\\s+(\\d{4}))?\\b'), (r) => {
+    const day = r[1] === '1er' ? 1 : +r[1];
+    let y = r[3] ? +r[3] : now.getFullYear();
+    let d = new Date(y, MONTHS.indexOf(r[2]), day);
+    if (!r[3] && d < today) d = new Date(y + 1, MONTHS.indexOf(r[2]), day);
+    return d;
+  });
+  tryDate(new RegExp('\\b(?:(ce|le)\\s+)?(' + WEEKDAYS.join('|') + ')(?:\\s+(prochain|d\'apres|en huit))?(?:\\s+(\\d{1,2})(?!\\s*(?:h|:|\\d)))?\\b'), (r) => {
+    const wd = WEEKDAYS.indexOf(r[2]);
+    if (r[4]) { // "lundi 13"
+      const n = +r[4];
+      let d = new Date(now.getFullYear(), now.getMonth(), n);
+      if (d < today) d = new Date(now.getFullYear(), now.getMonth() + 1, n);
+      return d;
+    }
+    const d = nextWeekday(now, wd, r[1] === 'ce');
+    if (r[3] === 'en huit' || r[3] === "d'apres") d.setDate(d.getDate() + 7);
+    return d;
+  });
+  tryDate(/\b(?:aujourd'?hui|ce\s+(?:soir|matin|midi)|cet\s+apres-?\s?midi|tout\s+a\s+l'heure|tantot)\b/, () => plus(0));
+  tryDate(/\b(?:le\s+)(1er|\d{1,2})(?!\s*(?:h|:|\/|\d|\s*(?:rue|avenue|bd|boulevard|place|chemin)))\b/, (r) => {
+    const n = r[1] === '1er' ? 1 : +r[1];
+    if (n < 1 || n > 31) return null;
+    let d = new Date(now.getFullYear(), now.getMonth(), n);
+    if (d < today) d = new Date(now.getFullYear(), now.getMonth() + 1, n);
+    return d;
+  });
+  // "ce soir", "ce matin" donnent aussi une heure par défaut
+  if (!time) {
+    const pm = /\b(?:le\s+|en\s+|dans\s+l[ae]\s+|ce\s+|cet\s+)?(matin|soir|apres-?\s?midi)\b/.exec(low);
+    if (pm) {
+      time = pm[1] === 'matin' ? '09:00' : pm[1] === 'soir' ? '20:00' : '15:00';
+      if (!blockedSpan(pm.index)) take(pm[0], pm.index);
+    }
+  }
+
+  // ---------- catégorie ----------
+  const category = guessCategory(low);
+  const assumed = { date: !date, time: !time };
+  if (!time) time = DEFAULT_TIME[category] || '10:00';
+  if (!date) {
+    const [h, mi] = time.split(':').map(Number);
+    const cand = new Date(today); cand.setHours(h, mi);
+    date = cand > now ? today : plus(1);
+  }
+
+  // ---------- lieux enregistrés ----------
+  const byKind = (k) => places.find((p) => p.kind === k);
+  const findPlace = (fromIdx = 0) => {
+    let best = null;
+    for (const p of places) {
+      const n = strip(p.name).trim();
+      if (n.length < 2) continue;
+      const re = new RegExp('(^|[^a-z0-9])' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z0-9]|$)');
+      const r = re.exec(low.slice(fromIdx));
+      if (r && (!best || n.length > best.len)) best = { p, idx: fromIdx + r.index, len: n.length };
+    }
+    return best;
+  };
+
+  // ---------- départ ----------
+  let origin = null, originName = null;
+  const om = /\b(?:depuis|en partant d[eu]|au depart d[eu]|en sortant d[eu])\s+(?:le |la |l'|chez |du )?([a-z' -]{2,30}?)(?=$|[,.]|\s+(?:pour|a|au|aux|vers|le|demain|apres|ce|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b)/.exec(low);
+  if (om) {
+    const w = om[1].trim();
+    let p = null;
+    if (/^(travail|boulot|bureau|taf)$/.test(w)) p = byKind('work');
+    else if (/^(maison|nous|moi|la maison)$/.test(w)) p = byKind('home');
+    else p = places.find((x) => strip(x.name).trim() === w);
+    if (p) { origin = p.address; originName = p.name; take(om[0], om.index); }
+  }
+
+  // ---------- destination ----------
+  let location = null, locationName = null;
+  const blocked = (i) => spans.some(([a, b]) => i >= a && i < b);
+  // 1) adresse écrite
+  const am = new RegExp('(?:\\b(?:au|a|chez)\\s+)?\\b(\\d{1,4}\\s*(?:bis|ter)?\\s*,?\\s*)?' + STREET + '\\b').exec(low);
+  if (am && !blocked(am.index + (am[0].length - 1))) {
+    const startCut = am.index;
+    const startAddr = am.index + am[0].search(/\d|[a-z]/) + (/^(au|a|chez)\s+/.test(am[0]) ? am[0].match(/^(au|a|chez)\s+/)[0].length : 0);
+    let end = orig.length;
+    for (const [a] of spans) if (a > startAddr && a < end) end = a;
+    const pm = /\s(?:pour|avec)\s/.exec(low.slice(startAddr));
+    if (pm && startAddr + pm.index < end) end = startAddr + pm.index;
+    let addr = orig.slice(startAddr, end).replace(/[\s,.;-]+$/, '').replace(/\s+(?:à|a|le|au)$/i, '');
+    addr = addr.replace(/\s+(?:à|a)\s+(?=[A-ZÀ-Ý])/, ', ');
+    if (addr.length >= 4) { location = addr; spans.push([startCut, end]); }
+  }
+  // 2) lieu enregistré
+  if (!location) {
+    const hit = findPlace();
+    if (hit && hit.p.kind !== 'home') { location = hit.p.address; locationName = hit.p.name; }
+    else if (/\b(?:au|a la|au bureau|au)\s+(?:travail|boulot|bureau|taf)\b/.test(low) && byKind('work')) { location = byKind('work').address; locationName = byKind('work').name; }
+    else if (/\b(?:a la maison|chez nous|rentrer)\b/.test(low) && byKind('home')) { location = byKind('home').address; locationName = byKind('home').name; }
+  }
+  // 3) "au Café de Paris", "à Odysseum", "à Lyon"
+  if (!location) {
+    const re = /\b(au|aux|a l'|a la|a)\s+(?!\d)([a-z0-9'][a-z0-9' &-]{2,60})/g;
+    let r;
+    while ((r = re.exec(low))) {
+      if (blocked(r.index) || blocked(r.index + r[0].length - 1)) continue;
+      const startAddr = r.index + r[1].length + 1;
+      let end = r.index + r[0].length;
+      for (const [a] of spans) if (a > startAddr && a < end) end = a;
+      const txt = orig.slice(startAddr, end).replace(/[\s,.;-]+$/, '').replace(/\s+(?:le|à|a|pour|avec|vers|au)$/i, '').trim();
+      if (txt.length >= 3 && !/^(midi|minuit|demain|l'heure)/i.test(txt)) { location = txt; spans.push([r.index, end]); break; }
+    }
+  }
+
+  // ---------- titre ----------
+  let title = '';
+  {
+    const keep = [];
+    for (let i = 0; i < orig.length; i++) if (!spans.some(([a, b]) => i >= a && i < b)) keep.push(orig[i]);
+    title = keep.join('')
+      .replace(/\b(?:le|la|les|à|a|au|aux|de|du|des|pour|vers|chez|ce|cet|cette|et|,)\s*$/i, '')
+      .replace(/\s*[,;]\s*/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/^(?:le|la|à|a|au|de|du|pour|vers|et)\s+/i, '')
+      .replace(/\s+(?:le|la|à|a|au|aux|de|du|pour|vers|chez|ce|et)$/i, '')
+      .trim();
+    if (!title) title = locationName || ({ medecin: 'Rendez-vous médical', courses: 'Courses', sortie: 'Sortie', travail: 'Travail', rdv: 'Rendez-vous', autre: 'Évènement' })[category];
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+    if (title.length > 60) title = title.slice(0, 60).trim();
+  }
+
+  return { title, category, date: ymd(date), time, location: location || '', locationName, origin: origin || '', originName, assumed };
+}
+
+return parseText;
+})();
+
+/* ---------- Calendrier de l'iPhone (.ics avec alarmes) ---------- */
+function icsFor(ev){
+  const s=startOf(ev),e=new Date(s.getTime()+(+ev.durationMin||60)*60000);
+  const z=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+  const esc=t=>String(t||"").replace(/\\/g,"\\\\").replace(/\r?\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
+  let desc="";
+  if((+ev.travelMin||0)>0) desc+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+")\nItinéraire : "+appleUrl(ev)+"\n";
+  if(ev.notes) desc+=ev.notes+"\n";
+  desc+="Agenda à Deux";
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Agenda a Deux//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT",
+    "UID:"+(ev.id||Date.now())+"@agenda-a-deux","DTSTAMP:"+z(new Date()),"DTSTART:"+z(s),"DTEND:"+z(e),
+    "SUMMARY:"+esc(ev.title),"LOCATION:"+esc(ev.location),"DESCRIPTION:"+esc(desc)];
+  for(const r of liveReminders(ev)) L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+esc(r.label||ev.title),"TRIGGER:-PT"+Math.max(0,Math.round(r.min))+"M","END:VALARM");
+  L.push("END:VEVENT","END:VCALENDAR");
+  return L.join("\r\n");
+}
+async function addToCalendar(ev){
+  const ics=icsFor(ev);
+  const name=(norm(ev.title).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"evenement")+".ics";
+  const file=new File([ics],name,{type:"text/calendar"});
+  markAdded(ev);
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:ev.title});return;}
+  }catch(e){if(e&&e.name==="AbortError")return;}
+  const url=URL.createObjectURL(file);
+  const a=document.createElement("a");a.href=url;a.download=name;a.rel="noopener";document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
+/* ---------- Synchronisation Firebase et jumelage du couple ---------- */
+const CFG_KEY="a2.fbconfig",COUPLE_KEY="a2.couple";
+function lsGet(k){try{return localStorage.getItem(k);}catch(_){return null;}}
+function lsSet(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(_){}}
+function readFbConfig(){
+  const w=window.FIREBASE_CONFIG;if(w&&w.apiKey&&w.projectId)return w;
+  try{const c=JSON.parse(lsGet(CFG_KEY)||"null");if(c&&c.apiKey)return c;}catch(_){}
+  return null;
+}
+function parseConfigText(t){
+  const m=String(t||"").match(/\{[\s\S]*\}/);if(!m)return null;
+  const s=m[0].replace(/\/\/.*$/gm,"").replace(/([{,]\s*)([A-Za-z_]\w*)\s*:/g,'$1"$2":').replace(/'/g,'"').replace(/,\s*}/g,"}");
+  try{const c=JSON.parse(s);return c.apiKey&&c.projectId&&c.appId?c:null;}catch(_){return null;}
+}
+let fs=null,fauth=null,coupleId=null,couple=null;
+const CODE_CHARS="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function colorFor(id){let h=0;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))%360;return `hsl(${h} 55% 42%)`;}
+const userShim={
+  id:async()=>myId,can:async()=>true,isOwner:async()=>true,canEdit:async()=>true,
+  profiles:async ids=>{const o={};for(const id of [].concat(ids||[]))o[id]={id,name:(couple&&couple.names&&couple.names[id])||"",color:colorFor(id)};return o;}
+};
+function makeDb(prefix){
+  const P=p=>prefix+"/"+p;
+  return {doc:p=>fs.doc(P(p)),collection:p=>fs.collection(P(p))};
+}
+const isStandalone=()=>!!(window.navigator.standalone||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches));
+function pageScreen(children){
+  const main=$("#list");main.textContent="";
+  $("#fab").hidden=true;$("#fab-mic").hidden=true;$("#btn-past").hidden=true;
+  const comp=document.querySelector(".composer");if(comp)comp.hidden=true;
+  main.append(el("div",{class:"setup"},...children));
+}
+function installHint(){
+  if(isStandalone()||!IS_IOS) return null;
+  return el("div",{class:"notice"},el("strong",{},"Installe l'app sur ton iPhone : "),"touche le bouton Partager de Safari (le carré avec une flèche), puis « Sur l'écran d'accueil ». Ouvre ensuite l'app depuis son icône.");
+}
+function showSetup(){
+  const ta=el("textarea",{id:"cfg-in",rows:"7",class:"q-input",placeholder:"Colle ici le bloc firebaseConfig = { apiKey: … }"});
+  const go=el("button",{class:"btn primary",type:"button"},"Enregistrer la configuration");
+  go.onclick=()=>{const c=parseConfigText(ta.value);if(!c){toast("Configuration non reconnue. Copie tout le bloc entre les accolades.");return;}lsSet(CFG_KEY,JSON.stringify(c));location.reload();};
+  pageScreen([el("h2",{},"Encore une étape"),
+    el("p",{},"La synchronisation entre vos deux téléphones n'est pas configurée. Le plus simple : remplis le fichier config.js avant de mettre l'app en ligne (voir le guide). Sinon, colle ici la configuration Firebase :"),
+    ta,go]);
+}
+function showPair(prefill){
+  const name=el("input",{id:"pair-name",type:"text",placeholder:"Ton prénom",autocomplete:"given-name",class:"pair-in"});
+  const code=el("input",{id:"pair-code",type:"text",placeholder:"Code à 6 caractères",maxlength:"6",class:"pair-in code",autocapitalize:"characters",autocomplete:"off"});
+  if(prefill) code.value=prefill;
+  const create=el("button",{class:"btn primary",type:"button"},"Créer notre agenda");
+  const join=el("button",{class:"btn",type:"button"},"Rejoindre avec le code");
+  create.onclick=async()=>{
+    if(!name.value.trim()){toast("Indique ton prénom.");name.focus();return;}
+    create.disabled=true;
+    try{
+      const ref=fs.collection("couples").doc();let c="";for(let i=0;i<6;i++)c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];
+      await ref.set({members:[myId],names:{[myId]:name.value.trim()},code:c,createdAt:Date.now()});
+      await fs.doc("codes/"+c).set({coupleId:ref.id});
+      lsSet(COUPLE_KEY,ref.id);
+      showCreated(c);
+    }catch(e){console.error(e);create.disabled=false;toast("Création impossible : vérifie la configuration Firebase et les règles.");}
+  };
+  join.onclick=async()=>{
+    const c=code.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if(!name.value.trim()){toast("Indique ton prénom.");name.focus();return;}
+    if(c.length!==6){toast("Le code fait 6 caractères.");code.focus();return;}
+    join.disabled=true;
+    try{
+      const s=await fs.doc("codes/"+c).get();
+      if(!s.exists){join.disabled=false;toast("Code introuvable. Vérifie les 6 caractères.");return;}
+      const id=s.data().coupleId;
+      await fs.doc("couples/"+id).update({members:firebase.firestore.FieldValue.arrayUnion(myId),["names."+myId]:name.value.trim()});
+      lsSet(COUPLE_KEY,id);location.hash="";location.reload();
+    }catch(e){console.error(e);join.disabled=false;toast("Impossible de rejoindre : "+(e&&e.message||"réessaie."));}
+  };
+  pageScreen([installHint(),
+    el("h2",{},"Bienvenue"),
+    el("p",{},"Un agenda partagé à deux : trajets, heure de départ et rappels."),
+    el("div",{class:"field"},el("label",{for:"pair-name"},"Ton prénom"),name),
+    el("div",{class:"pair-card"},el("strong",{},"Premier téléphone"),el("span",{class:"note"},"Crée votre agenda. Tu recevras un code à donner à ta compagne."),create),
+    el("div",{class:"pair-card"},el("strong",{},"J'ai reçu un code"),code,join)]);
+}
+function inviteText(c){return "Rejoins notre Agenda à Deux : ouvre "+location.origin+location.pathname+" dans Safari, ajoute-le à l'écran d'accueil, puis entre le code "+c;}
+async function shareInvite(c){
+  const txt=inviteText(c);
+  try{if(navigator.share){await navigator.share({text:txt});return;}}catch(e){if(e&&e.name==="AbortError")return;}
+  try{await navigator.clipboard.writeText(txt);toast("Invitation copiée");}catch(_){toast("Code : "+c);}
+}
+function showCreated(c){
+  pageScreen([el("h2",{},"Votre agenda est prêt"),
+    el("p",{},"Sur l'iPhone de ta compagne : ouvre l'app, entre son prénom, puis ce code dans « J'ai reçu un code »."),
+    el("div",{class:"big-code"},c),
+    el("button",{class:"btn",type:"button",onclick:()=>shareInvite(c)},"Envoyer l'invitation"),
+    el("button",{class:"btn primary",type:"button",onclick:()=>location.reload()},"Ouvrir l'agenda")]);
+}
+function coupleSection(){
+  const box=el("div",{class:"disc-box"});
+  const others=couple?(couple.members||[]).filter(m=>m!==myId):[];
+  const nm=el("input",{type:"text",value:(couple&&couple.names&&couple.names[myId])||"","aria-label":"Ton prénom",class:"pair-in"});
+  const ok=el("button",{type:"button",class:"btn"},"OK");
+  ok.onclick=async()=>{try{await fs.doc("couples/"+coupleId).update({["names."+myId]:nm.value.trim()});toast("Prénom enregistré");}catch(e){toast("Enregistrement impossible.");}};
+  box.append(el("div",{class:"brand-add"},nm,ok));
+  if(!others.length) box.append(el("p",{class:"note"},"Ta compagne n'a pas encore rejoint l'agenda. Code à lui donner :"),el("div",{class:"big-code"},(couple&&couple.code)||""),
+    el("button",{type:"button",class:"btn",onclick:()=>shareInvite(couple.code)},"Envoyer l'invitation"));
+  else box.append(el("p",{class:"note"},"Agenda partagé avec "+others.map(m=>(couple.names&&couple.names[m])||"ta compagne").join(", ")+". Code : "+((couple&&couple.code)||"")));
+  box.append(el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)",onclick:()=>{
+    const c=el("div",{class:"confirm"},el("span",{},"Quitter l'agenda sur ce téléphone ? Tu pourras revenir avec le code."),
+      el("button",{class:"btn danger",type:"button",onclick:()=>{lsSet(COUPLE_KEY,null);location.reload();}},"Quitter"),
+      el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
+  return box;
+}
+function registerSW(){if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});}
+
+/* ---------- Wire up ---------- */
+$("#btn-settings").onclick=openSettings;
+$("#fab").onclick=()=>openQuickAdd(false);
+$("#fab-mic").onclick=()=>openQuickAdd(true);
+$("#btn-manual").onclick=()=>{const t=$("#input").value.trim();const d=blankDraft();if(t)d.title=t.slice(0,80);openEditor(d);};
+$("#btn-past").onclick=()=>{showPast=!showPast;render();};
+$("#btn-analyze").onclick=()=>{
+  const text=$("#input").value.trim();
+  if(!text){$("#input").focus();toast("Écris d'abord ce que vous avez prévu.");return;}
+  prepareText(text,$("#btn-analyze"),"Préparer l'évènement");
+};
+
+/* ---------- Dictée vocale ---------- */
+const MIC_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+let voiceBlocked=false;
+function startVoice(ta,btn,help,onDone){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const fallback=()=>{
+    help.textContent="";
+    help.append(el("div",{class:"mic-help-icon",html:MIC_SVG}),
+      el("div",{},el("strong",{},SR?"Le micro est bloqué":"Dictée indisponible sur ce navigateur"),el("span",{},SR?"Autorise-le : Réglages, Apps, Safari, Micro. Vérifie aussi que Siri et Dictée sont activés (Réglages, Général, Clavier). Puis touche à nouveau Parler.":"Ouvre l'app dans Safari sur iPhone pour dicter.")));
+    help.hidden=false;
+  };
+  if(!SR||voiceBlocked){fallback();return;}
+  if(btn._rec){btn._rec.stop();return;}
+  let rec;
+  try{rec=new SR();}catch(_){voiceBlocked=true;fallback();return;}
+  rec.lang="fr-FR";rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
+  const before=ta.value.trim();let finalText="",gotAny=false;
+  btn._rec=rec;btn.classList.add("on");btn.querySelector("span").textContent="J'écoute…";
+  help.textContent="";help.append(el("div",{class:"mic-wave"},el("i"),el("i"),el("i"),el("i")),el("div",{},el("strong",{},"Parle maintenant"),el("span",{},"Quoi, quand et où. Touche à nouveau le bouton pour arrêter.")));help.hidden=false;
+  rec.onresult=e=>{gotAny=true;let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)finalText+=r[0].transcript;else interim+=r[0].transcript;}
+    ta.value=[before,(finalText+interim).trim()].filter(Boolean).join(" ");ta.dispatchEvent(new Event("input"));};
+  rec.onerror=e=>{if(e&&(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="audio-capture")){voiceBlocked=true;btn._rec=null;btn.classList.remove("on");btn.querySelector("span").textContent="Parler";fallback();}};
+  rec.onend=()=>{btn._rec=null;btn.classList.remove("on");btn.querySelector("span").textContent="Parler";
+    if(voiceBlocked)return;
+    help.hidden=true;
+    if(gotAny&&finalText.trim()&&onDone) onDone();
+  };
+  try{rec.start();}catch(_){btn._rec=null;btn.classList.remove("on");btn.querySelector("span").textContent="Parler";voiceBlocked=true;fallback();}
+}
+
+function openQuickAdd(voice){
+  const root=$("#sheet-root");root.textContent="";
+  const ta=el("textarea",{id:"q-input",rows:"3",class:"q-input",placeholder:"Qu'est-ce que vous avez prévu ? Ex. : dentiste vendredi 14h30"});
+  const micBtn=el("button",{type:"button",class:"mic-btn",html:MIC_SVG+"<span>Parler</span>","aria-label":"Dicter l'évènement"});
+  const micHelp=el("div",{class:"mic-help",hidden:true});
+  micBtn.onclick=()=>startVoice(ta,micBtn,micHelp,()=>go.click());
+  const go=el("button",{class:"btn primary",type:"button"},"Préparer l'évènement");
+  go.onclick=()=>{const t=ta.value.trim();if(!t){ta.focus();toast("Écris d'abord ce que vous avez prévu.");return;}prepareText(t,go,"Préparer l'évènement");};
+  ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();go.click();}});
+  // Modèles : un toucher, puis choisir le jour et l'heure
+  const chips=el("div",{class:"pchips tpl-chips"});
+  for(const t of tplList()) chips.append(el("button",{type:"button",class:"pchip tpl",onclick:()=>openEditor(draftFromTemplate(t))},t.name));
+  // Suggestions pendant la frappe : évènements déjà faits et modèles
+  const sugg=el("div",{class:"brand-panel",hidden:true});
+  const pastByTitle=()=>{const m=new Map();for(const e of [...events.values()].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))){const k=norm(e.title);if(k&&!m.has(k))m.set(k,e);}return [...m.values()];};
+  ta.addEventListener("input",()=>{
+    const q=norm(ta.value);sugg.textContent="";
+    if(q.length<2||/\d/.test(q)||q.split(" ").length>3){sugg.hidden=true;return;}
+    const hits=pastByTitle().filter(e=>norm(e.title).startsWith(q)||norm(e.title).includes(" "+q)).slice(0,4);
+    for(const e of hits) sugg.append(el("button",{type:"button",class:"ac-item",onclick:()=>openEditor(draftFromEvent(e))},
+      el("span",{class:"ac-main"},e.title),el("span",{class:"ac-sub"},[e.location?shortAddr(e.location):"",e.time].filter(Boolean).join(", ")),el("span",{class:"ac-tag"},"Déjà fait")));
+    for(const t of tplList().filter(t=>norm(t.name).startsWith(q)&&!hits.some(e=>norm(e.title)===norm(t.title)))) sugg.append(el("button",{type:"button",class:"ac-item",onclick:()=>openEditor(draftFromTemplate(t))},
+      el("span",{class:"ac-main"},t.name),el("span",{class:"ac-sub"},CATS[t.category]||""),el("span",{class:"ac-tag"},"Modèle")));
+    sugg.hidden=!sugg.childNodes.length;
+  });
+  root.append(sheetShell("Ajouter un évènement",[
+    el("div",{class:"sheet-h"},el("h2",{},"Ajouter un évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("div",{class:"field"},el("span",{class:"lab"},"En un toucher"),chips),
+    el("div",{class:"or"},el("span",{},"ou écris-le")),
+    el("div",{class:"q-row"},ta,micBtn),micHelp,sugg,
+    el("div",{class:"note"},"Touche Parler et dis simplement quoi, quand et où. Par exemple : « dentiste vendredi 14h30 »."),
+    el("div",{class:"sheet-foot"},el("button",{class:"btn quiet",type:"button",onclick:()=>{const d=blankDraft();const t=ta.value.trim();if(t)d.title=t.slice(0,80);openEditor(d);}},"Remplir moi-même"),go)
+  ]));
+  if(voice) startVoice(ta,micBtn,micHelp,()=>go.click());
+}
+async function prepareText(text,b,label){
+  b.disabled=true;b.textContent="";b.append(el("span",{class:"spinner"}),"Calcul du trajet…");
+  const info=[];
+  try{
+    const p=parseText(text,{places:placesSorted().map(x=>({name:x.name,kind:x.kind,address:x.address}))});
+    const d=blankDraft();
+    Object.assign(d,{title:p.title,category:CATS[p.category]?p.category:"autre",date:p.date,time:p.time});
+    d.marginMin=DEF_MARGIN[d.category]??10;d.durationMin=DEF_DUR[d.category]||60;
+    if(p.origin) d.origin=p.origin;
+    let loc=p.location||"";
+    // Enseigne cochée (« courses chez Action ») : magasin le plus proche de la maison
+    const nt=norm(text);
+    const br=brands.find(x=>{const n=norm(x);return n&&(norm(loc).startsWith(n)||new RegExp("(^|[^a-z0-9])"+n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z0-9]|$)").test(nt));});
+    if(br&&!/\d/.test(loc)&&!placeFor(loc)){
+      const st=await brandStores(br).catch(()=>[]);
+      if(st.length){loc=st[0].address;if(!/courses/i.test(d.title)&&norm(d.title)===norm(br))d.title=st[0].name;}
+    }
+    if(!loc){const pl=placeByTitle(d.title);if(pl)loc=pl.address;}
+    d.location=loc;
+    if(d.location){
+      const r=await estimateTrip(d).catch(()=>null);
+      if(r&&r.ok){
+        d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;
+        if(r.to&&!placeFor(d.location)&&!/\b\d{5}\b/.test(d.location)) d.location=r.to;
+        if(r.from&&d.origin&&!placeFor(d.origin)&&!/\b\d{5}\b/.test(d.origin)) d.origin=r.from;
+      }else if(r) info.push(r.problem);
+      else info.push("Trajet non calculé : vérifie ta connexion.");
+    }
+    d.reminders=suggestReminders(d);d.reminders.forEach(r=>{r.min=remMinFor(d,r);});
+    if(p.assumed&&p.assumed.date&&p.assumed.time) info.unshift("Date et heure non précisées : vérifie-les.");
+    else if(p.assumed&&p.assumed.time) info.unshift("Heure non précisée : vérifie-la.");
+    else if(p.assumed&&p.assumed.date) info.unshift("Date non précisée : vérifie-la.");
+    if(!homeAddr()) info.push("Enregistre ta maison dans les réglages pour calculer les trajets.");
+    openConfirm(d,info.join(" ")||null);
+  }catch(e){console.error(e);toast("Préparation impossible. Réessaie, ou remplis toi-même.");}
+  b.disabled=false;b.textContent=label;
+}
+$("#input").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))$("#btn-analyze").click();});
+
+setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>startOf(a)-startOf(b)).filter(e=>startOf(e).getTime()>Date.now()-3*3600000));},30000);
+
+(async function init(){
+  registerSW();
+  const cfg=readFbConfig();
+  if(!window.firebase){notice("Connexion internet nécessaire au premier lancement.");render();return;}
+  if(!cfg){showSetup();return;}
+  try{firebase.initializeApp(cfg);}catch(e){}
+  fs=firebase.firestore();
+  try{fs.settings({ignoreUndefinedProperties:true,experimentalAutoDetectLongPolling:true,merge:true});}catch(_){}
+  try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(_){}
+  fauth=firebase.auth();
+  let u;
+  try{
+    u=await new Promise((res,rej)=>{const off=fauth.onAuthStateChanged(x=>{if(x){off();res(x);}else fauth.signInAnonymously().catch(rej);});});
+  }catch(e){notice("Connexion impossible : active la connexion « Anonyme » dans Firebase Authentication. ("+(e&&e.code||e)+")");render();return;}
+  myId=u.uid;user=userShim;
+  const m=/join=([A-Z0-9]{6})/i.exec(location.hash||"");
+  coupleId=lsGet(COUPLE_KEY);
+  if(!coupleId){showPair(m?m[1].toUpperCase():"");return;}
+  db=makeDb("couples/"+coupleId);
+  fs.doc("couples/"+coupleId).onSnapshot(s=>{
+    if(!s.exists){lsSet(COUPLE_KEY,null);location.reload();return;}
+    couple=s.data();if(events.size)render();
+  },e=>{notice("Accès à votre agenda impossible. Quitte puis rejoins-le avec le code.");});
+  const hint=installHint();if(hint){const n=$("#notice");n.textContent="";n.append(...hint.childNodes);n.hidden=false;}
+  db.collection("places").onSnapshot(snap=>{
+    places=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
+    refreshPlaceUI();render();
+  },()=>{});
+  db.doc("config/templates").onSnapshot(snap=>{templates=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:null;if(templatesRefresh)templatesRefresh();},()=>{});
+  db.doc("config/brands").onSnapshot(snap=>{brands=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:[];refreshBrandUI();},()=>{});
+  db.doc("config/home").onSnapshot(snap=>{if(snap.exists){const x=snap.data();settings={home:x.home||"",mode:x.mode||"car"};}},()=>{});
+  db.collection("events").orderBy("startTs").onSnapshot(snap=>{
+    if(!firstSnap){
+      for(const ch of snap.docChanges()){
+        const x=ch.doc.data()||{};
+        if(ch.type==="removed") continue;
+        if(x.updatedBy&&x.updatedBy!==myId&&!ch.doc.metadata.hasPendingWrites){
+          const prev=events.get(ch.doc.id);
+          const who=(couple&&couple.names&&couple.names[x.updatedBy])||"L'autre";
+          if(!prev) toast(who+" a ajouté « "+x.title+" »");
+          else if(prev.updatedAt!==x.updatedAt) toast(who+" a modifié « "+x.title+" »");
+        }
+      }
+    }
+    firstSnap=false;
+    events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
+    render();
+  },()=>notice("La synchronisation s'est interrompue. Vérifie ta connexion puis rouvre l'app."));
+})();
+</script>
+</body>
+</html>
