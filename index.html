@@ -252,6 +252,8 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .rem-custom{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center}
 .rem-custom .rc-lab{grid-column:1 / -1;font-size:.8rem;font-weight:700;color:var(--muted)}
 .tag.past{opacity:.45;text-decoration:line-through}
+.sign .sign-btn{grid-column:1 / -1;justify-self:start;margin-top:8px;background:var(--sun-ink);color:var(--sun);border-color:transparent}
+.sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
 .cal-banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--sun);color:var(--sun-ink);border-radius:16px;padding:12px 14px}
 .cal-txt{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:.9rem}
 .cal-banner .btn{flex:none}
@@ -520,6 +522,7 @@ function renderNext(upcoming){
     el("div",{class:"big num"},hhmm(departOf(ev))),
     el("div",{class:"what"},ev.title),
     el("div",{class:"in"},mins>0?"Dans "+fmtDur(mins)+", "+MODE_IN[ev.mode]:"Arrivée prévue à "+ev.time));
+  if(IS_IOS&&canWrite){const b=alarmButton(ev,"sign-btn");if(b)n.append(b);}
 }
 
 function mapsUrl(ev){const p=new URLSearchParams({api:"1",destination:ev.location||"",travelmode:GMODE[ev.mode]||"driving"});if(ev.origin)p.set("origin",ev.origin);return "https://www.google.com/maps/dir/?"+p;}
@@ -554,6 +557,7 @@ function stop(ev,who){
 
   const links=el("div",{class:"links more-info"});
   links.append(el("button",{class:"btn"+((ev.calendarAdded||{})[myId]>=ev.updatedAt?"":" primary"),type:"button",onclick:()=>addToCalendar(ev)},(ev.calendarAdded||{})[myId]>=ev.updatedAt?"Déjà dans le calendrier":"Ajouter au calendrier"),el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
+  if(IS_IOS){const ab=alarmButton(ev);if(ab)links.append(ab);}
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
 
   const author=who(ev.createdBy), editor=ev.updatedBy&&ev.updatedBy!==ev.createdBy?who(ev.updatedBy):null;
@@ -1480,6 +1484,7 @@ function openSettings(){
     el("div",{class:"pgroup-h"},"Nos enseignes"),
     el("p",{class:"note"},"Coche les magasins où vous allez. En remplissant « Où », touche une enseigne : l'app propose ses magasins les plus proches de chez vous."),
     brandsSection(),
+    el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
     el("div",{class:"field"},el("label",{for:"s-mode"},"Transport habituel"),mode),
     el("p",{class:"note"},"Pour que les rappels sonnent même app fermée : ouvre un évènement et touche « Calendrier iPhone », chacun sur son téléphone.")]));
@@ -1789,6 +1794,41 @@ function addManyToCalendar(list){
   list.forEach(markAdded);
   toast("Dans la fenêtre du calendrier, touche « Tout ajouter »");
 }
+/* ---------- Vraie alarme dans l'Horloge (via l'app Raccourcis) ---------- */
+const SC_NAME="Alarme Agenda";
+function alarmTime(ev){return hasTrip(ev)?departOf(ev):new Date(startOf(ev).getTime()-15*60000);}
+function alarmPossible(ev){const t=alarmTime(ev).getTime(),now=Date.now();return t>now+60000&&t-now<24*3600000;}
+function alarmsDone(){try{return JSON.parse(localStorage.getItem("a2.alarms")||"{}");}catch(_){return {};}}
+function alarmDone(ev){const a=alarmsDone()[ev.id];return a&&a===hhmm(alarmTime(ev))+"|"+ev.date;}
+function runAlarmShortcut(hm){location.href="shortcuts://run-shortcut?name="+encodeURIComponent(SC_NAME)+"&input=text&text="+encodeURIComponent(hm);}
+function createClockAlarm(ev){
+  const hm=hhmm(alarmTime(ev));
+  try{const a=alarmsDone();a[ev.id]=hm+"|"+ev.date;localStorage.setItem("a2.alarms",JSON.stringify(a));}catch(_){}
+  runAlarmShortcut(hm);
+  setTimeout(()=>render(),800);
+}
+function alarmButton(ev,cls){
+  if(!alarmPossible(ev)) return null;
+  const done=alarmDone(ev);
+  return el("button",{type:"button",class:"btn"+(cls?" "+cls:""),onclick:e=>{e.stopPropagation();createClockAlarm(ev);}},(done?"Alarme créée ":"Créer l'alarme ")+hhmm(alarmTime(ev)));
+}
+function alarmSetupSection(){
+  const steps=[
+    "Ouvre l'app Raccourcis (déjà installée sur l'iPhone, sinon gratuite sur l'App Store).",
+    "Touche + en haut à droite pour créer un raccourci.",
+    "Touche « Ajouter une action », cherche « Créer une alarme » (app Horloge) et touche-la.",
+    "Dans l'action, touche l'heure, puis choisis la variable « Entrée du raccourci ».",
+    "Touche « Alarme » (le libellé) et écris : Agenda à Deux.",
+    "Touche le nom en haut, choisis « Renommer » et écris exactement : Alarme Agenda. Puis OK.",
+  ];
+  const box=el("div",{class:"disc-box"},
+    el("p",{class:"note"},"Une vraie alarme de l'Horloge, qui sonne fort même téléphone en silencieux. À créer une seule fois, sur chaque iPhone :"),
+    el("ol",{class:"sc-steps"},...steps.map(t=>el("li",{},t))),
+    el("button",{type:"button",class:"btn",onclick:()=>{const t=new Date(Date.now()+2*60000);runAlarmShortcut(hhmm(t));}},"Tester : alarme dans 2 minutes"),
+    el("p",{class:"note"},"Au premier essai, l'iPhone demande d'autoriser Raccourcis à utiliser l'Horloge : touche Autoriser. Ensuite, le bouton « Créer l'alarme » apparaît sur les départs des prochaines 24 heures."));
+  return box;
+}
+
 /* Rappels affichés dans l'app quand elle est ouverte */
 let lastRemCheck=Date.now();
 setInterval(()=>{
