@@ -1774,13 +1774,16 @@ function vevent(ev){
 function icsFor(ev){return icsOf([ev]);}
 function icsOf(list){return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Agenda a Deux//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH",...list.flatMap(vevent),"END:VCALENDAR"].join("\r\n");}
 function openIcs(ics,name){
-  if(IS_IOS){
-    const url="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics);
-    const w=window.open(url,"_blank");
-    if(!w) location.href=url;
+  // 1) iPhone : fichier servi par l'app elle-même (service worker), que Safari ouvre dans Calendrier
+  if(IS_IOS&&navigator.serviceWorker&&navigator.serviceWorker.controller){
+    location.href="agenda.ics?d="+encodeURIComponent(ics)+"&t="+Date.now();
     return;
   }
-  const blob=new Blob([ics],{type:"text/calendar"});const url=URL.createObjectURL(blob);
+  // 2) Partage du fichier
+  const file=new File([ics],name,{type:"text/calendar"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file]}).catch(()=>{});return;}
+  // 3) Téléchargement classique
+  const url=URL.createObjectURL(file);
   const a=document.createElement("a");a.href=url;a.download=name;a.rel="noopener";document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
