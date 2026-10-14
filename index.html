@@ -254,6 +254,7 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .tag.past{opacity:.45;text-decoration:line-through}
 .sign .sign-btn{grid-column:1 / -1;justify-self:start;margin-top:8px;background:var(--sun-ink);color:var(--sun);border-color:transparent}
 .sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.imp-link{align-self:flex-start;color:var(--line)}
 .cal-banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--sun);color:var(--sun-ink);border-radius:16px;padding:12px 14px}
 .cal-txt{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:.9rem}
 .cal-banner .btn{flex:none}
@@ -1484,6 +1485,7 @@ function openSettings(){
     el("div",{class:"pgroup-h"},"Nos enseignes"),
     el("p",{class:"note"},"Coche les magasins où vous allez. En remplissant « Où », touche une enseigne : l'app propose ses magasins les plus proches de chez vous."),
     brandsSection(),
+    el("div",{class:"pgroup-h"},"Importer mon calendrier"),el("div",{class:"disc-box"},el("p",{class:"note"},"Récupère les évènements déjà enregistrés dans le Calendrier de ton iPhone."),el("button",{type:"button",class:"btn",onclick:openImport},"Importer depuis mon calendrier")),
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
     el("div",{class:"field"},el("label",{for:"s-mode"},"Transport habituel"),mode),
@@ -1797,6 +1799,88 @@ function addManyToCalendar(list){
   list.forEach(markAdded);
   toast("Dans la fenêtre du calendrier, touche « Tout ajouter »");
 }
+/* ---------- Import depuis le calendrier de l'iPhone (via le raccourci « Export Agenda ») ---------- */
+const EXPORT_SC="Export Agenda";
+const IMP_MONTHS={janv:1,janvier:1,jan:1,fevr:2,fev:2,fevrier:2,feb:2,mars:3,mar:3,avr:4,avril:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,juillet:7,jul:7,aout:8,aug:8,sept:9,sep:9,septembre:9,oct:10,octobre:10,nov:11,novembre:11,dec:12,decembre:12,january:1,february:2,march:3,april:4,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+// Trouve une date (et une heure) dans un morceau de texte, quel que soit le format de l'iPhone
+function impDate(txt){
+  const t=norm(txt);
+  let y,mo,d,h=null,mi=0,idx=-1,len=0,m;
+  if((m=/(\d{4})-(\d{2})-(\d{2})(?:[t ](\d{1,2}):(\d{2}))?/.exec(t))){y=+m[1];mo=+m[2];d=+m[3];if(m[4]!=null){h=+m[4];mi=+m[5];}idx=m.index;len=m[0].length;}
+  else if((m=/(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})/.exec(t))){d=+m[1];mo=+m[2];y=+m[3];if(y<100)y+=2000;idx=m.index;len=m[0].length;}
+  else if((m=/(\d{1,2})(?:er)?\s+([a-z]{3,9})\.?\s+(\d{4})/.exec(t))&&IMP_MONTHS[m[2]]){d=+m[1];mo=IMP_MONTHS[m[2]];y=+m[3];idx=m.index;len=m[0].length;}
+  else if((m=/([a-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})/.exec(t))&&IMP_MONTHS[m[1]]){mo=IMP_MONTHS[m[1]];d=+m[2];y=+m[3];idx=m.index;len=m[0].length;}
+  else return null;
+  if(h==null){const rest=t.slice(idx+len);const tm=/(\d{1,2})\s*(?:h|:)\s*(\d{2})?\s*(am|pm)?/.exec(rest);
+    if(tm){h=+tm[1];mi=tm[2]?+tm[2]:0;if(tm[3]==="pm"&&h<12)h+=12;if(tm[3]==="am"&&h===12)h=0;len+=tm.index+tm[0].length;}}
+  if(!(mo>=1&&mo<=12&&d>=1&&d<=31))return null;
+  return {date:y+"-"+pad(mo)+"-"+pad(d),time:h==null?null:pad(h)+":"+pad(mi),idx,len};
+}
+// Une ligne par évènement : « Titre | Début | Lieu ». Une ligne sans date complète le lieu de la précédente.
+function parseImport(text){
+  const out=[];
+  for(const raw of String(text||"").split(/\r?\n/)){
+    const line=raw.trim();if(!line)continue;
+    const parts=line.split(/\s*\|\s*/);
+    let found=null,pi=-1;
+    for(let i=0;i<parts.length;i++){const dd=impDate(parts[i]);if(dd){found=dd;pi=i;break;}}
+    if(!found){ if(out.length){const l=out[out.length-1];l.location=[l.location,line.replace(/\|/g," ").trim()].filter(Boolean).join(", ");} continue; }
+    let title=parts.slice(0,pi).join(" ").trim();
+    const after=parts.slice(pi+1).filter(x=>x&&!impDate(x)).join(", ").trim();
+    if(!title){title=parts[pi].slice(0,found.idx).trim();}
+    out.push({title:title||"Évènement",date:found.date,time:found.time||"09:00",allDay:!found.time,location:after});
+  }
+  return out;
+}
+function importDuplicate(it){return [...events.values()].some(e=>norm(e.title)===norm(it.title)&&e.date===it.date&&e.time===it.time);}
+function openImport(){
+  const root=$("#sheet-root");root.textContent="";
+  const ta=el("textarea",{id:"imp-text",rows:"5",class:"q-input",placeholder:"Colle ici ce que le raccourci a copié"});
+  const list=el("div",{class:"rem-simple"});
+  const go=el("button",{class:"btn primary",type:"button",hidden:true},"Importer");
+  let items=[];
+  function show(){
+    items=parseImport(ta.value).map(it=>({...it,on:!importDuplicate(it)&&startOf(it).getTime()>Date.now()-86400000}));
+    list.textContent="";
+    if(ta.value.trim()&&!items.length) list.append(el("p",{class:"note"},"Aucun évènement reconnu. Vérifie que le raccourci « Export Agenda » a bien été lancé juste avant."));
+    items.forEach((it,i)=>{
+      const cb=el("input",{type:"checkbox",id:"imp-"+i});cb.checked=it.on;cb.onchange=()=>{it.on=cb.checked;row.classList.toggle("off",!it.on);upd();};
+      const s=startOf(it);
+      const row=el("label",{class:"rs-row"+(it.on?"":" off"),for:cb.id},cb,el("span",{class:"rs-txt"},el("strong",{},it.title),
+        el("span",{},s.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"})+(it.allDay?", toute la journée":" à "+it.time)+(it.location?", "+it.location:"")+(importDuplicate(it)?" (déjà dans l'app)":""))));
+      list.append(row);
+    });
+    upd();
+  }
+  function upd(){const n=items.filter(x=>x.on).length;go.hidden=!n;go.textContent="Importer "+n+" évènement"+(n>1?"s":"");}
+  ta.addEventListener("input",show);
+  const paste=el("button",{class:"btn",type:"button"},"Coller");
+  paste.onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t){ta.value=t;show();}else toast("Le presse-papiers est vide. Lance d'abord le raccourci.");}catch(_){ta.focus();toast("Touche longuement le champ puis « Coller ».");}};
+  go.onclick=async()=>{
+    const sel=items.filter(x=>x.on);if(!sel.length)return;
+    go.disabled=true;let done=0;
+    for(const it of sel){
+      go.textContent="Import en cours… "+(done+1)+"/"+sel.length;
+      const d=blankDraft();
+      Object.assign(d,{title:it.title.slice(0,80),date:it.date,time:it.time,category:guessCat(it.title),notes:it.allDay?"Toute la journée":""});
+      d.marginMin=DEF_MARGIN[d.category]??10;d.durationMin=DEF_DUR[d.category]||60;
+      const pl=placeFor(it.location)||placeByTitle(it.title);
+      d.location=pl?pl.address:(it.location||"");
+      if(d.location&&!it.allDay){try{const r=await estimateTrip(d);if(r.ok){d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;}}catch(_){}}
+      d.reminders=suggestReminders(d);
+      try{await db.doc("events/"+db.collection("events").doc().id).set(buildBody(d,{...d,calendarAdded:{[myId]:Date.now()+86400000*365}}));done++;}catch(e){}
+    }
+    closeSheet();toast(done+" évènement"+(done>1?"s importés":" importé")+" pour vous deux");
+  };
+  root.append(sheetShell("Importer depuis mon calendrier",[
+    el("div",{class:"sheet-h"},el("h2",{},"Importer mon calendrier"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("p",{class:"note"},"1. Lance le raccourci : il copie tes prochains évènements. 2. Reviens ici et touche Coller. 3. Choisis ceux à importer."),
+    el("div",{class:"pchips"},el("button",{class:"btn primary",type:"button",onclick:()=>{location.href="shortcuts://run-shortcut?name="+encodeURIComponent(EXPORT_SC);}},"1. Lancer le raccourci"),paste),
+    ta,list,
+    el("div",{class:"sheet-foot"},el("span"),go)]));
+}
+function guessCat(t){try{return parseText(t).category||"autre";}catch(_){return "autre";}}
+
 /* ---------- Vraie alarme dans l'Horloge (via l'app Raccourcis) ---------- */
 const SC_NAME="Alarme Agenda";
 function alarmTime(ev){return hasTrip(ev)?departOf(ev):new Date(startOf(ev).getTime()-15*60000);}
@@ -2022,6 +2106,7 @@ function openQuickAdd(voice){
   root.append(sheetShell("Ajouter un évènement",[
     el("div",{class:"sheet-h"},el("h2",{},"Ajouter un évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
     el("div",{class:"field"},el("span",{class:"lab"},"En un toucher"),chips),
+    el("button",{type:"button",class:"btn quiet imp-link",onclick:openImport},"Importer depuis mon calendrier"),
     el("div",{class:"or"},el("span",{},"ou écris-le")),
     el("div",{class:"q-row"},ta,micBtn),micHelp,sugg,
     el("div",{class:"note"},"Touche Parler et dis simplement quoi, quand et où. Par exemple : « dentiste vendredi 14h30 »."),
