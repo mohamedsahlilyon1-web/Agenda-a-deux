@@ -255,6 +255,10 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .sign .sign-btn{grid-column:1 / -1;justify-self:start;margin-top:8px;background:var(--sun-ink);color:var(--sun);border-color:transparent}
 .sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
 @media (max-width:430px){h1{font-size:1.25rem;white-space:nowrap}.brand{gap:8px}header .round{width:38px;height:38px}header .round svg{width:18px;height:18px}}
+.imp-start{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.imp-big{justify-content:center;padding:14px 18px;font-size:1.05rem}
+.imp-manual summary{color:var(--muted);font-weight:700;padding:6px 0;cursor:pointer}
+.imp-manual{display:flex;flex-direction:column;gap:8px}
 .imp-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .imp-day{font-weight:800;font-size:.9rem;margin-top:8px;color:var(--muted)}
 .cal-banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--sun);color:var(--sun-ink);border-radius:16px;padding:12px 14px}
@@ -1547,7 +1551,15 @@ function openTheme(){
     grid]));
 }
 $("#btn-theme").onclick=openTheme;
-$("#btn-import").onclick=openImport;
+$("#btn-import").onclick=()=>{
+  try{sessionStorage.setItem("a2.impPending",String(Date.now()));}catch(_){}
+  location.href="shortcuts://run-shortcut?name="+encodeURIComponent(EXPORT_SC);
+};
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState!=="visible")return;
+  let t=0;try{t=+sessionStorage.getItem("a2.impPending")||0;sessionStorage.removeItem("a2.impPending");}catch(_){}
+  if(t&&Date.now()-t<10*60000) openImport(true);
+});
 
 /* ---------- Lecture des phrases en français (sans connexion) ---------- */
 const parseText=(()=>{
@@ -1837,7 +1849,7 @@ function parseImport(text){
   return out;
 }
 function importDuplicate(it){return [...events.values()].some(e=>norm(e.title)===norm(it.title)&&e.date===it.date&&e.time===it.time);}
-function openImport(){
+function openImport(fromShortcut){
   const root=$("#sheet-root");root.textContent="";
   const ta=el("textarea",{id:"imp-text",rows:"5",class:"q-input",placeholder:"Colle ici ce que le raccourci a copié"});
   const list=el("div",{class:"rem-simple"});
@@ -1875,8 +1887,12 @@ function openImport(){
   }
   function upd(){const n=items.filter(x=>x.on).length;go.hidden=!n;go.textContent="Importer "+n+" évènement"+(n>1?"s":"");}
   ta.addEventListener("input",show);
-  const paste=el("button",{class:"btn",type:"button"},"Coller");
-  paste.onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t){ta.value=t;show();}else toast("Le presse-papiers est vide. Lance d'abord le raccourci.");}catch(_){ta.focus();toast("Touche longuement le champ puis « Coller ».");}};
+  const paste=el("button",{class:"btn primary imp-big",type:"button"},"Afficher mes évènements");
+  const pasteWrap=el("div",{class:"imp-start"},paste,el("p",{class:"note"},"L'iPhone affiche une bulle « Coller » : touche-la."));
+  const manual=el("details",{class:"imp-manual"},el("summary",{},"Ça ne marche pas ?"),
+    el("p",{class:"note"},"Relance le raccourci « Export Agenda », reviens ici, puis colle le texte dans ce champ :"),ta,
+    el("button",{class:"btn",type:"button",onclick:()=>{location.href="shortcuts://run-shortcut?name="+encodeURIComponent(EXPORT_SC);}},"Relancer le raccourci"));
+  paste.onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t){ta.value=t;show();pasteWrap.hidden=!!items.length;}else toast("Rien à afficher : le raccourci n'a rien copié. Relance-le.");}catch(_){manual.open=true;ta.focus();toast("Touche longuement le champ puis « Coller ».");}};
   go.onclick=async()=>{
     const sel=items.filter(x=>x.on);if(!sel.length)return;
     go.disabled=true;let done=0;
@@ -1895,9 +1911,9 @@ function openImport(){
   };
   root.append(sheetShell("Importer depuis mon calendrier",[
     el("div",{class:"sheet-h"},el("h2",{},"Importer mon calendrier"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
-    el("p",{class:"note"},"1. Lance le raccourci : il copie tes prochains évènements. 2. Reviens ici et touche Coller. 3. Choisis ceux à importer."),
-    el("div",{class:"pchips"},el("button",{class:"btn primary",type:"button",onclick:()=>{location.href="shortcuts://run-shortcut?name="+encodeURIComponent(EXPORT_SC);}},"1. Lancer le raccourci"),paste),
-    ta,list,
+    pasteWrap,
+    list,
+    manual,
     el("div",{class:"sheet-foot"},el("span"),go)]));
 }
 function guessCat(t){try{return parseText(t).category||"autre";}catch(_){return "autre";}}
