@@ -1820,7 +1820,7 @@ function impDate(txt){
 function parseImport(text){
   const out=[];
   for(const raw of String(text||"").split(/\r?\n/)){
-    const line=raw.trim();if(!line)continue;
+    const line=raw.replace(/["«»“”]/g," ").replace(/\s+/g," ").trim();if(!line)continue;
     const parts=line.split(/\s*\|\s*/);
     let found=null,pi=-1;
     for(let i=0;i<parts.length;i++){const dd=impDate(parts[i]);if(dd){found=dd;pi=i;break;}}
