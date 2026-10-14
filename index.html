@@ -254,7 +254,9 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .tag.past{opacity:.45;text-decoration:line-through}
 .sign .sign-btn{grid-column:1 / -1;justify-self:start;margin-top:8px;background:var(--sun-ink);color:var(--sun);border-color:transparent}
 .sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
-.imp-link{align-self:flex-start;color:var(--line)}
+@media (max-width:430px){h1{font-size:1.25rem;white-space:nowrap}.brand{gap:8px}header .round{width:38px;height:38px}header .round svg{width:18px;height:18px}}
+.imp-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.imp-day{font-weight:800;font-size:.9rem;margin-top:8px;color:var(--muted)}
 .cal-banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--sun);color:var(--sun-ink);border-radius:16px;padding:12px 14px}
 .cal-txt{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:.9rem}
 .cal-banner .btn{flex:none}
@@ -348,7 +350,8 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
       <svg class="brand-mark" viewBox="0 0 30 30" aria-hidden="true"><path d="M6 4v22" stroke="var(--line)" stroke-width="4" stroke-linecap="round"/><circle cx="6" cy="9" r="4.5" fill="var(--sun)" stroke="var(--line)" stroke-width="3"/><circle cx="6" cy="21" r="4.5" fill="var(--line)"/><path d="M14 9h12M14 21h9" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/></svg>
       <h1>Agenda à Deux</h1>
     </div>
-    <div style="display:flex;gap:8px"><button class="round" id="btn-theme" aria-label="Thème"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor"/></svg></button>
+    <div style="display:flex;gap:8px"><button class="round" id="btn-import" aria-label="Importer depuis mon calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5 12 18l2.5-2.5"/></svg></button>
+    <button class="round" id="btn-theme" aria-label="Thème"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor"/></svg></button>
     <button class="round" id="btn-settings" aria-label="Réglages communs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>
   </header>
 
@@ -1544,6 +1547,7 @@ function openTheme(){
     grid]));
 }
 $("#btn-theme").onclick=openTheme;
+$("#btn-import").onclick=openImport;
 
 /* ---------- Lecture des phrases en français (sans connexion) ---------- */
 const parseText=(()=>{
@@ -1838,17 +1842,34 @@ function openImport(){
   const ta=el("textarea",{id:"imp-text",rows:"5",class:"q-input",placeholder:"Colle ici ce que le raccourci a copié"});
   const list=el("div",{class:"rem-simple"});
   const go=el("button",{class:"btn primary",type:"button",hidden:true},"Importer");
-  let items=[];
+  let items=[],hidden=0;
   function show(){
-    items=parseImport(ta.value).map(it=>({...it,on:!importDuplicate(it)&&startOf(it).getTime()>Date.now()-86400000}));
+    const from=new Date();from.setHours(0,0,0,0);const to=new Date(from);to.setMonth(to.getMonth()+1);
+    const all=parseImport(ta.value);
+    items=all.filter(it=>{const t=startOf(it).getTime();return t>=from.getTime()&&t<to.getTime();}).map(it=>({...it,on:!importDuplicate(it)}));
+    hidden=all.length-items.length;
     list.textContent="";
     if(ta.value.trim()&&!items.length) list.append(el("p",{class:"note"},"Aucun évènement reconnu. Vérifie que le raccourci « Export Agenda » a bien été lancé juste avant."));
+    if(items.length){
+      const to=new Date();to.setMonth(to.getMonth()+1);
+      list.append(el("div",{class:"imp-head"},el("strong",{},items.length+" évènement"+(items.length>1?"s":"")+" d'ici le "+to.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})),
+        el("button",{type:"button",class:"btn quiet",onclick:()=>{const all=items.every(x=>x.on);items.forEach(x=>x.on=!all);redraw();}},"Tout cocher / décocher")));
+    }
+    redraw();
+    if(hidden>0) list.append(el("p",{class:"note"},hidden+" évènement"+(hidden>1?"s":"")+" hors de ce mois "+(hidden>1?"ne sont pas affichés":"n'est pas affiché")+"."));
+    upd();
+  }
+  const rows=el("div",{class:"rem-simple"});
+  function redraw(){
+    rows.textContent="";if(!rows.isConnected&&items.length)list.append(rows);
+    let curDay="";
     items.forEach((it,i)=>{
+      if(it.date!==curDay){curDay=it.date;const [a,b]=dayParts(startOf(it));rows.append(el("div",{class:"imp-day"},a+(b?" "+b:"")));}
       const cb=el("input",{type:"checkbox",id:"imp-"+i});cb.checked=it.on;cb.onchange=()=>{it.on=cb.checked;row.classList.toggle("off",!it.on);upd();};
       const s=startOf(it);
       const row=el("label",{class:"rs-row"+(it.on?"":" off"),for:cb.id},cb,el("span",{class:"rs-txt"},el("strong",{},it.title),
-        el("span",{},s.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"})+(it.allDay?", toute la journée":" à "+it.time)+(it.location?", "+it.location:"")+(importDuplicate(it)?" (déjà dans l'app)":""))));
-      list.append(row);
+        el("span",{},(it.allDay?"Toute la journée":it.time)+(it.location?", "+it.location:"")+(importDuplicate(it)?" (déjà dans l'app)":""))));
+      rows.append(row);
     });
     upd();
   }
@@ -2106,7 +2127,6 @@ function openQuickAdd(voice){
   root.append(sheetShell("Ajouter un évènement",[
     el("div",{class:"sheet-h"},el("h2",{},"Ajouter un évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
     el("div",{class:"field"},el("span",{class:"lab"},"En un toucher"),chips),
-    el("button",{type:"button",class:"btn quiet imp-link",onclick:openImport},"Importer depuis mon calendrier"),
     el("div",{class:"or"},el("span",{},"ou écris-le")),
     el("div",{class:"q-row"},ta,micBtn),micHelp,sugg,
     el("div",{class:"note"},"Touche Parler et dis simplement quoi, quand et où. Par exemple : « dentiste vendredi 14h30 »."),
