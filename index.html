@@ -255,6 +255,8 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .sign .sign-btn{grid-column:1 / -1;justify-self:start;margin-top:8px;background:var(--sun-ink);color:var(--sun);border-color:transparent}
 .sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
 @media (max-width:430px){h1{font-size:1.25rem;white-space:nowrap}.brand{gap:8px}header .round{width:38px;height:38px}header .round svg{width:18px;height:18px}}
+#btn-import{position:relative}
+.imp-dot{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--danger);color:var(--danger-ink);font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
 .imp-start{display:flex;flex-direction:column;gap:6px;align-items:stretch}
 .imp-big{justify-content:center;padding:14px 18px;font-size:1.05rem}
 .imp-manual summary{color:var(--muted);font-weight:700;padding:6px 0;cursor:pointer}
@@ -483,6 +485,7 @@ document.addEventListener("pointerdown",e=>{ if(openFront&&!e.target.closest(".s
 /* ---------- Rendering ---------- */
 let renderSeq=0;
 async function render(){
+  try{importBadge();}catch(_){}
   const seq=++renderSeq;
   const now=Date.now();
   const all=[...events.values()].sort((a,b)=>startOf(a)-startOf(b));
@@ -1248,7 +1251,7 @@ function blankDraft(){
   const d=new Date(Date.now()+86400000);
   return {title:"",category:"rdv",date:ymd(d),time:"10:00",durationMin:60,location:"",origin:homeAddr(),mode:settings.mode||"car",travelMin:0,marginMin:10,travelNote:"",reminders:[],notes:""};
 }
-function closeSheet(){$("#sheet-root").textContent="";}
+function closeSheet(){$("#sheet-root").textContent="";inboxRefresh=null;}
 function sheetShell(label,children){
   return el("div",{class:"sheet-bg",onclick:e=>{if(e.target===e.currentTarget)closeSheet();}},
     el("div",{class:"sheet",role:"dialog","aria-modal":"true","aria-label":label},el("div",{class:"grab"}),...children));
@@ -1551,15 +1554,7 @@ function openTheme(){
     grid]));
 }
 $("#btn-theme").onclick=openTheme;
-$("#btn-import").onclick=()=>{
-  try{sessionStorage.setItem("a2.impPending",String(Date.now()));}catch(_){}
-  location.href="shortcuts://run-shortcut?name="+encodeURIComponent(EXPORT_SC);
-};
-document.addEventListener("visibilitychange",()=>{
-  if(document.visibilityState!=="visible")return;
-  let t=0;try{t=+sessionStorage.getItem("a2.impPending")||0;sessionStorage.removeItem("a2.impPending");}catch(_){}
-  if(t&&Date.now()-t<10*60000) openImport(true);
-});
+$("#btn-import").onclick=()=>openImport();
 
 /* ---------- Lecture des phrases en français (sans connexion) ---------- */
 const parseText=(()=>{
@@ -1848,8 +1843,42 @@ function parseImport(text){
   }
   return out;
 }
+let inboxKey=null,inboxText="",inboxRefresh=null;
+function inboxUrl(){
+  let pid="";try{pid=firebase.app().options.projectId;}catch(_){}
+  if(!pid)pid=(window.FIREBASE_CONFIG||{}).projectId||"";
+  return "https://firestore.googleapis.com/v1/projects/"+pid+"/databases/(default)/documents/inbox/"+inboxKey;
+}
+function inboxItems(){
+  const from=new Date();from.setHours(0,0,0,0);const to=new Date(from);to.setMonth(to.getMonth()+1);
+  return parseImport(inboxText).filter(it=>{const t=startOf(it).getTime();return t>=from.getTime()&&t<to.getTime();});
+}
+function importBadge(){
+  const b=$("#btn-import");if(!b)return;
+  const n=inboxItems().filter(it=>!importDuplicate(it)).length;
+  let dot=b.querySelector(".imp-dot");
+  if(!n){if(dot)dot.remove();return;}
+  if(!dot){dot=el("span",{class:"imp-dot"});b.append(dot);}
+  dot.textContent=n>99?"99+":String(n);
+}
+async function startInbox(){
+  inboxKey=lsGet("a2.inbox");
+  if(!inboxKey){
+    try{const c=await db.doc("config/inbox").get();if(c.exists&&c.data()[myId])inboxKey=c.data()[myId];}catch(_){}
+  }
+  if(!inboxKey){
+    const a=new Uint8Array(18);crypto.getRandomValues(a);
+    inboxKey="k"+[...a].map(x=>x.toString(16).padStart(2,"0")).join("");
+  }
+  lsSet("a2.inbox",inboxKey);
+  try{await db.doc("config/inbox").set({[myId]:inboxKey},{merge:true});}catch(_){}
+  fs.doc("inbox/"+inboxKey).onSnapshot(snap=>{
+    inboxText=snap.exists?String(snap.data().texte||""):"";
+    importBadge();if(inboxRefresh)inboxRefresh();
+  },()=>{});
+}
 function importDuplicate(it){return [...events.values()].some(e=>norm(e.title)===norm(it.title)&&e.date===it.date&&e.time===it.time);}
-function openImport(fromShortcut){
+function openImport(){
   const root=$("#sheet-root");root.textContent="";
   const ta=el("textarea",{id:"imp-text",rows:"5",class:"q-input",placeholder:"Colle ici ce que le raccourci a copié"});
   const list=el("div",{class:"rem-simple"});
@@ -1857,11 +1886,12 @@ function openImport(fromShortcut){
   let items=[],hidden=0;
   function show(){
     const from=new Date();from.setHours(0,0,0,0);const to=new Date(from);to.setMonth(to.getMonth()+1);
-    const all=parseImport(ta.value);
+    const all=parseImport(ta.value||inboxText);
     items=all.filter(it=>{const t=startOf(it).getTime();return t>=from.getTime()&&t<to.getTime();}).map(it=>({...it,on:!importDuplicate(it)}));
     hidden=all.length-items.length;
     list.textContent="";
-    if(ta.value.trim()&&!items.length) list.append(el("p",{class:"note"},"Aucun évènement reconnu. Vérifie que le raccourci « Export Agenda » a bien été lancé juste avant."));
+    setup.hidden=!!(inboxText||ta.value.trim());
+    if((inboxText||ta.value.trim())&&!items.length) list.append(el("p",{class:"note"},"Aucun évènement dans ton calendrier ce mois-ci."));
     if(items.length){
       const to=new Date();to.setMonth(to.getMonth()+1);
       list.append(el("div",{class:"imp-head"},el("strong",{},items.length+" évènement"+(items.length>1?"s":"")+" d'ici le "+to.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})),
@@ -1887,12 +1917,13 @@ function openImport(fromShortcut){
   }
   function upd(){const n=items.filter(x=>x.on).length;go.hidden=!n;go.textContent="Importer "+n+" évènement"+(n>1?"s":"");}
   ta.addEventListener("input",show);
-  const paste=el("button",{class:"btn primary imp-big",type:"button"},"Afficher mes évènements");
-  const pasteWrap=el("div",{class:"imp-start"},paste,el("p",{class:"note"},"L'iPhone affiche une bulle « Coller » : touche-la."));
-  const manual=el("details",{class:"imp-manual"},el("summary",{},"Ça ne marche pas ?"),
-    el("p",{class:"note"},"Relance le raccourci « Export Agenda », reviens ici, puis colle le texte dans ce champ :"),ta,
-    el("button",{class:"btn",type:"button",onclick:()=>{location.href="shortcuts://run-shortcut?name="+encodeURIComponent(EXPORT_SC);}},"Relancer le raccourci"));
-  paste.onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t){ta.value=t;show();pasteWrap.hidden=!!items.length;}else toast("Rien à afficher : le raccourci n'a rien copié. Relance-le.");}catch(_){manual.open=true;ta.focus();toast("Touche longuement le champ puis « Coller ».");}};
+  const copyBtn=el("button",{class:"btn primary imp-big",type:"button",onclick:async()=>{
+    try{await navigator.clipboard.writeText(inboxUrl());toast("Adresse copiée");}catch(_){prompt("Copie cette adresse :",inboxUrl());}}},"Copier mon adresse de synchronisation");
+  const setup=el("div",{class:"imp-start"},
+    el("p",{class:"note"},"Réglage à faire une seule fois : le raccourci « Export Agenda » enverra tes évènements ici tout seul, sans que tu quittes l'app. Copie ton adresse et colle-la dans le raccourci (je te guide)."),copyBtn);
+  const manual=el("details",{class:"imp-manual"},el("summary",{},"Coller à la main"),
+    el("p",{class:"note"},"Colle ici le texte copié par le raccourci :"),ta);
+  inboxRefresh=()=>{if(!ta.value.trim())show();};
   go.onclick=async()=>{
     const sel=items.filter(x=>x.on);if(!sel.length)return;
     go.disabled=true;let done=0;
@@ -1907,11 +1938,12 @@ function openImport(fromShortcut){
       d.reminders=suggestReminders(d);
       try{await db.doc("events/"+db.collection("events").doc().id).set(buildBody(d,{...d,calendarAdded:{[myId]:Date.now()+86400000*365}}));done++;}catch(e){}
     }
-    closeSheet();toast(done+" évènement"+(done>1?"s importés":" importé")+" pour vous deux");
+    closeSheet();importBadge();toast(done+" évènement"+(done>1?"s importés":" importé")+" pour vous deux");
   };
+  setTimeout(show,0);
   root.append(sheetShell("Importer depuis mon calendrier",[
     el("div",{class:"sheet-h"},el("h2",{},"Importer mon calendrier"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
-    pasteWrap,
+    setup,
     list,
     manual,
     el("div",{class:"sheet-foot"},el("span"),go)]));
@@ -2221,6 +2253,7 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
   },()=>{});
   db.doc("config/templates").onSnapshot(snap=>{templates=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:null;if(templatesRefresh)templatesRefresh();},()=>{});
   db.doc("config/brands").onSnapshot(snap=>{brands=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:[];refreshBrandUI();},()=>{});
+  startInbox();
   db.doc("config/home").onSnapshot(snap=>{if(snap.exists){const x=snap.data();settings={home:x.home||"",mode:x.mode||"car"};}},()=>{});
   db.collection("events").orderBy("startTs").onSnapshot(snap=>{
     if(!firstSnap){

@@ -13,6 +13,15 @@ service cloud.firestore {
       allow create: if signedIn();
     }
 
+    // Boîte de réception du raccourci « Export Agenda » (adresse secrète propre à chaque téléphone)
+    match /inbox/{key} {
+      allow get: if key.size() >= 30;
+      allow create, update: if key.size() >= 30
+        && request.resource.data.keys().hasOnly(['texte'])
+        && request.resource.data.texte is string
+        && request.resource.data.texte.size() < 200000;
+    }
+
     match /couples/{coupleId} {
       allow create: if signedIn() && request.resource.data.members == [request.auth.uid];
       allow read: if isMember(coupleId);
