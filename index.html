@@ -597,6 +597,29 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .jm-note{font-size:.84rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .links-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
+.rec-code{font-size:1.15rem;font-weight:800;letter-spacing:.06em;text-align:center;padding:14px 10px;border-radius:16px;border:2px dashed var(--line);color:var(--line);overflow-wrap:anywhere}
+.wishes{display:flex;flex-direction:column;gap:10px}
+.wish{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"ic t h" "act act act";gap:6px 12px;align-items:center;padding:12px;border-radius:18px;background:color-mix(in oklab,var(--m,var(--line)) 9%,var(--surface));box-shadow:var(--lift);border:var(--cb,0 solid transparent)}
+.wish.planned{opacity:.6}
+.wish-ic{grid-area:ic;width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:var(--m,var(--line));color:#fff;flex:none}
+.wish-ic svg{width:22px;height:22px}
+.wish-t{grid-area:t;display:flex;flex-direction:column;min-width:0}
+.wish-t strong{overflow-wrap:anywhere}
+.wish-t small{color:var(--muted)}
+.wish-heart{grid-area:h;border:none;background:var(--surface);border-radius:999px;padding:6px 10px;display:flex;align-items:center;gap:4px;font-weight:800;color:var(--muted);box-shadow:var(--lift)}
+.wish-heart svg{width:20px;height:20px;fill:currentColor}
+.wish-heart.on{color:#E11D48}
+.wish-act{grid-area:act;display:flex;gap:6px;justify-content:flex-end}
+.weekend{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:var(--r,24px);background:linear-gradient(135deg,color-mix(in oklab,var(--m,var(--sun)) 22%,var(--surface)),var(--surface) 70%);box-shadow:var(--lift);border:var(--cb,0 solid transparent)}
+.wk-h{display:flex;flex-direction:column}
+.wk-h strong{font-family:var(--fd,var(--f));font-size:1.3rem;letter-spacing:-.02em}
+.wk-h small{color:var(--muted)}
+.wk-idea{display:flex;align-items:center;gap:12px;font-size:1.02rem}
+.wk-wx{font-size:.9rem;color:var(--muted)}
+.wk-wx:empty{display:none}
+.tag.cost{background:color-mix(in oklab,var(--sun) 25%,var(--surface))}
+.month-budget{font-size:.92rem;color:var(--muted)}
+
 .skins{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .skin{border:2px solid var(--hair);background:var(--surface);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;text-align:left;color:var(--ink)}
 .skin.on{border-color:var(--line);box-shadow:0 0 0 2px var(--line) inset}
@@ -641,7 +664,7 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
   <main id="list" class="days">
     <div class="empty"><strong>Chargement de votre agenda</strong><p>Vos évènements partagés vont apparaître ici.</p></div>
   </main>
-  <div class="links-row"><button class="btn quiet toggle-past" id="btn-past" hidden>Voir les évènements passés</button><button class="btn quiet toggle-past" id="btn-mem" hidden>Nos souvenirs</button></div>
+  <div class="links-row"><button class="btn quiet toggle-past" id="btn-past" hidden>Voir les évènements passés</button><button class="btn quiet toggle-past" id="btn-mem" hidden>Nos souvenirs</button><button class="btn quiet toggle-past" id="btn-wish" hidden>Nos envies</button></div>
 </div>
 
 <div class="dock"><button class="fab-mic" id="fab-mic" aria-label="Dicter un évènement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
@@ -772,6 +795,7 @@ async function render(){
       el("span",{},"Sans ça, leurs rappels ne sonneront pas quand l'app est fermée.")),
     el("button",{class:"btn primary",type:"button",onclick:()=>addManyToCalendar(pend)},pend.length>1?"Tout ajouter":"Ajouter")));
   if(!upcoming.length){$("#next").hidden=true;}
+  {const wk=weekendCard();if(wk)list.append(wk);}
   if(!shown.length){
     list.append(el("div",{class:"empty"},el("strong",{},"Rien de prévu pour l'instant"),
       el("p",{},"Écris un rendez-vous, une sortie ou des courses : l'app calcule le trajet, l'heure de départ et propose les rappels."),
@@ -1056,6 +1080,7 @@ function openMonth(y,m,sel){
     el("div",{class:"month-nav"},el("button",{type:"button",class:"btn","aria-label":"Mois précédent",onclick:()=>openMonth(prev.getFullYear(),prev.getMonth())},"‹ "+prev.toLocaleDateString("fr-FR",{month:"long"})),
       el("button",{type:"button",class:"btn quiet",onclick:()=>openMonth()},"Aujourd'hui"),
       el("button",{type:"button",class:"btn","aria-label":"Mois suivant",onclick:()=>openMonth(next.getFullYear(),next.getMonth())},next.toLocaleDateString("fr-FR",{month:"long"})+" ›")),
+    monthBudget(y,m)?el("div",{class:"month-budget num"},"Budget des sorties ce mois-ci : "+monthBudget(y,m).toLocaleString("fr-FR")+" €"):null,
     grid,panel]));
   showDay(sel||(y===now.getFullYear()&&m===now.getMonth()?ymd(now):ymd(first)));
 }
@@ -1122,6 +1147,124 @@ function memBlock(ev){
     canWrite?el("button",{type:"button",class:"btn"+(m?"":" primary"),onclick:()=>openMemory(ev)},m?"Voir le souvenir":"Ajouter un souvenir"):null);
 }
 
+/* ---------- Code de secours : reprendre sa place si l'app perd ses données ---------- */
+function recFormat(k){return (k||"").replace(/(.{4})(?=.)/g,"$1-");}
+function recNorm(t){return String(t||"").toUpperCase().replace(/[^A-Z0-9]/g,"");}
+async function syncRecovery(){
+  if(!coupleId||!couple||!myId)return;
+  let k=lsGet("a2.rec");
+  if(!k){k="";const a=new Uint32Array(24);crypto.getRandomValues(a);for(const x of a)k+=CODE_CHARS[x%CODE_CHARS.length];lsSet("a2.rec",k);}
+  const body={coupleId,uid:myId,members:couple.members||[myId],name:(couple.names&&couple.names[myId])||""};
+  const sig=JSON.stringify(body);if(syncRecovery._last===sig)return;
+  syncRecovery._last=sig;
+  try{await fs.doc("recovery/"+k).set(body);}catch(_){syncRecovery._last=null;}
+}
+function recoverySection(){
+  const k=lsGet("a2.rec");
+  const box=el("div",{class:"disc-box"});
+  if(!k){box.append(el("p",{class:"note"},"Le code de secours se prépare. Rouvre les réglages dans un instant."));return box;}
+  box.append(el("p",{class:"note"},"Garde ce code dans tes Notes ou envoie-le-toi par message. Si un jour l'app perd ses données (icône supprimée, iPhone changé), il te permet de reprendre ta place dans l'agenda. Ne le donne à personne."),
+    el("div",{class:"rec-code num"},recFormat(k)),
+    el("div",{class:"pchips"},el("button",{type:"button",class:"btn primary",onclick:async()=>{try{await navigator.clipboard.writeText(recFormat(k));toast("Code de secours copié");}catch(_){toast(recFormat(k));}}},"Copier le code"),
+      el("button",{type:"button",class:"btn",onclick:async()=>{try{if(navigator.share)await navigator.share({text:"Mon code de secours Agenda à Deux : "+recFormat(k)});}catch(_){}}},"L'envoyer dans mes notes")));
+  return box;
+}
+async function recoverWith(raw,btn){
+  const k=recNorm(raw);
+  if(k.length<24){toast("Le code de secours fait 24 caractères.");return;}
+  btn.disabled=true;
+  try{
+    const s=await fs.doc("recovery/"+k).get();
+    if(!s.exists){btn.disabled=false;toast("Code de secours inconnu. Vérifie les caractères.");return;}
+    const r=s.data(),old=r.uid,id=r.coupleId;
+    if(old===myId){lsSet(COUPLE_KEY,id);lsSet("a2.rec",k);location.reload();return;}
+    const members=(r.members||[]).map(m=>m===old?myId:m);
+    await fs.doc("couples/"+id).update({members,recoveryKey:k,["names."+myId]:r.name||""});
+    await fs.doc("couples/"+id).update({recoveryKey:firebase.firestore.FieldValue.delete()}).catch(()=>{});
+    await fs.doc("recovery/"+k).set({coupleId:id,uid:myId,members,name:r.name||""});
+    // les évènements attribués à l'ancien téléphone passent au nouveau
+    try{const evs=await fs.collection("couples/"+id+"/events").get();
+      for(const d of evs.docs){const x=d.data(),p={};if(x.who===old)p.who=myId;if(x.createdBy===old)p.createdBy=myId;if(Object.keys(p).length)await d.ref.update(p);}}catch(_){}
+    lsSet(COUPLE_KEY,id);lsSet("a2.rec",k);location.reload();
+  }catch(e){console.error(e);btn.disabled=false;toast("Récupération impossible. Vérifie le code, ta connexion, et que les règles Firebase sont à jour.");}
+}
+
+/* ---------- Raccourcis à installer sur l'autre iPhone ---------- */
+let scLinks={};
+function shortcutsSection(){
+  const box=el("div",{class:"disc-box"});
+  const ok=u=>/^https:\/\/(www\.)?icloud\.com\/shortcuts\//.test(u||"");
+  const field=(key,label)=>{const i=el("input",{type:"url",value:scLinks[key]||"",placeholder:"https://www.icloud.com/shortcuts/…","aria-label":"Lien iCloud de "+label});
+    const save=el("button",{type:"button",class:"btn"},"Enregistrer");
+    save.onclick=async()=>{const v=i.value.trim();if(v&&!ok(v)){toast("Colle le lien iCloud du raccourci (il commence par https://www.icloud.com/shortcuts/).");return;}
+      try{await db.doc("config/shortcuts").set({[key]:v},{merge:true});toast("Lien enregistré pour vous deux");}catch(_){toast("Enregistrement impossible.");}};
+    return el("div",{class:"field"},el("span",{class:"lab"},label),el("div",{class:"brand-add"},i,save));};
+  const inst=(key,label)=>ok(scLinks[key])?el("a",{class:"btn primary",href:scLinks[key],target:"_blank",rel:"noopener"},"Installer « "+label+" »"):null;
+  const any=ok(scLinks.alarm)||ok(scLinks.export);
+  if(any) box.append(el("p",{class:"note"},"Sur ton iPhone, installe les raccourcis en un toucher :"),el("div",{class:"pchips"},inst("alarm","Alarme Agenda"),inst("export","Export Agenda")),
+    el("ol",{class:"sc-steps"},
+      el("li",{},"Touche chaque bouton, puis « Ajouter le raccourci »."),
+      el("li",{},"Dans l'app, touche l'icône calendrier, puis « Copier mon adresse de synchronisation »."),
+      el("li",{},"Dans Raccourcis, touche longuement « Export Agenda », puis Modifier. Dans « Obtenir le contenu de », remplace l'adresse par la tienne (touche longuement, Coller)."),
+      el("li",{},"Onglet Automatisation, +, App, Calendrier, « Est fermée », « Exécuter immédiatement », puis choisis Export Agenda.")));
+  box.append(el("p",{class:"note"},any?"Liens des raccourcis :":"Pour que ta moitié installe tes raccourcis en un toucher : dans Raccourcis, touche longuement « Alarme Agenda », Partager, puis « Copier le lien iCloud ». Colle-le ici. Fais pareil pour « Export Agenda »."),
+    field("alarm","Alarme Agenda"),field("export","Export Agenda"));
+  return box;
+}
+
+/* ---------- Nos envies ---------- */
+let wishes=new Map();
+function wishList(){return [...wishes.values()].sort((a,b)=>(!!a.planned-!!b.planned)||(Object.keys(b.hearts||{}).length-Object.keys(a.hearts||{}).length)||((b.createdAt||0)-(a.createdAt||0)));}
+function nextWeekend(){const d=new Date();d.setHours(0,0,0,0);const wd=d.getDay();const sat=new Date(d);if(wd===0)sat.setDate(d.getDate()-1);else sat.setDate(d.getDate()+((6-wd+7)%7));const sun=new Date(sat);sun.setDate(sat.getDate()+1);return [ymd(sat),ymd(sun)];}
+function planWish(w,date){
+  const x=blankDraft();x.title=w.title;if(date)x.date=date;x.time="14:00";x.category="sortie";if(w.cost)x.cost=w.cost;
+  closeSheet();openEditor(x,"Idée de "+firstName(w.by)+" : choisis le jour et l'heure.");
+  db.doc("wishes/"+w.id).update({planned:Date.now()}).catch(()=>{});
+}
+function openWishes(){
+  const root=$("#sheet-root");root.textContent="";
+  const list=el("div",{class:"wishes"});
+  const draw=()=>{list.textContent="";const ws=wishList();
+    if(!ws.length)list.append(el("p",{class:"note"},"Notez ici vos idées de sorties : le zoo de Beauval, un resto à tester, un concert… Mettez un cœur aux idées de l'autre, puis planifiez-les quand vous avez une date."));
+    for(const w of ws){const k=motifOf({title:w.title});const hs=w.hearts||{},mine=!!hs[myId],n=Object.keys(hs).length;
+      list.append(el("div",{class:"wish"+(w.planned?" planned":""),style:motifStyle(k)},
+        el("span",{class:"wish-ic",html:k?motifSvg(k):""}),
+        el("span",{class:"wish-t"},el("strong",{},w.title),el("small",{},"Idée de "+firstName(w.by)+(w.planned?", déjà planifiée":""))),
+        el("button",{type:"button",class:"wish-heart"+(mine?" on":""),"aria-pressed":mine?"true":"false","aria-label":mine?"Retirer mon cœur":"Mettre un cœur",onclick:()=>db.doc("wishes/"+w.id).update({["hearts."+myId]:mine?firebase.firestore.FieldValue.delete():true}).catch(()=>toast("Impossible pour l'instant."))},
+          el("span",{html:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.4-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.3 0 2.4.6 3 1.6.6-1 1.7-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.8-7.5 10.2-7.5 10.2z"/></svg>'}),n?String(n):""),
+        el("span",{class:"wish-act"},el("button",{type:"button",class:"btn primary",onclick:()=>planWish(w)},"Planifier"),
+          el("button",{type:"button",class:"btn quiet","aria-label":"Supprimer cette idée",onclick:()=>db.doc("wishes/"+w.id).delete().catch(()=>{})},"Retirer"))));}
+  };
+  openWishes.redraw=draw;draw();
+  const inp=el("input",{type:"text",class:"pair-in",placeholder:"Une idée : zoo de Beauval, resto japonais…","aria-label":"Nouvelle idée"});
+  const add=async()=>{const t=inp.value.trim().slice(0,80);if(!t)return;inp.value="";
+    try{await db.doc("wishes/"+db.collection("wishes").doc().id).set({title:t,by:myId,hearts:{[myId]:true},createdAt:Date.now()});}catch(_){toast("Idée non enregistrée. Vérifie ta connexion.");}};
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add();}});
+  root.append(sheetShell("Nos envies",[
+    el("div",{class:"sheet-h"},el("h2",{},"Nos envies"),el("button",{class:"btn quiet",type:"button",onclick:()=>{openWishes.redraw=null;closeSheet();}},"Fermer")),
+    el("div",{class:"brand-add"},inp,el("button",{type:"button",class:"btn primary",onclick:add},"Ajouter")),list]));
+}
+function weekendCard(){
+  const [sat,sun]=nextWeekend();
+  const busy=[...events.values()].some(e=>(e.date===sat||e.date===sun)&&passWho(e));
+  if(busy)return null;
+  const today=ymd(new Date());if(sun<today)return null;
+  const w=wishList().find(x=>!x.planned);
+  const card=el("section",{class:"weekend"});
+  const d=new Date(sat+"T12:00:00");
+  card.append(el("div",{class:"wk-h"},el("strong",{},sat===today?"Ce week-end est libre":"Le week-end est libre"),el("small",{},"Samedi "+d.getDate()+" et dimanche "+new Date(sun+"T12:00:00").getDate())));
+  if(w){
+    const k=motifOf({title:w.title});
+    card.setAttribute("style",motifStyle(k));
+    card.append(el("div",{class:"wk-idea"},el("span",{class:"wish-ic",html:k?motifSvg(k):""}),el("span",{},"Et si vous faisiez : ",el("strong",{},w.title),"?")));
+    const wx=el("div",{class:"wk-wx"});
+    if(k&&OUTDOOR.has(k))weatherFor({id:"wk-"+w.id,date:sat,time:"14:00",title:w.title}).then(r=>{if(r)wx.textContent="Samedi après-midi : "+r.t+"°, "+WX_TXT[r.kind].toLowerCase()+(r.rain?", "+r.rain+" % de pluie":"")+". "+r.tip+".";});
+    card.append(wx,el("div",{class:"pchips"},el("button",{type:"button",class:"btn primary",onclick:()=>planWish(w,sat)},"Planifier samedi"),el("button",{type:"button",class:"btn",onclick:()=>planWish(w,sun)},"Dimanche"),el("button",{type:"button",class:"btn quiet",onclick:openWishes},"Autres idées")));
+  }else card.append(el("p",{class:"note"},"Notez vos idées de sorties dans « Nos envies » : l'app vous en proposera une quand le week-end est libre."),el("button",{type:"button",class:"btn",onclick:openWishes},"Nos envies"));
+  return card;
+}
+function monthBudget(y,m){let t=0;for(const e of events.values()){const d=new Date(e.date+"T12:00:00");if(d.getFullYear()===y&&d.getMonth()===m&&passWho(e))t+=+e.cost||0;}return Math.round(t*100)/100;}
+
 function stop(ev,who){
   const hasTrip=(+ev.travelMin||0)>0;
   const mk=motifOf(ev);
@@ -1136,6 +1279,7 @@ function stop(ev,who){
       el("div",{class:"small"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode],el("span",{class:"more-info"},", "+(ev.marginMin||0)+" min de marge")))));
 
   const tags=el("div",{class:"tags more-info"});
+  if((+ev.cost||0)>0) tags.append(el("span",{class:"tag cost num"},"Budget "+(+ev.cost).toLocaleString("fr-FR")+" €"));
   for(const r of liveReminders(ev)){const past=remWhen(ev,r).getTime()<Date.now();tags.append(el("span",{class:"tag num"+(presetOf(r)==="leave"?" alarm":"")+(past?" past":"")},remChip(ev,r)));}
   const added=ev.calendarAdded||{};
   if(myId&&added[myId]) tags.append(added[myId]>=ev.updatedAt?el("span",{class:"tag ok"},"Dans ton agenda"):el("span",{class:"tag stale"},"Modifié depuis ton ajout à l'agenda"));
@@ -1713,7 +1857,7 @@ function liveReminders(x){
 function nextDate(daysAhead){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+daysAhead);return d;}
 function draftFromEvent(ev){
   const d=blankDraft();
-  for(const k of ["title","category","location","origin","mode","travelMin","marginMin","durationMin","notes","route","routeVia","routeGeo","time","who","motif"]) if(ev[k]!==undefined) d[k]=ev[k];
+  for(const k of ["title","category","location","origin","mode","travelMin","marginMin","durationMin","notes","route","routeVia","routeGeo","time","who","motif","cost"]) if(ev[k]!==undefined) d[k]=ev[k];
   d.reminders=relReminders(ev);
   return d;
 }
@@ -1726,7 +1870,7 @@ function draftFromTemplate(t){
   d.reminders=Array.isArray(t.reminders)&&t.reminders.length?t.reminders.map(r=>({...r})):null;
   return d;
 }
-const REPEATS={none:["Une fois",0,0],week:["Chaque semaine",7,8],week2:["Toutes les 2 semaines",14,6],month:["Chaque mois",0,6]};
+const REPEATS={none:["Une fois",0,0],week:["Chaque semaine",7,8],week2:["Toutes les 2 semaines",14,6],month:["Chaque mois",0,6],year:["Chaque année",0,10]};
 function buildBody(x,d,overrides){
   const now=Date.now();
   const y={...x,...(overrides||{})};
@@ -1738,6 +1882,7 @@ function buildBody(x,d,overrides){
     ...(d.seriesId||y.seriesId?{seriesId:d.seriesId||y.seriesId}:{}),
     ...((y.motif||d.motif)?{motif:y.motif||d.motif}:{}),
     who:(y.who||d.who||"both"),
+    ...((+y.cost||0)>0?{cost:+y.cost}:{}),
     ...(Array.isArray(y.items)||Array.isArray(d.items)?{items:(y.items||d.items).slice(0,150)}:{})};
 }
 async function saveEventDraft(x,d,repeat){
@@ -1752,9 +1897,11 @@ async function saveEventDraft(x,d,repeat){
       const base=startOf(x);
       for(let i=0;i<rp[2];i++){
         const dt=new Date(base);
-        if(repeat==="month"){const day=base.getDate();dt.setDate(1);dt.setMonth(base.getMonth()+i);dt.setDate(Math.min(day,new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));}
+        if(repeat==="year"){dt.setDate(1);dt.setFullYear(base.getFullYear()+i);dt.setDate(Math.min(base.getDate(),new Date(dt.getFullYear(),base.getMonth()+1,0).getDate()));}
+        else if(repeat==="month"){const day=base.getDate();dt.setDate(1);dt.setMonth(base.getMonth()+i);dt.setDate(Math.min(day,new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));}
         else dt.setDate(dt.getDate()+rp[1]*i);
-        await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId}));
+        const extra=repeat==="year"&&!(x.reminders||[]).some(r=>+r.day===7)?{reminders:[...(x.reminders||[]),{day:7,at:"18:00",label:"Dans une semaine : "+(x.title||"date importante")}]}:{};
+        await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId,...extra}));
       }
       toast(rp[2]+" évènements créés ("+rp[0].toLowerCase()+")");
     }else{
@@ -1862,6 +2009,7 @@ function openEditor(d,info){
   const mode=sel("e-mode",MODES,d.mode||"car");
   const travel=inp("e-travel",d.travelMin||0,"number",{min:"0",step:"1",inputmode:"numeric"});
   const margin=inp("e-margin",d.marginMin||0,"number",{min:"0",step:"5",inputmode:"numeric"});
+  const cost=inp("e-cost",d.cost||"","number",{min:"0",step:"1",inputmode:"decimal",placeholder:"0"});
   const notes=el("textarea",{id:"e-notes",rows:"2",placeholder:"Code d'entrée, documents à prendre…"});notes.value=d.notes||"";
   const depOut=el("span",{class:"dep num"}),depMeta=el("span",{class:"note"});
   const tripNote=el("div",{class:"note"},d.travelNote||"");
@@ -1875,7 +2023,7 @@ function openEditor(d,info){
 
   const read=()=>({...d,title:title.value.trim(),category:cat.value,date:date.value,time:time.value,durationMin:+dur.value||60,
     location:loc.value.trim(),origin:origin.value.trim(),mode:mode.value,travelMin:Math.max(0,+travel.value||0),marginMin:Math.max(0,+margin.value||0),
-    travelNote:tripNote.textContent,notes:notes.value.trim(),reminders,route,routeVia,routeGeo,who});
+    travelNote:tripNote.textContent,notes:notes.value.trim(),reminders,route,routeVia,routeGeo,who,cost:Math.max(0,Math.round((+cost.value||0)*100)/100)});
 
   function updateCalc(){
     if(remAuto) reminders=suggestReminders(read());
@@ -2009,6 +2157,7 @@ function openEditor(d,info){
       f("e-cat","Type",cat),
       el("div",{class:"grid3"},f("e-travel","Trajet (min)",travel),f("e-margin","Marge (min)",margin),f("e-dur","Durée (min)",dur)),
       tripNote,el("div",{},recalc),
+      f("e-cost","Budget prévu (€)",cost),
       f("e-notes","Notes",notes),
       canWrite?el("div",{},tplBtn):null],false),
     confirmBox,
@@ -2089,6 +2238,8 @@ function openSettings(){
     el("div",{class:"pgroup-h"},"Importer mon calendrier"),el("div",{class:"disc-box"},el("p",{class:"note"},"Récupère les évènements déjà enregistrés dans le Calendrier de ton iPhone."),el("button",{type:"button",class:"btn",onclick:openImport},"Importer depuis mon calendrier")),
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
+    coupleId?el("div",{class:"pgroup-h"},"Mon code de secours"):null,coupleId?recoverySection():null,
+    coupleId?el("div",{class:"pgroup-h"},"Installer sur l'iPhone de ta moitié"):null,coupleId?shortcutsSection():null,
     el("div",{class:"field"},el("label",{for:"s-mode"},"Transport habituel"),mode),
     el("p",{class:"note"},"Pour que les rappels sonnent même app fermée : ouvre un évènement et touche « Calendrier iPhone », chacun sur son téléphone.")]));
   drawList();
@@ -2673,7 +2824,10 @@ function showPair(prefill){
     el("p",{},"Un agenda partagé à deux : trajets, heure de départ et rappels."),
     el("div",{class:"field"},el("label",{for:"pair-name"},"Ton prénom"),name),
     el("div",{class:"pair-card"},el("strong",{},"Premier téléphone"),el("span",{class:"note"},"Crée votre agenda. Tu recevras un code à donner à ta compagne."),create),
-    el("div",{class:"pair-card"},el("strong",{},"J'ai reçu un code"),code,join)]);
+    el("div",{class:"pair-card"},el("strong",{},"J'ai reçu un code"),code,join),
+    (()=>{const ri=el("input",{id:"rec-code",type:"text",placeholder:"XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",class:"pair-in",autocapitalize:"characters",autocomplete:"off"});
+      const rb=el("button",{class:"btn",type:"button"},"Reprendre ma place");rb.onclick=()=>recoverWith(ri.value,rb);
+      return el("details",{class:"pair-card"},el("summary",{},el("strong",{},"J'ai un code de secours")),el("span",{class:"note"},"Tu faisais déjà partie d'un agenda et l'app a perdu ses données : colle ton code de secours."),ri,rb);})()]);
 }
 function inviteText(c){return "Rejoins notre Agenda à Deux : ouvre "+location.origin+location.pathname+" dans Safari, ajoute-le à l'écran d'accueil, puis entre le code "+c;}
 async function shareInvite(c){
@@ -2704,7 +2858,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="22";
+const APP_V="23";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -2727,6 +2881,7 @@ function registerSW(){
 $("#btn-settings").onclick=openSettings;
 $("#fab").onclick=()=>openQuickAdd(false);
 $("#btn-mem").onclick=()=>openJournal();
+$("#btn-wish").onclick=()=>openWishes();
 $("#fab-mic").onclick=()=>openQuickAdd(true);
 $("#btn-manual").onclick=()=>{const t=$("#input").value.trim();const d=blankDraft();if(t)d.title=t.slice(0,80);openEditor(d);};
 $("#btn-past").onclick=()=>{showPast=!showPast;render();};
@@ -2890,9 +3045,16 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
   db=makeDb("couples/"+coupleId);
   fs.doc("couples/"+coupleId).onSnapshot(s=>{
     if(!s.exists){lsSet(COUPLE_KEY,null);location.reload();return;}
-    couple=s.data();if(events.size)render();
+    couple=s.data();syncRecovery();if(events.size)render();
   },e=>{notice("Accès à votre agenda impossible. Quitte puis rejoins-le avec le code.");});
   const hint=installHint();if(hint){const n=$("#notice");n.textContent="";n.append(...hint.childNodes);n.hidden=false;}
+  db.collection("wishes").onSnapshot(snap=>{
+    wishes=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
+    const bw=$("#btn-wish");bw.hidden=false;const n=wishList().filter(w=>!w.planned).length;bw.textContent=n?"Nos envies ("+n+")":"Nos envies";
+    if(openWishes.redraw)openWishes.redraw();
+    if(events.size||true)render();
+  },()=>{});
+  db.doc("config/shortcuts").onSnapshot(snap=>{scLinks=snap.exists?snap.data():{};},()=>{});
   db.collection("memories").onSnapshot(snap=>{
     memories=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     const bm=$("#btn-mem");bm.hidden=false;bm.textContent=memories.size?"Nos souvenirs ("+memories.size+")":"Nos souvenirs";
