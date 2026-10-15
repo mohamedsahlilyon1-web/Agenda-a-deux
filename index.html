@@ -1808,6 +1808,7 @@ function openSettings(){
     el("div",{class:"pgroup-h"},"Nos enseignes"),
     el("p",{class:"note"},"Coche les magasins où vous allez. En remplissant « Où », touche une enseigne : l'app propose ses magasins les plus proches de chez vous."),
     brandsSection(),
+    el("div",{class:"pgroup-h"},"Version de l'app"),el("div",{class:"disc-box"},el("p",{class:"note"},"Version "+APP_V+". Si une nouveauté n'apparaît pas, touche ce bouton : l'app télécharge la dernière version et redémarre. Tes évènements ne sont pas touchés."),el("button",{type:"button",class:"btn primary",onclick:forceUpdate},"Mettre à jour l'app")),
     el("div",{class:"pgroup-h"},"Importer mon calendrier"),el("div",{class:"disc-box"},el("p",{class:"note"},"Récupère les évènements déjà enregistrés dans le Calendrier de ton iPhone."),el("button",{type:"button",class:"btn",onclick:openImport},"Importer depuis mon calendrier")),
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
@@ -2425,6 +2426,14 @@ function coupleSection(){
       el("button",{class:"btn danger",type:"button",onclick:()=>{lsSet(COUPLE_KEY,null);location.reload();}},"Quitter"),
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
+}
+const APP_V="19";
+async function forceUpdate(){
+  toast("Mise à jour en cours…");
+  try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
+  try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}catch(_){}
+  try{const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));}catch(_){}
+  location.replace(location.pathname+"?v="+Date.now());
 }
 function registerSW(){
   if(!("serviceWorker" in navigator)||location.protocol!=="https:")return;
