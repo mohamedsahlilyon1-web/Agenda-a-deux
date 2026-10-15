@@ -2339,7 +2339,16 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-function registerSW(){if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});}
+function registerSW(){
+  if(!("serviceWorker" in navigator)||location.protocol!=="https:")return;
+  const had=!!navigator.serviceWorker.controller;let reloaded=false;
+  // Nouvelle version en ligne : l'app se recharge toute seule, une fois
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!reloaded){reloaded=true;location.reload();}});
+  navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>{
+    const check=()=>r.update().catch(()=>{});
+    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")check();});
+  }).catch(()=>{});
+}
 
 /* ---------- Wire up ---------- */
 $("#btn-settings").onclick=openSettings;
