@@ -266,6 +266,9 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .cal-banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--sun);color:var(--sun-ink);border-radius:16px;padding:12px 14px}
 .cal-txt{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:.9rem}
 .cal-banner .btn{flex:none}
+.cal-banner{position:relative;padding-right:40px}
+.cal-banner .btn.primary{background:var(--sun-ink);color:var(--sun);border-color:transparent;box-shadow:none}
+.cal-x{position:absolute;top:4px;right:4px;width:36px;height:36px;border:none;background:none;color:var(--sun-ink);font-size:1.5rem;line-height:1;border-radius:50%;opacity:.75}
 .rs-kind{font-size:.76rem;font-weight:700;background:var(--sun);color:var(--sun-ink);border-radius:999px;padding:2px 8px}
 .sheet-foot.sticky{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));background:var(--bg);padding:12px 0 calc(6px + env(safe-area-inset-bottom,0px));margin-top:4px;border-top:1px solid var(--hair);z-index:4}
 @media (prefers-reduced-motion:reduce){.disc-chev{transition:none}}
@@ -790,10 +793,15 @@ async function render(){
   renderNext(upcoming.filter(passWho));
   const wf=whoFilterBar();if(wf)list.append(wf);
   const pend=calPending();
-  if(pend.length&&myId) list.append(el("div",{class:"cal-banner"},
+  // Bandeau masquable : il ne revient que si un nouvel évènement est à ajouter
+  const pendSig=pend.map(e=>e.id).sort().join(",");
+  let hiddenSig="";try{hiddenSig=localStorage.getItem("a2.calHide")||"";}catch(_){}
+  const hideSet=new Set(hiddenSig.split(",").filter(Boolean));
+  if(pend.length&&myId&&pend.some(e=>!hideSet.has(e.id))) list.append(el("div",{class:"cal-banner"},
     el("div",{class:"cal-txt"},el("strong",{},pend.length>1?pend.length+" évènements ne sont pas dans ton calendrier":"1 évènement n'est pas dans ton calendrier"),
       el("span",{},"Sans ça, leurs rappels ne sonneront pas quand l'app est fermée.")),
-    el("button",{class:"btn primary",type:"button",onclick:()=>addManyToCalendar(pend)},pend.length>1?"Tout ajouter":"Ajouter")));
+    el("button",{class:"btn primary",type:"button",onclick:()=>addManyToCalendar(pend)},pend.length>1?"Tout ajouter":"Ajouter"),
+    el("button",{class:"cal-x",type:"button","aria-label":"Masquer ce bandeau",onclick:()=>{try{localStorage.setItem("a2.calHide",pendSig);}catch(_){}render();toast("Bandeau masqué. Il reviendra pour un nouvel évènement.");}},"×")));
   if(!upcoming.length){$("#next").hidden=true;}
   {const wk=weekendCard();if(wk)list.append(wk);}
   if(!shown.length){
@@ -2858,7 +2866,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="23";
+const APP_V="24";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
