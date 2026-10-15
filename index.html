@@ -256,7 +256,7 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
 @media (max-width:430px){h1{font-size:1.25rem;white-space:nowrap}.brand{gap:8px}header .round{width:38px;height:38px}header .round svg{width:18px;height:18px}}
 #btn-import{position:relative}
-.imp-dot{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--danger);color:var(--danger-ink);font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
+.imp-dot{position:absolute;top:-5px;right:-5px;z-index:2;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#E5193C;color:#fff;font-family:system-ui,-apple-system,sans-serif;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--bg);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 .imp-start{display:flex;flex-direction:column;gap:6px;align-items:stretch}
 .imp-big{justify-content:center;padding:14px 18px;font-size:1.05rem}
 .imp-manual summary{color:var(--muted);font-weight:700;padding:6px 0;cursor:pointer}
@@ -623,6 +623,16 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .tag.cost{background:color-mix(in oklab,var(--sun) 25%,var(--surface))}
 .month-budget{font-size:.92rem;color:var(--muted)}
 
+/* Photos de profil */
+.has-photo{overflow:hidden;padding:0}
+.has-photo img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+.duo-av b{width:40px;height:40px}
+.duo-av b+b{margin-left:-12px}
+.trip-from b{width:26px;height:26px;border-radius:50%;border:2px solid var(--hero);display:block}
+.trip-from b+b{margin-left:-9px}
+.photo-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.me-av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.5rem;box-shadow:var(--lift)}
+
 .skins{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .skin{border:2px solid var(--hair);background:var(--surface);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;text-align:left;color:var(--ink)}
 .skin.on{border-color:var(--line);box-shadow:0 0 0 2px var(--line) inset}
@@ -775,6 +785,9 @@ document.addEventListener("pointerdown",e=>{ if(openFront&&!e.target.closest(".s
 
 /* ---------- Rendering ---------- */
 let renderSeq=0;
+// Plusieurs mises à jour d'un coup : un seul rafraîchissement de l'écran
+let renderQueued=false;
+function scheduleRender(){if(renderQueued)return;renderQueued=true;setTimeout(()=>{renderQueued=false;render();},30);}
 async function render(){
   try{importBadge();}catch(_){}
   const seq=++renderSeq;
@@ -845,7 +858,7 @@ function renderNext(upcoming){
   n.classList.toggle("soon",mins<=30);
   if(!heroShown){heroShown=true;n.classList.add("enter");}
   const ids=(couple&&couple.members)||[myId];
-  const from=el("span",{class:"trip-from"},...ids.slice(0,2).map(id=>el("i",{style:"background:"+colorFor(id)})));
+  const from=el("span",{class:"trip-from"},...ids.slice(0,2).map(id=>avatar(id,"",photoOf(id)?"b":"i")));
   const total=trip?((+ev.travelMin||0)+(+ev.marginMin||0)):0;
   const pct=trip&&mins<=0?Math.min(100,Math.round(-mins/Math.max(1,total)*100)):0;
   n.append(...[
@@ -867,8 +880,8 @@ function renderToday(){
   const nm=id=>((couple&&couple.names&&couple.names[id])||"").trim();
   const me=myId,other=mem.find(m=>m!==me);
   const av=el("span",{class:"duo-av"},
-    el("b",{style:"background:"+colorFor(me)},(nm(me)||"?").charAt(0).toUpperCase()),
-    other?el("b",{style:"background:"+colorFor(other)},(nm(other)||"?").charAt(0).toUpperCase()):el("b",{class:"wait","aria-hidden":"true"},"+"));
+    avatar(me),
+    other?avatar(other):el("b",{class:"wait","aria-hidden":"true"},"+"));
   duo.append(av,el("span",{class:"duo-n"},other?[nm(me)||"Toi",nm(other)||"l'autre"].join(" et "):"En attente de ta moitié"));
 }
 function renderWeek(){
@@ -958,6 +971,31 @@ function openMotif(ev){
     el("p",{class:"note"},"L'app choisit le thème d'après le titre. Tu peux en imposer un autre : il s'affichera aussi chez ta compagne."),grid]));
 }
 
+/* ---------- Photos de profil ---------- */
+function photoOf(id){return (couple&&couple.photos&&couple.photos[id])||"";}
+function avatar(id,cls,tag){
+  const ph=photoOf(id),n=firstName(id);
+  const a=el(tag||"b",{class:(cls||"")+(ph?" has-photo":""),style:"background:"+colorFor(id),"aria-label":n,title:n});
+  if(ph)a.append(el("img",{src:ph,alt:""}));else if(tag!=="i")a.append(n.charAt(0).toUpperCase());
+  return a;
+}
+function avatarPhoto(file){
+  return new Promise((res,rej)=>{const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{try{const S=240,c=document.createElement("canvas");c.width=c.height=S;const m=Math.min(img.width,img.height);
+      c.getContext("2d").drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,S,S);URL.revokeObjectURL(url);res(c.toDataURL("image/jpeg",.82));}catch(e){rej(e);}};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("illisible"));};img.src=url;});
+}
+function photoSetting(){
+  const prev=el("span",{class:"me-photo"});const draw=()=>{prev.textContent="";prev.append(avatar(myId,"me-av"));};draw();
+  const file=el("input",{type:"file",accept:"image/*",hidden:true});
+  file.onchange=async()=>{const f=file.files&&file.files[0];if(!f)return;
+    try{const d=await avatarPhoto(f);await fs.doc("couples/"+coupleId).update({["photos."+myId]:d});toast("Photo enregistrée, visible chez vous deux");}
+    catch(_){toast("Cette photo n'a pas pu être enregistrée. Essaie-en une autre.");}};
+  return el("div",{class:"photo-row"},prev,el("div",{class:"pchips"},
+    el("button",{type:"button",class:"btn primary",onclick:()=>file.click()},photoOf(myId)?"Changer ma photo":"Ajouter ma photo"),
+    photoOf(myId)?el("button",{type:"button",class:"btn quiet",onclick:async()=>{try{await fs.doc("couples/"+coupleId).update({["photos."+myId]:firebase.firestore.FieldValue.delete()});toast("Photo retirée");}catch(_){}}},"Retirer"):null,file));
+}
+
 /* ---------- Qui vient ? ---------- */
 function memberIds(){return (couple&&couple.members)||(myId?[myId]:[]);}
 function otherId(){return memberIds().find(m=>m!==myId)||null;}
@@ -966,7 +1004,7 @@ function whoOf(ev){const w=ev&&ev.who;return w&&w!=="both"&&memberIds().includes
 function whoBadge(ev){
   const w=whoOf(ev),ids=w==="both"?memberIds().slice(0,2):[w];
   const lab=w==="both"?(ids.length>1?"Vous deux":"Toi"):(w===myId?"Toi seul":firstName(w)+" seule");
-  return el("span",{class:"who","aria-label":lab,title:lab},...ids.map(id=>el("b",{style:"background:"+colorFor(id)},firstName(id).charAt(0).toUpperCase())));
+  return el("span",{class:"who","aria-label":lab,title:lab},...ids.map(id=>avatar(id)));
 }
 function whoChips(cur,onPick){
   const box=el("div",{class:"pchips who-chips"});
@@ -2856,7 +2894,7 @@ function coupleSection(){
   const nm=el("input",{type:"text",value:(couple&&couple.names&&couple.names[myId])||"","aria-label":"Ton prénom",class:"pair-in"});
   const ok=el("button",{type:"button",class:"btn"},"OK");
   ok.onclick=async()=>{try{await fs.doc("couples/"+coupleId).update({["names."+myId]:nm.value.trim()});toast("Prénom enregistré");}catch(e){toast("Enregistrement impossible.");}};
-  box.append(el("div",{class:"brand-add"},nm,ok));
+  box.append(el("div",{class:"brand-add"},nm,ok),photoSetting());
   if(!others.length) box.append(el("p",{class:"note"},"Ta compagne n'a pas encore rejoint l'agenda. Code à lui donner :"),el("div",{class:"big-code"},(couple&&couple.code)||""),
     el("button",{type:"button",class:"btn",onclick:()=>shareInvite(couple.code)},"Envoyer l'invitation"));
   else box.append(el("div",{class:"notice"},el("strong",{},"Agenda fermé"),el("div",{},"Vous êtes deux : "+[firstName(myId)].concat(others.map(firstName)).join(" et ")+". Personne d'autre ne peut le rejoindre, même avec l'ancien code.")));
@@ -2866,7 +2904,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="24";
+const APP_V="25";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -3053,24 +3091,24 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
   db=makeDb("couples/"+coupleId);
   fs.doc("couples/"+coupleId).onSnapshot(s=>{
     if(!s.exists){lsSet(COUPLE_KEY,null);location.reload();return;}
-    couple=s.data();syncRecovery();if(events.size)render();
+    couple=s.data();syncRecovery();if(events.size)scheduleRender();
   },e=>{notice("Accès à votre agenda impossible. Quitte puis rejoins-le avec le code.");});
   const hint=installHint();if(hint){const n=$("#notice");n.textContent="";n.append(...hint.childNodes);n.hidden=false;}
   db.collection("wishes").onSnapshot(snap=>{
     wishes=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     const bw=$("#btn-wish");bw.hidden=false;const n=wishList().filter(w=>!w.planned).length;bw.textContent=n?"Nos envies ("+n+")":"Nos envies";
     if(openWishes.redraw)openWishes.redraw();
-    if(events.size||true)render();
+    scheduleRender();
   },()=>{});
   db.doc("config/shortcuts").onSnapshot(snap=>{scLinks=snap.exists?snap.data():{};},()=>{});
   db.collection("memories").onSnapshot(snap=>{
     memories=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     const bm=$("#btn-mem");bm.hidden=false;bm.textContent=memories.size?"Nos souvenirs ("+memories.size+")":"Nos souvenirs";
-    if(events.size)render();
+    if(events.size)scheduleRender();
   },()=>{});
   db.collection("places").onSnapshot(snap=>{
     places=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    refreshPlaceUI();render();
+    refreshPlaceUI();scheduleRender();
   },()=>{});
   db.doc("config/templates").onSnapshot(snap=>{templates=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:null;if(templatesRefresh)templatesRefresh();},()=>{});
   db.doc("config/brands").onSnapshot(snap=>{brands=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:[];refreshBrandUI();},()=>{});
@@ -3091,7 +3129,7 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
     }
     firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    render();
+    scheduleRender();
   },()=>notice("La synchronisation s'est interrompue. Vérifie ta connexion puis rouvre l'app."));
 })();
 </script>
