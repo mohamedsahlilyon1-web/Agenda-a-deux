@@ -1018,7 +1018,7 @@ const GEO="https://data.geopf.fr/geocodage", BAN="https://api-adresse.data.gouv.
 const DEF_MARGIN={medecin:15,rdv:10,travail:10,sortie:5,courses:0,autre:5};
 const DEF_DUR={medecin:45,rdv:60,travail:60,sortie:120,courses:60,autre:60};
 function sampleErr(e){return (e&&e.name==="AbortError")?"":"Service indisponible. Vérifie ta connexion internet et réessaie.";}
-async function getJson(url,signal,ms=12000,opts){
+async function getJson(url,signal,ms=7000,opts){
   const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),ms);
   if(signal){if(signal.aborted)ctl.abort();else signal.addEventListener("abort",()=>ctl.abort());}
   try{const r=await fetch(url,{...(opts||{}),signal:ctl.signal,headers:{Accept:"application/json",...((opts&&opts.headers)||{})}});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json();}
@@ -1090,6 +1090,11 @@ async function computeTrip(from,to,mode,arriveAt){
   return {travelMin:Math.max(1,Math.round(min)),distanceKm:Math.round(km*10)/10,path:thin(path,160)};
 }
 async function estimateTrip(d){
+  // Jamais plus de 12 secondes d'attente, même si un service ne répond pas
+  let tm;const slow=new Promise(res=>{tm=setTimeout(()=>res({ok:false,problem:"Le calcul du trajet prend trop de temps. Vérifie ta connexion, ou enregistre sans trajet et réessaie plus tard."}),12000);});
+  try{return await Promise.race([estimateTripRaw(d),slow]);}finally{clearTimeout(tm);}
+}
+async function estimateTripRaw(d){
   const [o,t]=await Promise.all([geocode(d.origin||homeAddr()),geocode(d.location)]);
   if(!t) return {ok:false,problem:"Adresse d'arrivée introuvable. Choisis une suggestion dans la liste."};
   if(!o) return {ok:false,problem:"Adresse de départ introuvable. Choisis un domicile enregistré ou une suggestion."};
@@ -1477,7 +1482,8 @@ async function saveEventDraft(x,d,repeat){
       const base=startOf(x);
       for(let i=0;i<rp[2];i++){
         const dt=new Date(base);
-        if(repeat==="month") dt.setMonth(dt.getMonth()+i); else dt.setDate(dt.getDate()+rp[1]*i);
+        if(repeat==="month"){const day=base.getDate();dt.setDate(1);dt.setMonth(base.getMonth()+i);dt.setDate(Math.min(day,new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));}
+        else dt.setDate(dt.getDate()+rp[1]*i);
         await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId}));
       }
       toast(rp[2]+" évènements créés ("+rp[0].toLowerCase()+")");
@@ -2095,7 +2101,7 @@ function calPending(){
 function vevent(ev){
   const s=startOf(ev),e=new Date(s.getTime()+(+ev.durationMin||60)*60000);
   const z=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
-  const esc=t=>String(t||"").replace(/\\/g,"\\\\").replace(/\r?\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\;");
+  const esc=t=>String(t||"").replace(/\\/g,"\\\\").replace(/\r?\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
   let desc="";
   if(hasTrip(ev)) desc+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+")\nItinéraire : "+appleUrl(ev)+"\n";
   if(ev.notes) desc+=ev.notes+"\n";
@@ -2427,7 +2433,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="19";
+const APP_V="20";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
