@@ -490,6 +490,26 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .skin-name{font-size:1.1rem}
 .skin-sub{line-height:1.3}
 /* Thèmes par évènement */
+.swipe .behind{opacity:0;transition:opacity .12s}
+.swipe:has(.front.dragging) .behind,.swipe:has(.front[data-open]) .behind{opacity:1}
+/* Décors propres à chaque sortie, sur la carte et sur le grand panneau */
+.swipe.themed{--pc:color-mix(in oklab,var(--m) 20%,transparent);--pc2:color-mix(in oklab,var(--m) 34%,transparent)}
+.sign.themed{--pc:rgba(255,255,255,.08);--pc2:rgba(255,255,255,.14)}
+.swipe.themed .front{background:var(--mp,none),linear-gradient(120deg,color-mix(in oklab,var(--m) 13%,var(--surface)) 0%,var(--surface) 62%)}
+.sign.themed{background:var(--mp,none),var(--hero-img,none),var(--hero-t,var(--hero))}
+[data-mk="aqua"]{--mp:radial-gradient(circle at 88% 22%,var(--pc2) 0 5px,transparent 6px),radial-gradient(circle at 80% 46%,var(--pc) 0 9px,transparent 10px),radial-gradient(circle at 93% 64%,var(--pc) 0 4px,transparent 5px),radial-gradient(circle at 72% 80%,var(--pc2) 0 3px,transparent 4px),radial-gradient(120% 40px at 50% 100%,var(--pc) 0 60%,transparent 61%)}
+[data-mk="ecran"]{--mp:repeating-linear-gradient(90deg,var(--pc2) 0 10px,transparent 10px 20px) top/100% 7px no-repeat,repeating-linear-gradient(90deg,var(--pc2) 0 10px,transparent 10px 20px) bottom/100% 7px no-repeat}
+[data-mk="scene"]{--mp:conic-gradient(from 160deg at 85% -10%,transparent 0deg,var(--pc2) 14deg,transparent 30deg,transparent 330deg)}
+[data-mk="fun"]{--mp:radial-gradient(circle at 70% 18%,#F59E0B66 0 3px,transparent 4px),radial-gradient(circle at 82% 40%,#22C55E66 0 3px,transparent 4px),radial-gradient(circle at 92% 22%,#3B82F666 0 3px,transparent 4px),radial-gradient(circle at 76% 70%,#EF444466 0 3px,transparent 4px),radial-gradient(circle at 90% 82%,var(--pc2) 0 3px,transparent 4px),radial-gradient(circle at 62% 88%,#F59E0B55 0 2.5px,transparent 3.5px)}
+[data-mk="zoo"]{--mp:radial-gradient(ellipse 9px 6px at 78% 25%,var(--pc2) 0 60%,transparent 62%),radial-gradient(ellipse 7px 9px at 90% 48%,var(--pc) 0 60%,transparent 62%),radial-gradient(ellipse 10px 7px at 74% 70%,var(--pc) 0 60%,transparent 62%),radial-gradient(ellipse 6px 8px at 94% 82%,var(--pc2) 0 60%,transparent 62%)}
+[data-mk="parc"]{--mp:radial-gradient(60px 40px at 100% 100%,var(--pc) 0 70%,transparent 72%),radial-gradient(40px 30px at 86% 100%,var(--pc2) 0 70%,transparent 72%)}
+[data-mk="visite"]{--mp:repeating-linear-gradient(90deg,transparent 0 22px,var(--pc) 22px 30px) right bottom/45% 100% no-repeat}
+[data-mk="jeux"]{--mp:conic-gradient(var(--pc) 25%,transparent 0 50%,var(--pc) 0 75%,transparent 0) right top/14px 14px,linear-gradient(transparent,transparent)}
+[data-mk="jeux"].swipe .front{background:conic-gradient(var(--pc) 25%,transparent 0 50%,var(--pc) 0 75%,transparent 0) right top/14px 14px no-repeat,linear-gradient(90deg,transparent 60%,transparent),linear-gradient(120deg,color-mix(in oklab,var(--m) 13%,var(--surface)) 0%,var(--surface) 62%)}
+[data-mk="plage"]{--mp:radial-gradient(circle at 12px -4px,transparent 10px,var(--pc) 11px 15px,transparent 16px) left bottom/24px 14px repeat-x}
+[data-mk="neige"]{--mp:radial-gradient(circle at 70% 20%,var(--pc2) 0 2px,transparent 3px),radial-gradient(circle at 84% 34%,var(--pc2) 0 2.5px,transparent 3.5px),radial-gradient(circle at 92% 14%,var(--pc) 0 2px,transparent 3px),radial-gradient(circle at 78% 58%,var(--pc) 0 2px,transparent 3px),radial-gradient(circle at 95% 70%,var(--pc2) 0 2px,transparent 3px),linear-gradient(160deg,transparent 70%,var(--pc) 70.5%)}
+[data-mk="amour"]{--mp:radial-gradient(circle at 86% 24%,var(--pc) 0 4px,transparent 5px),radial-gradient(circle at 78% 70%,var(--pc) 0 3px,transparent 4px)}
+
 .swipe.themed .front{background:linear-gradient(120deg,color-mix(in oklab,var(--m) 13%,var(--surface)) 0%,var(--surface) 62%)}
 .swipe.themed .behind{background:var(--surface)}
 .motif-wm{position:absolute;right:-14px;bottom:-18px;width:118px;height:118px;color:var(--m);opacity:.13;pointer-events:none;transform:rotate(-12deg)}
@@ -720,7 +740,7 @@ function renderNext(upcoming){
   else when=ref.toLocaleDateString("fr-FR",{weekday:"long"}).replace(/^./,c=>c.toUpperCase());
   n.textContent="";n.hidden=false;
   const hk=motifOf(ev);
-  n.setAttribute("style",hk?"--m:"+MOTIFS[hk].c:"");n.classList.toggle("themed",!!hk);
+  n.setAttribute("style",hk?"--m:"+MOTIFS[hk].c:"");n.classList.toggle("themed",!!hk);if(hk)n.dataset.mk=hk;else delete n.dataset.mk;
   if(hk) n.append(el("span",{class:"motif-wm",html:motifSvg(hk)}));
   n.classList.toggle("soon",mins<=30);
   if(!heroShown){heroShown=true;n.classList.add("enter");}
@@ -728,13 +748,13 @@ function renderNext(upcoming){
   const from=el("span",{class:"trip-from"},...ids.slice(0,2).map(id=>el("i",{style:"background:"+colorFor(id)})));
   const total=trip?((+ev.travelMin||0)+(+ev.marginMin||0)):0;
   const pct=trip&&mins<=0?Math.min(100,Math.round(-mins/Math.max(1,total)*100)):0;
-  n.append(
+  n.append(...[
     el("div",{class:"k"},(trip?"Prochain départ":"Prochain moment à deux")+(hk?", "+MOTIFS[hk].name.toLowerCase():"")),
     el("div",{class:"big num"},hhmm(ref)),
     el("div",{class:"in"},when),
     el("div",{class:"what"},ev.title+(trip?", rendez-vous à "+ev.time:"")),
     trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||ev.title))):null,
-    trip?el("div",{class:"trip-meta"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null);
+    trip?el("div",{class:"trip-meta"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null].filter(Boolean));
   if(trip&&IS_IOS&&canWrite){const b=alarmButton(ev,"sign-btn");if(b)n.append(b);}
 }
 function hasTripEv(e){return (+e.travelMin||0)>0;}
@@ -789,8 +809,17 @@ const MOTIFS={
   dent:{name:"Dentiste",c:"#0EA5A0",re:/\bdent|orthodont|detartr|carie|implant/,svg:'<path d="M7.5 3.5c-2.4 0-4 1.9-4 4.6 0 2.2.8 3.6 1.4 5.5.6 1.9.8 4.4 1.4 6.2.4 1.1 1.8 1.2 2.2.1.5-1.6.9-4.4 2.1-4.4h2.8c1.2 0 1.6 2.8 2.1 4.4.4 1.1 1.8 1 2.2-.1.6-1.8.8-4.3 1.4-6.2.6-1.9 1.4-3.3 1.4-5.5 0-2.7-1.6-4.6-4-4.6-1.8 0-2.6 1-4.5 1s-2.7-1-4.5-1z"/><path d="M9 7.5c1 .5 2 .7 3 .7"/>'},
   soin:{name:"Santé",c:"#2F7BEA",re:/medecin|docteur|\bdr\b|kine|osteo|pharma|hopital|clinique|analyse|prise de sang|vaccin|ophtalmo|dermato|gyneco|radio|irm|echo|sante|generaliste|pediatre|psy/,svg:'<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/>'},
   amour:{name:"En amoureux",c:"#E11D48",re:/erotique|romanti|amoureu|saint[- ]valentin|valentin|tete[- ]a[- ]tete|galant|soiree a deux|nuit a deux|moment a deux|en couple|calin|sexy|coquin|lune de miel|anniversaire de (mariage|rencontre)|notre anniversaire|bisou|love/,svg:'<path d="M12 20.5s-7.5-4.4-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.3 0 2.4.6 3 1.6.6-1 1.7-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.8-7.5 10.2-7.5 10.2z"/><path d="M8 10c.3-1 1-1.5 1.8-1.6"/>'},
+  fun:{name:"Parc d'attractions",c:"#C026D3",re:/parc d'?attraction|disney|asterix|futuroscope|puy du fou|walibi|europa ?park|port aventura|fete foraine|manege|grand huit|parc a theme/,svg:'<circle cx="12" cy="10" r="7"/><path d="M12 3v14M5 10h14M7 5l10 10M17 5 7 15"/><circle cx="12" cy="10" r="1.6"/><path d="M8 21l4-4 4 4M6.5 21h11"/>'},
+  zoo:{name:"Zoo, safari",c:"#65A30D",re:/\bzoo|safari|parc animalier|reserve africaine|ferme pedagogique|vivarium|planete sauvage|beauval|bioparc|girafe|lion/,svg:'<path d="M9 21v-7.5L6.5 7.5 4 7l.5-2.5L8 4l2 2.5 1.5 5h3.5l2.5 2.5V21"/><path d="M12.5 21v-4M16 21v-3"/><circle cx="7.6" cy="6" r=".6" fill="currentColor"/><circle cx="12.6" cy="15" r=".9" fill="currentColor"/><circle cx="10.4" cy="17.6" r=".9" fill="currentColor"/>'},
+  aqua:{name:"Aquarium, mer",c:"#0284C7",re:/aquarium|oceanarium|seaquarium|marineland|nausicaa|plongee|snorkel|dauphin|requin|bateau|croisiere/,svg:'<path d="M3 12c3-4.5 9-6 13.5-2L21 7v10l-4.5-3c-4.5 4-10.5 2.5-13.5-2z"/><circle cx="8" cy="11.2" r=".9" fill="currentColor"/><path d="M19 3.5a1.3 1.3 0 1 1 0 .01M15.5 2.5a.8.8 0 1 1 0 .01"/>'},
+  plage:{name:"Plage",c:"#F59E0B",re:/plage|bord de mer|baignade|\bmer\b|sable|surf|paddle|crique|calanque/,svg:'<circle cx="16" cy="8" r="3.5"/><path d="M16 2v1.2M21.5 8h-1.2M20 4l-.9.9M12 4l.9.9"/><path d="M2.5 16c1.6 0 1.6-1.5 3.2-1.5S7.3 16 8.9 16s1.6-1.5 3.2-1.5 1.6 1.5 3.2 1.5 1.6-1.5 3.2-1.5 1.6 1.5 3 1.5M2.5 20c1.6 0 1.6-1.5 3.2-1.5S7.3 20 8.9 20s1.6-1.5 3.2-1.5 1.6 1.5 3.2 1.5 1.6-1.5 3.2-1.5 1.6 1.5 3 1.5"/>'},
+  neige:{name:"Montagne, ski",c:"#0EA5E9",re:/\bski|montagne|luge|neige|station de|snowboard|raquette|chalet/,svg:'<path d="M2.5 20 9 8l3.5 6 2.5-4 6.5 10z"/><path d="M7 12l2 1.5 2-1.5M15 10l1.2 2"/>'},
+  parc:{name:"Parc, nature",c:"#15803D",re:/\bparc\b|jardin|foret|balade|promenade|pique-?nique|\blac\b|bois de|nature|cueillette|botanique/,svg:'<path d="M12 21v-6"/><path d="M12 15c-4.5 0-7-2.5-7-5.5C5 6.4 8 3 12 3s7 3.4 7 6.5c0 3-2.5 5.5-7 5.5z"/><path d="M12 15l-3-3M12 13l3-3M4 21h16"/>'},
+  visite:{name:"Monument, musée",c:"#B45309",re:/monument|chateau|cathedrale|basilique|tour eiffel|arc de triomphe|visite|patrimoine|musee|\bexpo|galerie|louvre|versailles|abbaye|remparts|arenes/,svg:'<path d="M4 21V9l2-1V5h2v2l2-1V4h4v2l2 1V5h2v3l2 1v12z"/><path d="M10 21v-5a2 2 0 0 1 4 0v5M7 12h1M16 12h1"/>'},
+  jeux:{name:"Jeux, loisirs",c:"#6D28D9",re:/bowling|escape|laser ?game|karting|arcade|billard|paintball|trampoline|accrobranche|mini-?golf|\bjeux?\b|quiz|blind test|realite virtuelle|\bvr\b|patinoire|flechettes/,svg:'<path d="M7 8h10a4 4 0 0 1 4 4v3.5a2.5 2.5 0 0 1-4.5 1.5L15 15H9l-1.5 2A2.5 2.5 0 0 1 3 15.5V12a4 4 0 0 1 4-4z"/><path d="M7.5 10.5v3M6 12h3"/><circle cx="15.5" cy="11" r=".9" fill="currentColor"/><circle cx="17.5" cy="13" r=".9" fill="currentColor"/>'},
   table:{name:"Restaurant",c:"#B4304A",re:/resto|restaurant|diner|dejeuner|brunch|pizza|sushi|burger|tapas|bistro|brasserie|cafe\b|apero|petit dej/,svg:'<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16.5 21V3c-2 0-3.5 2.5-3.5 6v4h3.5"/>'},
-  ecran:{name:"Cinéma, spectacle",c:"#7C3AED",re:/cine|film|seance|theatre|spectacle|concert|expo|musee|opera|show/,svg:'<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M3 7l3-4M9 7l3-4M15 7l3-4M3 11h18"/>'},
+  ecran:{name:"Cinéma",c:"#DC2626",re:/cine|film|seance|imax|avant-premiere/,svg:'<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M3 7l3-4M9 7l3-4M15 7l3-4M3 11h18"/>'},
+  scene:{name:"Spectacle, concert",c:"#7C3AED",re:/theatre|spectacle|concert|opera|show|festival|humoriste|stand-?up|comedie musicale|ballet|cirque|magie/,svg:'<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/><path d="M9 9.5l11-2"/>'},
   panier:{name:"Courses",c:"#16A34A",re:/\bcourses?\b(?! (a )?pied)|carrefour|\baction\b|leclerc|lidl|auchan|intermarche|super ?u\b|monoprix|franprix|aldi|supermarche|\bmarche\b|\bdrive\b|grand frais|picard/,svg:'<path d="M3 8h18l-2 11a2 2 0 0 1-2 1.7H7A2 2 0 0 1 5 19z"/><path d="M8 8l3-5M16 8l-3-5M9 12v5M12 12v5M15 12v5"/>'},
   fete:{name:"Fête",c:"#DB2777",re:/anniv|fete|soiree|mariage|bapteme|cremaillere|party|naissance|noel|reveillon|nouvel an/,svg:'<rect x="3.5" y="9" width="17" height="11.5" rx="2"/><path d="M12 9v11.5M3.5 13h17M12 9c-1.5-3-5.5-4-5.5-1.5S10 9 12 9zm0 0c1.5-3 5.5-4 5.5-1.5S14 9 12 9z"/>'},
   sport:{name:"Sport",c:"#EA580C",re:/sport|salle|gym|fitness|foot|piscine|nage|running|course (a )?pied|footing|yoga|pilates|padel|tennis|muscu|velo|rando|match|basket|boxe|danse/,svg:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>'},
@@ -870,7 +899,7 @@ function stop(ev,who){
   if(ev.location&&expanded.has(ev.id)) front.append(routeBlock(ev));
 
   const isOpen=expanded.has(ev.id);
-  const wrap=el("article",{class:"swipe"+(isOpen?" open":"")+(mk?" themed":""),style:motifStyle(mk)});
+  const wrap=el("article",{class:"swipe"+(isOpen?" open":"")+(mk?" themed":""),style:motifStyle(mk),"data-mk":mk||null});
   front.setAttribute("tabindex","0");front.setAttribute("role","button");front.setAttribute("aria-expanded",isOpen?"true":"false");
   const toggle=()=>{
     if(expanded.has(ev.id)) expanded.delete(ev.id); else expanded.add(ev.id);
