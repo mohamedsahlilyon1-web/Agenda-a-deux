@@ -1486,7 +1486,7 @@ function blankDraft(){
   const d=new Date(Date.now()+86400000);
   return {title:"",category:"rdv",date:ymd(d),time:"10:00",durationMin:60,location:"",origin:homeAddr(),mode:settings.mode||"car",travelMin:0,marginMin:10,travelNote:"",reminders:[],notes:""};
 }
-function closeSheet(){$("#sheet-root").textContent="";inboxRefresh=null;}
+function closeSheet(){if(typeof recOn!=="undefined"&&recOn){try{REC.abort();}catch(_){}recOn=false;}$("#sheet-root").textContent="";inboxRefresh=null;}
 function sheetShell(label,children){
   return el("div",{class:"sheet-bg",onclick:e=>{if(e.target===e.currentTarget)closeSheet();}},
     el("div",{class:"sheet",role:"dialog","aria-modal":"true","aria-label":label},el("div",{class:"grab"}),...children));
@@ -2364,33 +2364,60 @@ $("#btn-analyze").onclick=()=>{
 
 /* ---------- Dictée vocale ---------- */
 const MIC_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
-let voiceBlocked=false;
-function startVoice(ta,btn,help,onDone){
+// Une seule reconnaissance vocale pour toute la session : l'iPhone ne redemande pas le micro à chaque fois
+let REC=null,recOn=false,recBtn=null;
+function getRec(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  const fallback=()=>{
+  if(!SR) return null;
+  if(!REC){try{REC=new SR();}catch(_){REC=null;}}
+  if(REC){REC.lang="fr-FR";REC.interimResults=true;REC.continuous=false;REC.maxAlternatives=1;}
+  return REC;
+}
+function micIdle(btn){if(!btn)return;btn.classList.remove("on");const sp=btn.querySelector("span");if(sp)sp.textContent="Parler";}
+function startVoice(ta,btn,help,onDone,retry){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const fallback=(denied)=>{
     help.textContent="";
     help.append(el("div",{class:"mic-help-icon",html:MIC_SVG}),
-      el("div",{},el("strong",{},SR?"Le micro est bloqué":"Dictée indisponible sur ce navigateur"),el("span",{},SR?"Autorise-le : Réglages, Apps, Safari, Micro. Vérifie aussi que Siri et Dictée sont activés (Réglages, Général, Clavier). Puis touche à nouveau Parler.":"Ouvre l'app dans Safari sur iPhone pour dicter.")));
+      el("div",{},el("strong",{},!SR?"Dictée indisponible sur ce navigateur":denied?"Le micro a été refusé":"Le micro n'a pas démarré"),
+        el("span",{},!SR?"Ouvre l'app depuis son icône sur l'iPhone pour dicter.":denied?"Touche à nouveau Parler et réponds « Autoriser ». Pour ne plus avoir la question : Réglages, Apps, Safari, Micro, puis « Autoriser ».":"Touche à nouveau Parler. Vérifie que Siri et Dictée sont activés (Réglages, Général, Clavier).")));
     help.hidden=false;
   };
-  if(!SR||voiceBlocked){fallback();return;}
-  if(btn._rec){btn._rec.stop();return;}
-  let rec;
-  try{rec=new SR();}catch(_){voiceBlocked=true;fallback();return;}
-  rec.lang="fr-FR";rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
-  const before=ta.value.trim();let finalText="",gotAny=false;
-  btn._rec=rec;btn.classList.add("on");btn.querySelector("span").textContent="J'écoute…";
+  if(!SR){fallback(false);return;}
+  if(recOn){try{REC.stop();}catch(_){}return;}
+  const rec=getRec();
+  if(!rec){fallback(false);return;}
+  const before=ta.value.trim();let finalText="",gotAny=false,errored=false,silence=null;
+  const armSilence=()=>{clearTimeout(silence);silence=setTimeout(()=>{try{rec.stop();}catch(_){}},gotAny?2500:9000);};
+  recBtn=btn;btn.classList.add("on");btn.querySelector("span").textContent="J'écoute…";
   help.textContent="";help.append(el("div",{class:"mic-wave"},el("i"),el("i"),el("i"),el("i")),el("div",{},el("strong",{},"Parle maintenant"),el("span",{},"Quoi, quand et où. Touche à nouveau le bouton pour arrêter.")));help.hidden=false;
-  rec.onresult=e=>{gotAny=true;let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)finalText+=r[0].transcript;else interim+=r[0].transcript;}
+  rec.onstart=()=>{recOn=true;armSilence();};
+  rec.onresult=e=>{gotAny=true;armSilence();let interim="";finalText="";for(let i=0;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)finalText+=r[0].transcript;else interim+=r[0].transcript;}
     ta.value=[before,(finalText+interim).trim()].filter(Boolean).join(" ");ta.dispatchEvent(new Event("input"));};
-  rec.onerror=e=>{if(e&&(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="audio-capture")){voiceBlocked=true;btn._rec=null;btn.classList.remove("on");btn.querySelector("span").textContent="Parler";fallback();}};
-  rec.onend=()=>{btn._rec=null;btn.classList.remove("on");btn.querySelector("span").textContent="Parler";
-    if(voiceBlocked)return;
-    help.hidden=true;
-    if(gotAny&&finalText.trim()&&onDone) onDone();
+  rec.onerror=e=>{
+    const code=e&&e.error;
+    if(code==="aborted"||code==="no-speech")return;
+    errored=true;
+    if(code==="not-allowed"||code==="service-not-allowed"){REC=null;fallback(true);}
+    else fallback(false);
   };
-  try{rec.start();}catch(_){btn._rec=null;btn.classList.remove("on");btn.querySelector("span").textContent="Parler";voiceBlocked=true;fallback();}
+  rec.onend=()=>{
+    clearTimeout(silence);recOn=false;micIdle(btn);
+    if(errored)return;
+    help.hidden=true;
+    const said=(finalText||ta.value.slice(before.length)).trim();
+    if(gotAny&&said&&onDone) onDone();
+  };
+  try{rec.start();}
+  catch(_){
+    // L'iPhone garde parfois l'ancienne écoute ouverte : on la ferme et on recommence une fois
+    try{rec.abort();}catch(__){}
+    REC=null;recOn=false;micIdle(btn);
+    if(!retry) setTimeout(()=>startVoice(ta,btn,help,onDone,true),250);
+    else fallback(false);
+  }
 }
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible"&&recOn){try{REC.abort();}catch(_){}recOn=false;micIdle(recBtn);}});
 
 function openQuickAdd(voice){
   const root=$("#sheet-root");root.textContent="";
