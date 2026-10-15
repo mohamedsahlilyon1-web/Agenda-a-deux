@@ -1106,7 +1106,8 @@ function openJournal(){
   const root=$("#sheet-root");root.textContent="";
   const list=[...memories.values()].sort((a,b)=>(b.date+(b.time||"")).localeCompare(a.date+(a.time||"")));
   const grid=el("div",{class:"journal"});
-  if(!list.length)grid.append(el("div",{class:"empty"},el("strong",{},"Pas encore de souvenir"),el("p",{},"Après une sortie, ouvre-la et touche « Ajouter un souvenir » pour garder une photo et un petit mot.")));
+  if(!list.length)grid.append(el("div",{class:"empty"},el("strong",{},"Pas encore de souvenir"),el("p",{},"Après une sortie, touche « Voir les évènements passés », ouvre la sortie puis « Ajouter un souvenir » : une photo, des cœurs et un petit mot."),
+    (()=>{const past=[...events.values()].filter(e=>startOf(e).getTime()<Date.now()).sort((a,b)=>startOf(b)-startOf(a))[0];return past&&canWrite?el("button",{type:"button",class:"btn primary",onclick:()=>openMemory(past)},"Souvenir de « "+(past.title||"la dernière sortie").slice(0,30)+" »"):null;})()));
   for(const m of list){const k=MOTIFS[m.motif]?m.motif:null;const ev=events.get(m.eventId)||{id:m.eventId,title:m.title,date:m.date,time:m.time};
     grid.append(el("button",{type:"button",class:"jm",style:motifStyle(k),onclick:()=>openMemory(ev)},
       m.photo?el("img",{src:m.photo,alt:"",loading:"lazy"}):el("span",{class:"jm-ph",html:k?motifSvg(k):""}),
@@ -2703,7 +2704,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="21";
+const APP_V="22";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -2894,7 +2895,7 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
   const hint=installHint();if(hint){const n=$("#notice");n.textContent="";n.append(...hint.childNodes);n.hidden=false;}
   db.collection("memories").onSnapshot(snap=>{
     memories=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    const bm=$("#btn-mem");bm.hidden=!memories.size;bm.textContent="Nos souvenirs ("+memories.size+")";
+    const bm=$("#btn-mem");bm.hidden=false;bm.textContent=memories.size?"Nos souvenirs ("+memories.size+")":"Nos souvenirs";
     if(events.size)render();
   },()=>{});
   db.collection("places").onSnapshot(snap=>{
