@@ -633,6 +633,15 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .photo-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .me-av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.5rem;box-shadow:var(--lift)}
 
+.wish-alerts{display:flex;flex-direction:column;gap:10px}
+.wish-alert{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:14px;border-radius:var(--r,22px);background:linear-gradient(135deg,color-mix(in oklab,var(--m,var(--line)) 18%,var(--surface)),var(--surface) 75%);box-shadow:0 0 0 2px color-mix(in oklab,var(--m,var(--line)) 45%,transparent),var(--lift);border:var(--cb,0 solid transparent)}
+.wa-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.wa-body strong{font-size:1.05rem;overflow-wrap:anywhere}
+.wa-body small{color:var(--muted)}
+.wa-when{font-weight:700;color:var(--m,var(--line))}
+.wa-body .pchips{margin-top:8px}
+.wish-status{font-size:.82rem;font-weight:700;color:var(--m,var(--line))}
+
 .skins{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .skin{border:2px solid var(--hair);background:var(--surface);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;text-align:left;color:var(--ink)}
 .skin.on{border-color:var(--line);box-shadow:0 0 0 2px var(--line) inset}
@@ -816,6 +825,7 @@ async function render(){
     el("button",{class:"btn primary",type:"button",onclick:()=>addManyToCalendar(pend)},pend.length>1?"Tout ajouter":"Ajouter"),
     el("button",{class:"cal-x",type:"button","aria-label":"Masquer ce bandeau",onclick:()=>{try{localStorage.setItem("a2.calHide",pendSig);}catch(_){}render();toast("Bandeau masqué. Il reviendra pour un nouvel évènement.");}},"×")));
   if(!upcoming.length){$("#next").hidden=true;}
+  {const wa=wishAlerts();if(wa){const cb=list.querySelector(".cal-banner");cb?list.insertBefore(wa,cb):list.append(wa);}}
   {const wk=weekendCard();if(wk)list.append(wk);}
   if(!shown.length){
     list.append(el("div",{class:"empty"},el("strong",{},"Rien de prévu pour l'instant"),
@@ -1279,16 +1289,19 @@ function openWishes(){
     for(const w of ws){const k=motifOf({title:w.title});const hs=w.hearts||{},mine=!!hs[myId],n=Object.keys(hs).length;
       list.append(el("div",{class:"wish"+(w.planned?" planned":""),style:motifStyle(k)},
         el("span",{class:"wish-ic",html:k?motifSvg(k):""}),
-        el("span",{class:"wish-t"},el("strong",{},w.title),el("small",{},"Idée de "+firstName(w.by)+(w.planned?", déjà planifiée":""))),
+        el("span",{class:"wish-t"},el("strong",{},w.title),el("small",{},"Idée de "+firstName(w.by)+(w.status==="accepted"?", validée":w.planned?", déjà planifiée":"")),
+          w.status==="proposed"&&w.proposal?el("span",{class:"wish-status"},firstName(w.proposal.by)+" propose "+propText(w.proposal)):w.status==="declined"?el("span",{class:"wish-status"},"Proposition refusée"):null),
         el("button",{type:"button",class:"wish-heart"+(mine?" on":""),"aria-pressed":mine?"true":"false","aria-label":mine?"Retirer mon cœur":"Mettre un cœur",onclick:()=>db.doc("wishes/"+w.id).update({["hearts."+myId]:mine?firebase.firestore.FieldValue.delete():true}).catch(()=>toast("Impossible pour l'instant."))},
           el("span",{html:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.4-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.3 0 2.4.6 3 1.6.6-1 1.7-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.8-7.5 10.2-7.5 10.2z"/></svg>'}),n?String(n):""),
-        el("span",{class:"wish-act"},el("button",{type:"button",class:"btn primary",onclick:()=>planWish(w)},"Planifier"),
+        el("span",{class:"wish-act"},
+          wishTodo(w)==="answer"?(()=>{const b=el("button",{type:"button",class:"btn primary"},"Accepter");b.onclick=()=>acceptProposal(w,b);return b;})():null,
+          w.status==="accepted"?null:el("button",{type:"button",class:"btn"+(wishTodo(w)==="answer"?"":" primary"),onclick:()=>openPropose(w)},w.status==="proposed"&&w.proposal&&w.proposal.by===myId?"Changer ma proposition":wishTodo(w)==="answer"?"Autre date":"Proposer une date"),
           el("button",{type:"button",class:"btn quiet","aria-label":"Supprimer cette idée",onclick:()=>db.doc("wishes/"+w.id).delete().catch(()=>{})},"Retirer"))));}
   };
   openWishes.redraw=draw;draw();
   const inp=el("input",{type:"text",class:"pair-in",placeholder:"Une idée : zoo de Beauval, resto japonais…","aria-label":"Nouvelle idée"});
   const add=async()=>{const t=inp.value.trim().slice(0,80);if(!t)return;inp.value="";
-    try{await db.doc("wishes/"+db.collection("wishes").doc().id).set({title:t,by:myId,hearts:{[myId]:true},createdAt:Date.now()});}catch(_){toast("Idée non enregistrée. Vérifie ta connexion.");}};
+    try{await db.doc("wishes/"+db.collection("wishes").doc().id).set({title:t,by:myId,hearts:{[myId]:true},status:"open",createdAt:Date.now()});toast("Envie partagée avec "+firstName(otherId()||myId));}catch(_){toast("Idée non enregistrée. Vérifie ta connexion.");}};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add();}});
   root.append(sheetShell("Nos envies",[
     el("div",{class:"sheet-h"},el("h2",{},"Nos envies"),el("button",{class:"btn quiet",type:"button",onclick:()=>{openWishes.redraw=null;closeSheet();}},"Fermer")),
@@ -1314,6 +1327,106 @@ function weekendCard(){
   return card;
 }
 function monthBudget(y,m){let t=0;for(const e of events.values()){const d=new Date(e.date+"T12:00:00");if(d.getFullYear()===y&&d.getMonth()===m&&passWho(e))t+=+e.cost||0;}return Math.round(t*100)/100;}
+
+/* ---------- Envies : proposer une sortie, accepter ou refuser ---------- */
+function propText(p){if(!p)return "";const d=new Date(p.date+"T12:00:00");return d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+" à "+p.time+(p.location?", "+shortAddr(p.location):"");}
+// Ce que chacun doit faire maintenant
+function wishTodo(w){
+  if(w.status==="accepted"){return w.seen&&w.seen[myId]?null:(w.proposal&&w.proposal.by===myId?"accepted":null);}
+  if(w.status==="proposed"&&w.proposal&&w.proposal.by!==myId)return "answer";
+  if(w.status==="declined"&&w.declinedBy&&w.declinedBy!==myId&&!(w.seen&&w.seen[myId]>=w.declinedAt))return "declined";
+  if((!w.status||w.status==="open")&&w.by!==myId&&!(w.later&&w.later[myId]))return "propose";
+  return null;
+}
+function wishTodos(){return wishList().map(w=>[w,wishTodo(w)]).filter(x=>x[1]);}
+function openPropose(w){
+  const root=$("#sheet-root");root.textContent="";
+  const p=w.proposal||{};
+  const date=el("input",{id:"pp-date",type:"date",value:p.date||nextWeekend()[0]}),time=el("input",{id:"pp-time",type:"time",value:p.time||"14:00"});
+  const wc=whenChips(date,time);
+  const loc=el("input",{id:"pp-loc",type:"text",value:p.location||"",placeholder:"Où ? (facultatif)"});
+  const note=el("input",{id:"pp-note",type:"text",class:"pair-in",placeholder:"Un petit mot (facultatif)",value:""});
+  const send=el("button",{type:"button",class:"btn primary"},"Envoyer la proposition");
+  send.onclick=async()=>{
+    if(!date.value||!time.value){toast("Choisis le jour et l'heure.");return;}
+    send.disabled=true;
+    try{await db.doc("wishes/"+w.id).update({status:"proposed",proposal:{by:myId,date:date.value,time:time.value,location:loc.value.trim(),note:note.value.trim().slice(0,140),at:Date.now()},updatedBy:myId,updatedAt:Date.now()});
+      closeSheet();toast("Proposition envoyée à "+firstName(otherId()||w.by));}
+    catch(_){send.disabled=false;toast("Proposition non envoyée. Vérifie ta connexion.");}
+  };
+  root.append(sheetShell("Proposer une sortie",[
+    el("div",{class:"sheet-h"},el("h2",{},"Proposer une sortie"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("div",{class:"notice"},el("strong",{},w.title),el("div",{},"Envie de "+firstName(w.by)+". Choisis quand, et "+firstName(w.by===myId?(otherId()||w.by):w.by)+" pourra accepter ou refuser.")),
+    el("div",{class:"field"},el("span",{class:"lab"},"Quel jour"),wc.days),
+    el("div",{class:"field"},el("span",{class:"lab"},"À quelle heure"),wc.hours),
+    el("div",{class:"grid2 when-exact"},el("div",{class:"field"},el("label",{for:"pp-date"},"Autre date"),date),el("div",{class:"field"},el("label",{for:"pp-time"},"Heure précise"),time)),
+    el("div",{class:"field"},el("label",{for:"pp-loc"},"Où"),autocomplete(loc,()=>{}),placeChips(loc,false,()=>{})),
+    note,
+    el("div",{class:"sheet-foot"},el("span"),send)]));
+}
+async function acceptProposal(w,btn){
+  const p=w.proposal;if(!p)return;
+  if(btn)btn.disabled=true;
+  try{
+    const d=blankDraft();
+    Object.assign(d,{title:w.title,date:p.date,time:p.time,location:p.location||"",category:"sortie",who:"both",notes:p.note||""});
+    d.marginMin=DEF_MARGIN.sortie??5;d.durationMin=DEF_DUR.sortie||120;
+    if(d.location){try{const r=await estimateTrip(d);if(r.ok){d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;}}catch(_){}}
+    d.reminders=suggestReminders(d);
+    const id=db.collection("events").doc().id;
+    await db.doc("events/"+id).set(buildBody(d,{}));
+    await db.doc("wishes/"+w.id).update({status:"accepted",eventId:id,acceptedBy:myId,acceptedAt:Date.now(),planned:Date.now(),["seen."+myId]:Date.now(),updatedBy:myId,updatedAt:Date.now()});
+    toast("C'est validé : « "+w.title+" » est dans votre agenda");
+  }catch(_){if(btn)btn.disabled=false;toast("Impossible de valider. Vérifie ta connexion.");}
+}
+async function declineProposal(w){
+  try{await db.doc("wishes/"+w.id).update({status:"declined",declinedBy:myId,declinedAt:Date.now(),updatedBy:myId,updatedAt:Date.now()});toast("Proposition refusée. "+firstName(w.proposal&&w.proposal.by)+" peut en proposer une autre.");}catch(_){toast("Impossible pour l'instant.");}
+}
+function wishCard(w,todo){
+  const k=motifOf({title:w.title}),p=w.proposal;
+  const card=el("div",{class:"wish-alert",style:motifStyle(k)},el("span",{class:"wish-ic",html:k?motifSvg(k):""}));
+  const body=el("div",{class:"wa-body"});card.append(body);
+  const act=el("div",{class:"pchips"});
+  if(todo==="propose"){
+    body.append(el("strong",{},firstName(w.by)+" a une envie : "+w.title),el("small",{},"Propose-lui un jour et une heure."));
+    act.append(el("button",{type:"button",class:"btn primary",onclick:()=>openPropose(w)},"Proposer une sortie"),
+      el("button",{type:"button",class:"btn quiet",onclick:()=>db.doc("wishes/"+w.id).update({["later."+myId]:Date.now()}).catch(()=>{})},"Plus tard"));
+  }else if(todo==="answer"){
+    body.append(el("strong",{},firstName(p.by)+" propose : "+w.title),el("span",{class:"wa-when"},propText(p)),p.note?el("small",{},"« "+p.note+" »"):null);
+    const ok=el("button",{type:"button",class:"btn primary"},"Accepter");ok.onclick=()=>acceptProposal(w,ok);
+    act.append(ok,el("button",{type:"button",class:"btn",onclick:()=>openPropose(w)},"Autre date"),el("button",{type:"button",class:"btn quiet",onclick:()=>declineProposal(w)},"Refuser"));
+  }else if(todo==="declined"){
+    body.append(el("strong",{},firstName(w.declinedBy)+" a refusé ta proposition"),el("small",{},w.title+", "+propText(p)));
+    act.append(el("button",{type:"button",class:"btn primary",onclick:()=>openPropose(w)},"Proposer une autre date"),
+      el("button",{type:"button",class:"btn quiet",onclick:()=>db.doc("wishes/"+w.id).update({["seen."+myId]:Date.now()}).catch(()=>{})},"OK"));
+  }else if(todo==="accepted"){
+    body.append(el("strong",{},firstName(w.acceptedBy)+" a accepté : "+w.title),el("small",{},"C'est dans votre agenda, "+propText(p)+"."));
+    act.append(el("button",{type:"button",class:"btn primary",onclick:()=>db.doc("wishes/"+w.id).update({["seen."+myId]:Date.now()}).catch(()=>{})},"Super"));
+  }
+  body.append(act);
+  return card;
+}
+function wishAlerts(){
+  const t=wishTodos();if(!t.length)return null;
+  return el("section",{class:"wish-alerts","aria-label":"Envies à traiter"},...t.slice(0,3).map(([w,todo])=>wishCard(w,todo)),
+    t.length>3?el("button",{type:"button",class:"btn quiet",onclick:openWishes},"Voir les "+t.length+" envies à traiter"):null);
+}
+// Prévenir quand l'autre agit, l'app ouverte
+let wishPrev=null;
+function wishNotify(next){
+  if(wishPrev){
+    for(const w of next.values()){
+      const o=wishPrev.get(w.id);if(w.updatedBy===myId||(w.by===myId&&!o&&!w.updatedBy))continue;
+      if(!o&&w.by!==myId)toast(firstName(w.by)+" a une nouvelle envie : "+w.title,"Proposer",()=>openPropose(w));
+      else if(o&&w.status!==o.status){
+        if(w.status==="proposed"&&w.proposal&&w.proposal.by!==myId)toast(firstName(w.proposal.by)+" propose : "+w.title+", "+propText(w.proposal),"Répondre",()=>openWishes());
+        else if(w.status==="accepted"&&w.acceptedBy!==myId)toast(firstName(w.acceptedBy)+" a accepté : "+w.title);
+        else if(w.status==="declined"&&w.declinedBy!==myId)toast(firstName(w.declinedBy)+" a refusé ta proposition pour "+w.title);
+      }else if(o&&w.status==="proposed"&&w.proposal&&o.proposal&&w.proposal.at!==o.proposal.at&&w.proposal.by!==myId)toast(firstName(w.proposal.by)+" propose une autre date pour "+w.title);
+    }
+  }
+  wishPrev=new Map([...next].map(([k,v])=>[k,JSON.parse(JSON.stringify(v))]));
+}
 
 function stop(ev,who){
   const hasTrip=(+ev.travelMin||0)>0;
@@ -2908,7 +3021,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="28";
+const APP_V="29";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -3100,7 +3213,8 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
   const hint=installHint();if(hint){const n=$("#notice");n.textContent="";n.append(...hint.childNodes);n.hidden=false;}
   db.collection("wishes").onSnapshot(snap=>{
     wishes=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    const bw=$("#btn-wish");bw.hidden=false;const n=wishList().filter(w=>!w.planned).length;bw.textContent=n?"Nos envies ("+n+")":"Nos envies";
+    wishNotify(wishes);
+    const bw=$("#btn-wish");bw.hidden=false;const n=wishList().filter(w=>!w.planned).length,td=wishTodos().length;bw.textContent=(td?"● ":"")+(n?"Nos envies ("+n+")":"Nos envies");
     if(openWishes.redraw)openWishes.redraw();
     scheduleRender();
   },()=>{});
