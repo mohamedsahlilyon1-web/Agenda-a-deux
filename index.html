@@ -642,6 +642,35 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .wa-body .pchips{margin-top:8px}
 .wish-status{font-size:.82rem;font-weight:700;color:var(--m,var(--line))}
 
+/* Invitations : envies et propositions */
+.invite{position:relative;display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:var(--r,26px);overflow:hidden;isolation:isolate;
+  background:linear-gradient(150deg,color-mix(in oklab,var(--m,var(--line)) 26%,var(--surface)) 0%,var(--surface) 70%);
+  box-shadow:0 0 0 1.5px color-mix(in oklab,var(--m,var(--line)) 50%,transparent),var(--lift);border:var(--cb,0 solid transparent)}
+.invite::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:color-mix(in oklab,var(--m,var(--line)) 22%,transparent);z-index:-1}
+.inv-top{display:flex;align-items:center;gap:10px}
+.inv-av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:.9rem;flex:none;box-shadow:0 0 0 2px var(--surface)}
+.inv-kick{font-size:.92rem;color:var(--muted)}
+.inv-kick strong{color:var(--ink)}
+.inv-main{display:flex;align-items:center;gap:12px}
+.inv-ic{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:var(--m,var(--line));color:#fff;flex:none}
+.inv-ic svg{width:28px;height:28px}
+.inv-title{margin:0;font-family:var(--fd,var(--f));font-size:1.55rem;line-height:1.05;letter-spacing:-.02em;font-weight:800;overflow-wrap:anywhere}
+.inv-when{display:flex;align-items:center;gap:12px;padding:10px;border-radius:18px;background:color-mix(in oklab,var(--surface) 70%,transparent);border:1px solid color-mix(in oklab,var(--m,var(--line)) 25%,transparent)}
+.inv-cal{width:52px;flex:none;border-radius:12px;overflow:hidden;text-align:center;background:var(--surface);box-shadow:var(--lift)}
+.inv-cal small{display:block;background:var(--m,var(--line));color:#fff;font-size:.7rem;font-weight:800;padding:2px 0;text-transform:capitalize}
+.inv-cal b{display:block;font-size:1.5rem;font-weight:800;padding:2px 0 4px;color:var(--ink)}
+.inv-wt{display:flex;flex-direction:column;min-width:0}
+.inv-wt strong{font-size:1.05rem}
+.inv-wt span{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}
+.inv-note{margin:0;position:relative;align-self:flex-start;max-width:90%;padding:9px 13px;border-radius:16px 16px 16px 4px;background:var(--bg);font-style:italic}
+.inv-act{display:flex;flex-direction:column;gap:8px}
+.invite .btn.inv-go{justify-content:center;padding:13px 18px;font-size:1rem;background:var(--m,var(--line));border-color:var(--m,var(--line));color:#fff}
+.inv-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.inv-sub .btn{justify-content:center}
+.invite .btn.inv-no{color:var(--danger)}
+.inv-done{margin:0;color:var(--muted);font-size:.9rem}
+.inv-accepted .inv-title::after{content:" ✓";color:var(--m,var(--line))}
+
 .skins{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .skin{border:2px solid var(--hair);background:var(--surface);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;text-align:left;color:var(--ink)}
 .skin.on{border-color:var(--line);box-shadow:0 0 0 2px var(--line) inset}
@@ -674,7 +703,7 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 
   <div id="notice" class="notice" hidden></div>
 
-  <section class="composer" aria-label="Ajouter un évènement">
+  <section class="composer" aria-label="Ajouter un évènement" hidden>
     <textarea id="input" placeholder="Qu'est-ce que vous avez prévu ? Ex. : dentiste vendredi 14h30 rue de la République à Lyon"></textarea>
     <div class="row">
       <button class="btn quiet" id="btn-manual">Remplir moi-même</button>
@@ -1383,27 +1412,35 @@ async function declineProposal(w){
   try{await db.doc("wishes/"+w.id).update({status:"declined",declinedBy:myId,declinedAt:Date.now(),updatedBy:myId,updatedAt:Date.now()});toast("Proposition refusée. "+firstName(w.proposal&&w.proposal.by)+" peut en proposer une autre.");}catch(_){toast("Impossible pour l'instant.");}
 }
 function wishCard(w,todo){
-  const k=motifOf({title:w.title}),p=w.proposal;
-  const card=el("div",{class:"wish-alert",style:motifStyle(k)},el("span",{class:"wish-ic",html:k?motifSvg(k):""}));
-  const body=el("div",{class:"wa-body"});card.append(body);
-  const act=el("div",{class:"pchips"});
+  const k=motifOf({title:w.title}),p=w.proposal||null;
+  const from=todo==="propose"?w.by:todo==="answer"?p.by:todo==="declined"?w.declinedBy:w.acceptedBy;
+  const kicker={propose:"a une envie",answer:"te propose une sortie",declined:"a refusé ta proposition",accepted:"a accepté ta proposition"}[todo];
+  const card=el("article",{class:"invite inv-"+todo,style:motifStyle(k)});
+  card.append(el("div",{class:"inv-top"},avatar(from,"inv-av"),el("span",{class:"inv-kick"},el("strong",{},firstName(from))," "+kicker)));
+  card.append(el("div",{class:"inv-main"},el("span",{class:"inv-ic",html:k?motifSvg(k):""}),el("h3",{class:"inv-title"},w.title)));
+  if(p&&todo!=="propose"){
+    const d=new Date(p.date+"T12:00:00");
+    card.append(el("div",{class:"inv-when"},
+      el("span",{class:"inv-cal"},el("small",{},d.toLocaleDateString("fr-FR",{month:"short"}).replace(".","")),el("b",{class:"num"},String(d.getDate()))),
+      el("span",{class:"inv-wt"},el("strong",{},d.toLocaleDateString("fr-FR",{weekday:"long"}).replace(/^./,c=>c.toUpperCase())+" à "+p.time),
+        el("span",{},p.location?shortAddr(p.location):"Lieu libre"))));
+    if(p.note&&todo==="answer")card.append(el("p",{class:"inv-note"},p.note));
+  }
+  const act=el("div",{class:"inv-act"});
   if(todo==="propose"){
-    body.append(el("strong",{},firstName(w.by)+" a une envie : "+w.title),el("small",{},"Propose-lui un jour et une heure."));
-    act.append(el("button",{type:"button",class:"btn primary",onclick:()=>openPropose(w)},"Proposer une sortie"),
+    act.append(el("button",{type:"button",class:"btn primary inv-go",onclick:()=>openPropose(w)},"Proposer un jour"),
       el("button",{type:"button",class:"btn quiet",onclick:()=>db.doc("wishes/"+w.id).update({["later."+myId]:Date.now()}).catch(()=>{})},"Plus tard"));
   }else if(todo==="answer"){
-    body.append(el("strong",{},firstName(p.by)+" propose : "+w.title),el("span",{class:"wa-when"},propText(p)),p.note?el("small",{},"« "+p.note+" »"):null);
-    const ok=el("button",{type:"button",class:"btn primary"},"Accepter");ok.onclick=()=>acceptProposal(w,ok);
-    act.append(ok,el("button",{type:"button",class:"btn",onclick:()=>openPropose(w)},"Autre date"),el("button",{type:"button",class:"btn quiet",onclick:()=>declineProposal(w)},"Refuser"));
+    const ok=el("button",{type:"button",class:"btn primary inv-go"},"Accepter");ok.onclick=()=>acceptProposal(w,ok);
+    act.append(ok,el("div",{class:"inv-sub"},el("button",{type:"button",class:"btn",onclick:()=>openPropose(w)},"Autre date"),el("button",{type:"button",class:"btn quiet inv-no",onclick:()=>declineProposal(w)},"Refuser")));
   }else if(todo==="declined"){
-    body.append(el("strong",{},firstName(w.declinedBy)+" a refusé ta proposition"),el("small",{},w.title+", "+propText(p)));
-    act.append(el("button",{type:"button",class:"btn primary",onclick:()=>openPropose(w)},"Proposer une autre date"),
+    act.append(el("button",{type:"button",class:"btn primary inv-go",onclick:()=>openPropose(w)},"Proposer une autre date"),
       el("button",{type:"button",class:"btn quiet",onclick:()=>db.doc("wishes/"+w.id).update({["seen."+myId]:Date.now()}).catch(()=>{})},"OK"));
   }else if(todo==="accepted"){
-    body.append(el("strong",{},firstName(w.acceptedBy)+" a accepté : "+w.title),el("small",{},"C'est dans votre agenda, "+propText(p)+"."));
-    act.append(el("button",{type:"button",class:"btn primary",onclick:()=>db.doc("wishes/"+w.id).update({["seen."+myId]:Date.now()}).catch(()=>{})},"Super"));
+    act.append(el("p",{class:"inv-done"},"C'est dans votre agenda."),
+      el("button",{type:"button",class:"btn primary inv-go",onclick:()=>db.doc("wishes/"+w.id).update({["seen."+myId]:Date.now()}).catch(()=>{})},"Super !"));
   }
-  body.append(act);
+  card.append(act);
   return card;
 }
 function wishAlerts(){
@@ -3021,7 +3058,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="29";
+const APP_V="31";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
