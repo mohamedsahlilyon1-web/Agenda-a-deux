@@ -1228,6 +1228,8 @@ async function recoverWith(raw,btn){
     await fs.doc("couples/"+id).update({members,recoveryKey:k,["names."+myId]:r.name||""});
     await fs.doc("couples/"+id).update({recoveryKey:firebase.firestore.FieldValue.delete()}).catch(()=>{});
     await fs.doc("recovery/"+k).set({coupleId:id,uid:myId,members,name:r.name||""});
+    // l'adresse de synchronisation du raccourci reste la même
+    try{const ib=await fs.doc("couples/"+id+"/config/inbox").get();const ik=ib.exists&&ib.data()[old];if(ik){await fs.doc("couples/"+id+"/config/inbox").set({[myId]:ik},{merge:true});lsSet("a2.inbox",ik);}}catch(_){}
     // les évènements attribués à l'ancien téléphone passent au nouveau
     try{const evs=await fs.collection("couples/"+id+"/events").get();
       for(const d of evs.docs){const x=d.data(),p={};if(x.who===old)p.who=myId;if(x.createdBy===old)p.createdBy=myId;if(Object.keys(p).length)await d.ref.update(p);}}catch(_){}
@@ -2904,7 +2906,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="26";
+const APP_V="27";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
