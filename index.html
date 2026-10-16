@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Agenda à Deux">
+<meta name="apple-mobile-web-app-title" content="Together">
 <meta name="theme-color" content="#EDEEF5">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -33,7 +33,7 @@ img{max-width:100%}[hidden]{display:none!important}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<title>Agenda à Deux</title>
+<title>Together</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,500..800,0..100;1,9..144,500..800,0..100&display=swap">
 <style>
 /* Layout: a transit-line timeline. Each outing is a stop on a vertical line: a yellow "départ" stop, then the arrival stop. Rows slide left to reveal Modifier / Supprimer. */
@@ -653,7 +653,7 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
   <header>
     <div class="brand">
       <svg class="brand-mark" viewBox="0 0 30 30" aria-hidden="true"><circle cx="11" cy="15" r="7.5" fill="none" stroke="var(--sun)" stroke-width="3.2"/><circle cx="19" cy="15" r="7.5" fill="none" stroke="var(--line)" stroke-width="3.2"/><path d="M16.2 8.6a7.5 7.5 0 0 1 2.2 2.4" fill="none" stroke="var(--sun)" stroke-width="3.2"/></svg>
-      <h1>Agenda à Deux</h1>
+      <h1>Together</h1>
     </div>
     <div style="display:flex;gap:8px"><button class="round" id="btn-import" aria-label="Importer depuis mon calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5 12 18l2.5-2.5"/></svg></button>
     <button class="round" id="btn-theme" aria-label="Thème"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor"/></svg></button>
@@ -912,7 +912,7 @@ function gcalUrl(ev){
   if((+ev.travelMin||0)>0) det+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+" et "+(ev.marginMin||0)+" min de marge)\nItinéraire : "+mapsUrl(ev)+"\n\n";
   if(liveReminders(ev).length) det+="Rappels prévus :\n"+liveReminders(ev).map(r=>"- "+remChip(ev,r)).join("\n")+"\n\n";
   if(ev.notes) det+=ev.notes+"\n\n";
-  det+="Ajouté depuis Agenda à Deux";
+  det+="Ajouté depuis Together";
   return "https://calendar.google.com/calendar/render?"+new URLSearchParams({action:"TEMPLATE",text:ev.title||"Évènement",dates:z(s)+"/"+z(e),details:det,location:ev.location||""});
 }
 
@@ -1212,7 +1212,7 @@ function recoverySection(){
   box.append(el("p",{class:"note"},"Garde ce code dans tes Notes ou envoie-le-toi par message. Si un jour l'app perd ses données (icône supprimée, iPhone changé), il te permet de reprendre ta place dans l'agenda. Ne le donne à personne."),
     el("div",{class:"rec-code num"},recFormat(k)),
     el("div",{class:"pchips"},el("button",{type:"button",class:"btn primary",onclick:async()=>{try{await navigator.clipboard.writeText(recFormat(k));toast("Code de secours copié");}catch(_){toast(recFormat(k));}}},"Copier le code"),
-      el("button",{type:"button",class:"btn",onclick:async()=>{try{if(navigator.share)await navigator.share({text:"Mon code de secours Agenda à Deux : "+recFormat(k)});}catch(_){}}},"L'envoyer dans mes notes")));
+      el("button",{type:"button",class:"btn",onclick:async()=>{try{if(navigator.share)await navigator.share({text:"Mon code de secours Together : "+recFormat(k)});}catch(_){}}},"L'envoyer dans mes notes")));
   return box;
 }
 async function recoverWith(raw,btn){
@@ -2573,7 +2573,7 @@ function vevent(ev){
   let desc="";
   if(hasTrip(ev)) desc+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+")\nItinéraire : "+appleUrl(ev)+"\n";
   if(ev.notes) desc+=ev.notes+"\n";
-  desc+="Agenda à Deux";
+  desc+="Together";
   const L=["BEGIN:VEVENT","UID:"+(ev.id||Date.now())+"@agenda-a-deux","SEQUENCE:"+Math.floor((ev.updatedAt||Date.now())/1000),"DTSTAMP:"+z(new Date()),"DTSTART:"+z(s),"DTEND:"+z(e),
     "SUMMARY:"+esc(ev.title),"LOCATION:"+esc(ev.location),"DESCRIPTION:"+esc(desc)];
   const now=Date.now();
@@ -2772,7 +2772,7 @@ function alarmSetupSection(){
     "Touche + en haut à droite pour créer un raccourci.",
     "Touche « Ajouter une action », cherche « Créer une alarme » (app Horloge) et touche-la.",
     "Dans l'action, touche l'heure, puis choisis la variable « Entrée du raccourci ».",
-    "Touche « Alarme » (le libellé) et écris : Agenda à Deux.",
+    "Touche « Alarme » (le libellé) et écris : Together.",
     "Touche le nom en haut, choisis « Renommer » et écris exactement : Alarme Agenda. Puis OK.",
   ];
   const box=el("div",{class:"disc-box"},
@@ -2875,7 +2875,7 @@ function showPair(prefill){
       const rb=el("button",{class:"btn",type:"button"},"Reprendre ma place");rb.onclick=()=>recoverWith(ri.value,rb);
       return el("details",{class:"pair-card"},el("summary",{},el("strong",{},"J'ai un code de secours")),el("span",{class:"note"},"Tu faisais déjà partie d'un agenda et l'app a perdu ses données : colle ton code de secours."),ri,rb);})()]);
 }
-function inviteText(c){return "Rejoins notre Agenda à Deux : ouvre "+location.origin+location.pathname+" dans Safari, ajoute-le à l'écran d'accueil, puis entre le code "+c;}
+function inviteText(c){return "Rejoins-moi sur Together, notre agenda à deux : ouvre "+location.origin+location.pathname+" dans Safari, ajoute-le à l'écran d'accueil, puis entre le code "+c;}
 async function shareInvite(c){
   const txt=inviteText(c);
   try{if(navigator.share){await navigator.share({text:txt});return;}}catch(e){if(e&&e.name==="AbortError")return;}
@@ -2904,7 +2904,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="25";
+const APP_V="26";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
