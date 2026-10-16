@@ -1,4 +1,5 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
+// Déploiement : 2026-10-16T21:46Z
 // Envoie les notifications Web Push aux iPhone et garde les rappels programmés.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
 const SUBJECT = "https://mohamedsahlilyon1-web.github.io/Agenda-a-deux/";
