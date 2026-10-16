@@ -1,8 +1,58 @@
 name: Notifications (Cloudflare)
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["worker/**", ".github/workflows/deploy-push.yml"]
+  schedule:
+    - cron: "17 * * * *"
+permissions:
+  contents: write
+concurrency: deploy-push
 jobs:
-  noop:
+  deploy:
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
-      - run: echo ok
+      - uses: actions/checkout@v4
+      - name: Vérifier la clé Cloudflare
+        id: chk
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then echo "Clé CLOUDFLARE_API_TOKEN absente : rien à faire pour l'instant."; echo "go=no" >> $GITHUB_OUTPUT; exit 0; fi
+          if [ "${{ github.event_name }}" = "schedule" ] && [ -f push.json ] && grep -q workers.dev push.json; then echo "Déjà installé."; echo "go=no" >> $GITHUB_OUTPUT; exit 0; fi
+          echo "go=yes" >> $GITHUB_OUTPUT
+      - uses: actions/setup-node@v4
+        if: steps.chk.outputs.go == 'yes'
+        with: { node-version: 20 }
+      - name: Déployer le serveur de notifications
+        if: steps.chk.outputs.go == 'yes'
+        working-directory: worker
+        run: |
+          set -e
+          API=https://api.cloudflare.com/client/v4
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          ACC=$(curl -s -H "$AUTH" "$API/accounts" | jq -r '.result[0].id // empty')
+          if [ -z "$ACC" ]; then echo "::error::Clé Cloudflare refusée ou sans compte."; exit 1; fi
+          export CLOUDFLARE_ACCOUNT_ID=$ACC
+          SUB=$(curl -s -H "$AUTH" "$API/accounts/$ACC/workers/subdomain" | jq -r '.result.subdomain // empty')
+          if [ -z "$SUB" ]; then
+            SUB="together-$(head -c 4 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+            curl -s -X PUT -H "$AUTH" -H "Content-Type: application/json" "$API/accounts/$ACC/workers/subdomain" -d "{\"subdomain\":\"$SUB\"}" | jq -c '.success,.errors'
+          fi
+          KV=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces?per_page=100" | jq -r '.result[] | select(.title=="together-push-KV") | .id' | head -1)
+          if [ -z "$KV" ]; then
+            KV=$(curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$API/accounts/$ACC/storage/kv/namespaces" -d '{"title":"together-push-KV"}' | jq -r '.result.id')
+          fi
+          sed -i "s/__KV_ID__/$KV/" wrangler.toml
+          npx --yes wrangler@3 deploy | tee ../deploy.log
+          URL=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' ../deploy.log | head -1)
+          [ -z "$URL" ] && URL="https://together-push.$SUB.workers.dev"
+          echo "{\"url\":\"$URL\"}" > ../push.json
+          curl -s "$URL/api/key" | head -c 200; echo
+      - name: Publier l'adresse pour l'app
+        if: steps.chk.outputs.go == 'yes'
+        run: |
+          git config user.name "together-bot"; git config user.email "together-bot@users.noreply.github.com"
+          git add push.json
+          git diff --cached --quiet || (git commit -m "Adresse du serveur de notifications" && git push)

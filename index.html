@@ -924,6 +924,9 @@ async function render(){
   const who=id=>({name:id===myId?"toi":((ps[id]&&ps[id].name)||"l'autre"),color:(ps[id]&&ps[id].color)||"var(--muted)"});
   renderNext(upcoming.filter(passWho));
   const wf=whoFilterBar();if(wf)list.append(wf);
+  {const pp=pushPromptCard();if(pp)list.append(pp);}
+  if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
+  syncPush();
   const pend=calPending();
   // Bandeau masquable : il ne revient que si un nouvel évènement est à ajouter
   const pendSig=pend.map(e=>e.id).sort().join(",");
@@ -1297,6 +1300,7 @@ function feedbackDue(){
 }
 function memBase(ev){return {eventId:ev.id,title:ev.title||"",date:ev.date,time:ev.time||"",motif:motifOf(ev)||""};}
 async function rateOuting(ev,love,note){
+  if(!ratingsOf(memories.get(ev.id))[myId])pushOther(firstName(myId)+" a noté « "+(ev.title||"la sortie")+" »","Donne ta note pour découvrir la sienne, et ajoute tes photos.","fb-"+ev.id);
   await db.doc("memories/"+ev.id).set({...memBase(ev),ratings:{[myId]:{love:+love||0,note:String(note||"").slice(0,600),at:Date.now()}},updatedBy:myId,updatedAt:Date.now()},{merge:true});
 }
 const HEART='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.4-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.3 0 2.4.6 3 1.6.6-1 1.7-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.8-7.5 10.2-7.5 10.2z"/></svg>';
@@ -1333,6 +1337,7 @@ async function addMedia(ev,files,status){
     }catch(e){bad++;}
   }
   status&&status("");
+  if(ok)pushOther("Nouveaux souvenirs",firstName(myId)+" a ajouté "+ok+(ok>1?" photos":" photo")+" à « "+(ev.title||"votre sortie")+" ».","mem-"+ev.id);
   toast(ok?(ok+(ok>1?" souvenirs ajoutés":" souvenir ajouté")+(bad?", "+bad+" fichier"+(bad>1?"s":"")+" non pris en charge":"")):"Ces fichiers n'ont pas pu être ajoutés. Essaie une autre photo ou une vidéo plus courte.");
 }
 function animEl(frames,cls){const img=el("img",{src:frames[0],alt:"",class:cls||""});let i=0;const t=setInterval(()=>{if(!img.isConnected){clearInterval(t);return;}i=(i+1)%frames.length;img.src=frames[i];},170);return img;}
@@ -1633,7 +1638,7 @@ function renderWishesView(){
   openWishes.redraw=drawAll;
   const inp=el("input",{type:"text",class:"pair-in",placeholder:"Une idée : zoo de Beauval, resto japonais…","aria-label":"Nouvelle idée"});
   const add=async()=>{const t=inp.value.trim().slice(0,80);if(!t)return;inp.value="";
-    try{await db.doc("wishes/"+db.collection("wishes").doc().id).set({title:t,by:myId,hearts:{[myId]:true},status:"open",createdAt:Date.now()});toast("Envie partagée avec "+firstName(otherId()||myId));}catch(_){toast("Idée non enregistrée. Vérifie ta connexion.");}};
+    try{await db.doc("wishes/"+db.collection("wishes").doc().id).set({title:t,by:myId,hearts:{[myId]:true},status:"open",createdAt:Date.now()});pushOther("Nouvelle envie : "+t,firstName(myId)+" aimerait : « "+t+" ». Propose-lui un jour !","wish");toast("Envie partagée avec "+firstName(otherId()||myId));}catch(_){toast("Idée non enregistrée. Vérifie ta connexion.");}};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add();}});
   root.append(el("h2",{class:"view-h"},"Nos envies"),
     el("p",{class:"view-intro"},"Une idée de sortie ? Note-la : "+firstName(otherId()||myId)+" la reçoit et te propose un jour."),
@@ -1684,6 +1689,7 @@ function openPropose(w){
     if(!date.value||!time.value){toast("Choisis le jour et l'heure.");return;}
     send.disabled=true;
     try{await db.doc("wishes/"+w.id).update({status:"proposed",proposal:{by:myId,date:date.value,time:time.value,location:loc.value.trim(),note:note.value.trim().slice(0,140),at:Date.now()},updatedBy:myId,updatedAt:Date.now()});
+      pushOther(firstName(myId)+" te propose une sortie",w.title+", "+propText({date:date.value,time:time.value,location:loc.value.trim()})+(note.value.trim()?" : « "+note.value.trim()+" »":"")+".","wish-"+w.id);
       closeSheet();toast("Proposition envoyée à "+firstName(otherId()||w.by));}
     catch(_){send.disabled=false;toast("Proposition non envoyée. Vérifie ta connexion.");}
   };
@@ -1709,11 +1715,12 @@ async function acceptProposal(w,btn){
     const id=db.collection("events").doc().id;
     await db.doc("events/"+id).set(buildBody(d,{}));
     await db.doc("wishes/"+w.id).update({status:"accepted",eventId:id,acceptedBy:myId,acceptedAt:Date.now(),planned:Date.now(),["seen."+myId]:Date.now(),updatedBy:myId,updatedAt:Date.now()});
+    pushOther("C'est validé !",firstName(myId)+" a accepté : "+w.title+", "+propText(p)+".","wish-"+w.id);
     toast("C'est validé : « "+w.title+" » est dans votre agenda");
   }catch(_){if(btn)btn.disabled=false;toast("Impossible de valider. Vérifie ta connexion.");}
 }
 async function declineProposal(w){
-  try{await db.doc("wishes/"+w.id).update({status:"declined",declinedBy:myId,declinedAt:Date.now(),updatedBy:myId,updatedAt:Date.now()});toast("Proposition refusée. "+firstName(w.proposal&&w.proposal.by)+" peut en proposer une autre.");}catch(_){toast("Impossible pour l'instant.");}
+  try{await db.doc("wishes/"+w.id).update({status:"declined",declinedBy:myId,declinedAt:Date.now(),updatedBy:myId,updatedAt:Date.now()});pushOther(firstName(myId)+" a refusé ta proposition",w.title+" : propose une autre date ?","wish-"+w.id);toast("Proposition refusée. "+firstName(w.proposal&&w.proposal.by)+" peut en proposer une autre.");}catch(_){toast("Impossible pour l'instant.");}
 }
 function wishCard(w,todo){
   const k=motifOf({title:w.title}),p=w.proposal||null;
@@ -1767,6 +1774,173 @@ function wishNotify(next){
     }
   }
   wishPrev=new Map([...next].map(([k,v])=>[k,JSON.parse(JSON.stringify(v))]));
+}
+
+/* ---------- Notifications (serveur gratuit Cloudflare) et widget ---------- */
+let pushBase=null,pushBaseP=null;
+function pushUrl(){
+  if(pushBase!==null)return Promise.resolve(pushBase);
+  if(!pushBaseP)pushBaseP=(async()=>{
+    for(const u of ["push.json?v="+Date.now(),"https://raw.githubusercontent.com/Mohamedsahlilyon1-web/agenda-a-deux/main/push.json?v="+Date.now()]){
+      try{const r=await fetch(u,{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&/^https:\/\//.test(j.url||"")){pushBase=j.url.replace(/\/$/,"");return pushBase;}}}catch(_){}
+    }
+    pushBase="";return "";
+  })().finally(()=>{pushBaseP=null;});
+  return pushBaseP;
+}
+function pushToken(){return (couple&&couple.pushToken)||"";}
+async function ensurePushToken(){
+  if(pushToken())return pushToken();
+  const a=new Uint8Array(24);crypto.getRandomValues(a);const t="p"+[...a].map(x=>x.toString(16).padStart(2,"0")).join("");
+  await fs.doc("couples/"+coupleId).update({pushToken:t});
+  if(couple)couple.pushToken=t;
+  return t;
+}
+async function pushPost(path,body){
+  const base=await pushUrl(),tok=pushToken();
+  if(!base||!tok||!coupleId)return null;
+  try{const r=await fetch(base+path,{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({couple:coupleId,token:tok,...body})});return r.ok?await r.json().catch(()=>({ok:true})):null;}catch(_){return null;}
+}
+// Prévenir l'autre téléphone d'une action
+function pushTo(uids,title,body,tag){
+  const to=(Array.isArray(uids)?uids:[uids]).filter(u=>u&&u!==myId);
+  if(!to.length||!pushToken())return;
+  pushPost("/api/notify",{to,title,body,tag:tag||"",url:"./"});
+}
+function pushOther(title,body,tag){const o=otherId();if(o)pushTo([o],title,body,tag);}
+function pushSupported(){return "Notification" in window&&"serviceWorker" in navigator&&"PushManager" in window;}
+function pushOn(){return pushSupported()&&Notification.permission==="granted"&&lsGet("a2.push")==="1";}
+function b64uBytes(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
+async function enablePush(btn){
+  if(!pushSupported()){toast(IS_IOS&&!isStandalone()?"Ouvre Together depuis son icône sur l'écran d'accueil pour activer les notifications.":"Ce téléphone ne permet pas les notifications. Il faut iOS 16.4 ou plus récent.");return false;}
+  let perm=Notification.permission;
+  if(perm!=="granted")perm=await Notification.requestPermission();
+  if(perm!=="granted"){toast("Notifications refusées. Pour changer d'avis : Réglages de l'iPhone, Notifications, Together.");return false;}
+  if(btn){btn.disabled=true;btn.textContent="Activation…";}
+  try{
+    const base=await pushUrl();
+    if(!base){toast("Le serveur de notifications n'est pas encore installé.");return false;}
+    const reg=await navigator.serviceWorker.ready;
+    const {pub}=await (await fetch(base+"/api/key",{cache:"no-store"})).json();
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uBytes(pub)});
+    await ensurePushToken();
+    const r=await pushPost("/api/sub",{uid:myId,sub:sub.toJSON(),hello:true});
+    if(!r){toast("Activation impossible pour l'instant. Réessaie dans un moment.");return false;}
+    lsSet("a2.push","1");lsSet("a2.pushSig","");syncPush(true);
+    toast("Notifications activées");return true;
+  }catch(e){console.error(e);toast("Activation impossible : "+(e&&e.message||"réessaie."));return false;}
+  finally{if(btn){btn.disabled=false;}}
+}
+// Rappels programmés (envoyés par le serveur, même app fermée)
+function pushItems(){
+  const now=Date.now(),items=[],mem=memberIds();
+  for(const ev of events.values()){
+    const st=startOf(ev).getTime();if(st<now-6*3600000||st>now+35*86400000)continue;
+    const w=whoOf(ev),to=w==="both"?mem:[w];
+    const when=dayParts(startOf(ev))[0].toLowerCase();
+    liveReminders(ev).forEach((r,i)=>{const at=remWhen(ev,r).getTime();if(at<=now+30000)return;
+      const leave=presetOf(r)==="leave";
+      items.push({id:ev.id+":r"+i+":"+at,to,at,tag:"ev-"+ev.id,
+        title:leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+" à "+ev.time,
+        body:leave?"Départ maintenant pour arriver à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+".":(hasTrip(ev)?"Départ à "+hhmm(departOf(ev))+(ev.location?" pour "+shortAddr(ev.location):"")+".":(ev.location?shortAddr(ev.location):"Rappel"))});});
+    if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
+  }
+  return items.sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,200);
+}
+function widgetData(){
+  const now=Date.now();
+  const up=[...events.values()].filter(e=>startOf(e).getTime()>now-3600000&&passWho(e)).sort((a,b)=>startOf(a)-startOf(b)).slice(0,6);
+  return {names:memberIds().map(firstName),
+    items:up.map(e=>{const k=motifOf(e);return {t:(e.title||"Évènement").slice(0,40),s:startOf(e).getTime(),d:(+e.travelMin||0)>0?departOf(e).getTime():0,l:e.location?String(shortAddr(e.location)).slice(0,40):"",c:k?MOTIFS[k].c:"#6D5DF6",k:k?MOTIFS[k].name:""};}),
+    wishes:wishTodos().length,fb:feedbackDue().length};
+}
+let pushSyncT=null;
+function syncPush(now){
+  clearTimeout(pushSyncT);
+  pushSyncT=setTimeout(async()=>{
+    if(!pushToken()||!coupleId||!myId)return;
+    let items,widget;try{items=pushItems();widget=widgetData();}catch(_){return;}
+    const sig=JSON.stringify([items,widget]);
+    if(lsGet("a2.pushSig")===sig)return;
+    const r=await pushPost("/api/schedule",{uid:myId,items,widget});
+    if(r)lsSet("a2.pushSig",sig);
+  },now?50:5000);
+}
+function widgetScript(base){
+  return `// Together : widget (à coller dans l'app Scriptable)
+const API=${JSON.stringify(base+"/api/w?c="+encodeURIComponent(coupleId)+"&t="+encodeURIComponent(pushToken())+"&u="+encodeURIComponent(myId))};
+const APP=${JSON.stringify(location.origin+location.pathname)};
+const fm=FileManager.local(),cache=fm.joinPath(fm.documentsDirectory(),"together-widget.json");
+let data=null;
+try{const j=await new Request(API).loadJSON();data=j.data;if(data)fm.writeString(cache,JSON.stringify(data));}catch(e){}
+if(!data&&fm.fileExists(cache)){try{data=JSON.parse(fm.readString(cache));}catch(e){}}
+const fam=config.widgetFamily||"medium",now=Date.now();
+const items=((data&&data.items)||[]).filter(x=>x.s>now-3600000);
+const hm=ms=>{const d=new Date(ms);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");};
+const day=ms=>{const d=new Date(ms),t=new Date();t.setHours(0,0,0,0);const x=new Date(d);x.setHours(0,0,0,0);const n=Math.round((x-t)/864e5);return n===0?"Aujourd'hui":n===1?"Demain":d.toLocaleDateString("fr-FR",{weekday:"long"}).replace(/^./,c=>c.toUpperCase());};
+const rel=ms=>{const m=Math.round((ms-now)/6e4);if(m<=0)return "maintenant";if(m<60)return "dans "+m+" min";const h=Math.floor(m/60);if(h<24)return "dans "+h+" h"+(m%60?" "+String(m%60).padStart(2,"0"):"");return day(ms).toLowerCase();};
+const w=new ListWidget();w.url=APP;w.refreshAfterDate=new Date(now+15*6e4);
+const next=items[0];
+if(fam.startsWith("accessory")){
+  if(!next){w.addText("Together : rien de prévu");}
+  else if(fam==="accessoryInline"){w.addText((next.d&&next.d>now?"Départ "+hm(next.d):hm(next.s))+" "+next.t);}
+  else if(fam==="accessoryCircular"){const s=w.addStack();s.layoutVertically();const a=s.addText(hm(next.d&&next.d>now?next.d:next.s));a.font=Font.boldSystemFont(14);a.centerAlignText();const b=s.addText(next.d&&next.d>now?"départ":"rdv");b.font=Font.systemFont(9);b.centerAlignText();}
+  else{const a=w.addText(next.t);a.font=Font.boldSystemFont(14);a.lineLimit=1;const b=w.addText((next.d&&next.d>now?"Départ "+hm(next.d)+", ":"")+day(next.s)+" "+hm(next.s));b.font=Font.systemFont(12);}
+  Script.setWidget(w);Script.complete();return;
+}
+const g=new LinearGradient();g.colors=[new Color(next?next.c:"#4338CA",1),new Color("#0d0e1c",1)];g.locations=[0,1];g.startPoint=new Point(1,0);g.endPoint=new Point(0,1);w.backgroundGradient=g;
+w.setPadding(14,14,14,14);
+const top=w.addStack();const brand=top.addText("Together");brand.font=Font.boldSystemFont(12);brand.textColor=new Color("#ffffff",.8);top.addSpacer();
+if(data&&(data.wishes||data.fb)){const bd=top.addText((data.wishes?"★"+data.wishes+" ":"")+(data.fb?"♥"+data.fb:""));bd.font=Font.boldSystemFont(12);bd.textColor=new Color("#FFB547");}
+w.addSpacer(6);
+const body=w.addStack();body.layoutHorizontally();
+const left=body.addStack();left.layoutVertically();
+if(!next){const t=left.addText("Rien de prévu");t.font=Font.boldSystemFont(18);t.textColor=Color.white();const s=left.addText("Ajoutez une sortie à deux");s.font=Font.systemFont(12);s.textColor=new Color("#ffffff",.7);}
+else{const dep=next.d&&next.d>now-15*6e4;
+  const k=left.addText(dep?"Prochain départ":"Prochain moment");k.font=Font.mediumSystemFont(11);k.textColor=new Color("#ffffff",.75);
+  const big=left.addText(hm(dep?next.d:next.s));big.font=Font.heavySystemFont(fam==="small"?30:36);big.textColor=new Color("#FFB547");big.minimumScaleFactor=.6;
+  const ti=left.addText(next.t);ti.font=Font.boldSystemFont(14);ti.textColor=Color.white();ti.lineLimit=1;
+  const r=left.addText(rel(dep?next.d:next.s)+(next.l?", "+next.l:""));r.font=Font.systemFont(11);r.textColor=new Color("#ffffff",.75);r.lineLimit=1;}
+if(fam!=="small"&&items.length>1){body.addSpacer(12);const right=body.addStack();right.layoutVertically();
+  for(const x of items.slice(1,fam==="large"?6:4)){const row=right.addStack();row.centerAlignContent();const dot=row.addText("● ");dot.font=Font.systemFont(9);dot.textColor=new Color(x.c);
+    const tx=row.addText(day(x.s).slice(0,3)+". "+hm(x.s)+"  "+x.t);tx.font=Font.systemFont(12);tx.textColor=Color.white();tx.lineLimit=1;right.addSpacer(4);}}
+w.addSpacer();
+Script.setWidget(w);if(!config.runsInWidget)await (fam==="small"?w.presentSmall():w.presentMedium());Script.complete();
+`;
+}
+function notifSection(){
+  const box=el("div",{class:"disc-box"});
+  const st=el("p",{class:"note"},"Vérification…");box.append(st);
+  pushUrl().then(base=>{
+    box.textContent="";
+    if(!base){box.append(el("p",{class:"note"},"Le serveur de notifications n'est pas encore installé. Suis les étapes que je t'ai données dans la conversation : une fois la clé Cloudflare ajoutée, tout s'installe tout seul en quelques minutes."));return;}
+    if(pushOn())box.append(el("p",{class:"note"},"Notifications activées sur ce téléphone : départs, rappels, propositions de sorties, nouvelles envies, ajouts de ta moitié et « Comment c'était ? »."),
+      el("div",{class:"pchips"},el("button",{type:"button",class:"btn",onclick:async()=>{const r=await pushPost("/api/notify",{to:[myId],title:"Test Together",body:"Les notifications marchent sur ce téléphone.",tag:"test"});toast(r&&r.sent?"Notification envoyée : verrouille ton téléphone pour la voir arriver.":"Rien n'est parti. Désactive puis réactive les notifications.");}},"Envoyer un test"),
+        el("button",{type:"button",class:"btn quiet",onclick:()=>{lsSet("a2.push","");enablePush();}},"Réactiver")));
+    else{const b=el("button",{type:"button",class:"btn primary"},"Activer les notifications");b.onclick=async()=>{if(await enablePush(b))closeSheet();};
+      box.append(el("p",{class:"note"},IS_IOS&&!isStandalone()?"Ouvre Together depuis son icône sur l'écran d'accueil, puis reviens ici.":"Reçois les départs, les rappels et les propositions de sorties, même quand l'app est fermée."),b);}
+    // widget
+    box.append(el("div",{class:"pgroup-h"},"Widget sur l'écran d'accueil"));
+    if(!pushToken()){box.append(el("p",{class:"note"},"Active d'abord les notifications sur l'un de vos deux téléphones : le widget utilise le même serveur."));return;}
+    box.append(el("ol",{class:"sc-steps"},
+      el("li",{},"Installe l'app gratuite ",el("a",{href:"https://apps.apple.com/app/scriptable/id1405459188",target:"_blank",rel:"noopener"},"Scriptable"),"."),
+      el("li",{},"Touche « Copier le script » ci-dessous."),
+      el("li",{},"Dans Scriptable, touche +, colle, puis renomme le script « Together » (touche le titre en haut)."),
+      el("li",{},"Sur l'écran d'accueil, appui long, +, Scriptable, choisis la taille, Ajouter. Appui long sur le widget, Modifier, Script : Together.")),
+      el("button",{type:"button",class:"btn primary",onclick:async()=>{try{await navigator.clipboard.writeText(widgetScript(base));toast("Script copié : colle-le dans Scriptable");}catch(_){prompt("Copie ce script :",widgetScript(base));}}},"Copier le script du widget"));
+  });
+  return box;
+}
+function pushPromptCard(){
+  if(!pushSupported()||pushOn()||!isStandalone())return null;
+  let d="";try{d=localStorage.getItem("a2.pushAsk")||"";}catch(_){}
+  if(d&&Date.now()-+d<7*86400000)return null;
+  if(!pushBase)return null;
+  const b=el("button",{type:"button",class:"btn primary"},"Activer");
+  b.onclick=async()=>{if(await enablePush(b))render();};
+  return el("div",{class:"cal-banner push-ask"},el("div",{class:"cal-txt"},el("strong",{},"Active les notifications"),el("span",{},"Départs, rappels et propositions de "+firstName(otherId()||myId)+", même app fermée.")),b,
+    el("button",{class:"cal-x",type:"button","aria-label":"Plus tard",onclick:()=>{try{localStorage.setItem("a2.pushAsk",String(Date.now()));}catch(_){}render();}},"×"));
 }
 
 function stop(ev,who){
@@ -1918,6 +2092,7 @@ async function removeEvent(ev){
   const {id,...body}=ev;
   try{
     await db.doc("events/"+id).delete();
+    pushOther("Supprimé : "+(ev.title||"évènement"),firstName(myId)+" a supprimé « "+(ev.title||"évènement")+" ».","ev");
     toast("« "+(ev.title||"Évènement")+" » supprimé pour vous deux","Annuler",async()=>{
       try{await db.doc("events/"+id).set({...body,updatedBy:myId,updatedAt:Date.now()});toast("Évènement rétabli");}catch(e){toast("Impossible de le rétablir.");}
     });
@@ -2408,8 +2583,10 @@ async function saveEventDraft(x,d,repeat){
         await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId,...extra}));
       }
       toast(rp[2]+" évènements créés ("+rp[0].toLowerCase()+")");
+      pushOther("Nouveau : "+x.title,firstName(myId)+" a ajouté « "+x.title+" » ("+rp[0].toLowerCase()+").","ev");
     }else{
       await db.doc("events/"+(d.id||db.collection("events").doc().id)).set(buildBody(x,d));
+      pushOther((isNew?"Nouveau : ":"Modifié : ")+x.title,firstName(myId)+(isNew?" a ajouté":" a modifié")+" « "+x.title+" », "+dayParts(startOf(x))[0].toLowerCase()+" à "+x.time+".","ev");
       toast(isNew?"Enregistré, visible sur vos deux téléphones":"Modifications enregistrées pour vous deux");
     }
     $("#input").value="";
@@ -2741,6 +2918,7 @@ function openSettings(){
     el("div",{class:"pgroup-h"},"Version de l'app"),el("div",{class:"disc-box"},el("p",{class:"note"},"Version "+APP_V+". Si une nouveauté n'apparaît pas, touche ce bouton : l'app télécharge la dernière version et redémarre. Tes évènements ne sont pas touchés."),el("button",{type:"button",class:"btn primary",onclick:forceUpdate},"Mettre à jour l'app")),
     el("div",{class:"pgroup-h"},"Importer mon calendrier"),el("div",{class:"disc-box"},el("p",{class:"note"},"Récupère les évènements déjà enregistrés dans le Calendrier de ton iPhone."),el("button",{type:"button",class:"btn",onclick:openImport},"Importer depuis mon calendrier")),
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
+    coupleId?el("div",{class:"pgroup-h"},"Notifications"):null,coupleId?notifSection():null,
     el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
     coupleId?el("div",{class:"pgroup-h"},"Mon code de secours"):null,coupleId?recoverySection():null,
     coupleId?el("div",{class:"pgroup-h"},"Installer sur l'iPhone de ta moitié"):null,coupleId?shortcutsSection():null,
@@ -3362,7 +3540,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="32";
+const APP_V="33";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}

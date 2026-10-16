@@ -1,0 +1,11 @@
+name = "together-push"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "KV"
+id = "__KV_ID__"
+
+[triggers]
+crons = ["* * * * *"]
