@@ -1923,12 +1923,15 @@ function notifSection(){
     // widget
     box.append(el("div",{class:"pgroup-h"},"Widget sur l'écran d'accueil"));
     if(!pushToken()){box.append(el("p",{class:"note"},"Active d'abord les notifications sur l'un de vos deux téléphones : le widget utilise le même serveur."));return;}
+    const go=el("button",{type:"button",class:"btn primary"},"Installer le widget");
+    go.onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText(widgetScript(base));ok=true;}catch(_){}
+      if(!ok){prompt("Copie ce texte, puis colle-le dans Scriptable :",widgetScript(base));}
+      toast("Widget copié : colle-le dans Scriptable");setTimeout(()=>{location.href="scriptable:///add";},350);};
     box.append(el("ol",{class:"sc-steps"},
-      el("li",{},"Installe l'app gratuite ",el("a",{href:"https://apps.apple.com/app/scriptable/id1405459188",target:"_blank",rel:"noopener"},"Scriptable"),"."),
-      el("li",{},"Touche « Copier le script » ci-dessous."),
-      el("li",{},"Dans Scriptable, touche +, colle, puis renomme le script « Together » (touche le titre en haut)."),
-      el("li",{},"Sur l'écran d'accueil, appui long, +, Scriptable, choisis la taille, Ajouter. Appui long sur le widget, Modifier, Script : Together.")),
-      el("button",{type:"button",class:"btn primary",onclick:async()=>{try{await navigator.clipboard.writeText(widgetScript(base));toast("Script copié : colle-le dans Scriptable");}catch(_){prompt("Copie ce script :",widgetScript(base));}}},"Copier le script du widget"));
+      el("li",{},"Une seule fois : installe l'app gratuite ",el("a",{href:"https://apps.apple.com/app/scriptable/id1405459188",target:"_blank",rel:"noopener"},"Scriptable"),"."),
+      el("li",{},"Touche « Installer le widget » : Scriptable s'ouvre. Touche l'écran, « Coller », puis « OK »."),
+      el("li",{},"Sur l'écran d'accueil : appui long, +, Scriptable, Ajouter. Touche le widget et choisis le script.")),
+      go,el("button",{type:"button",class:"btn quiet",onclick:async()=>{try{await navigator.clipboard.writeText(widgetScript(base));toast("Script copié");}catch(_){prompt("Copie ce script :",widgetScript(base));}}},"Copier le script du widget"));
   });
   return box;
 }
@@ -3540,7 +3543,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="33";
+const APP_V="34";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
