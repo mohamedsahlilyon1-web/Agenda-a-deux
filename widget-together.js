@@ -28,26 +28,6 @@ const rest=items.filter(x=>x!==next);
 const dep=!!(next&&!next.a&&next.d&&next.d>now-15*6e4);
 const target=next?(dep?next.d:next.s):0;
 
-// ---------- lancé depuis l'app Scriptable (toucher le widget, ou ▶) : liste complète ----------
-if(!config.runsInWidget&&config.runsInApp){
-  let rows="",last="";
-  for(const x of items){const d=day(x.s);if(d!==last){rows+=`<h2>${esc(d)}</h2>`;last=d;}
-    rows+=`<div class="it" style="--c:${esc(x.c)}"><b>${x.a?"Toute la journée":(x.d&&x.d>now?"Départ "+hm(x.d)+" · ":"")+hm(x.s)}</b><span>${esc(x.t)}</span>${x.l?`<small>${esc(x.l)}</small>`:""}</div>`;}
-  if(!data)rows=`<p class="none">Ouvre Together une fois pour afficher vos évènements ici.</p>`;
-  else if(!items.length)rows=`<p class="none">Rien de prévu pour l'instant.</p>`;
-  const badges=data&&(data.wishes||data.fb)?`<p class="bd">${data.wishes?"★ "+data.wishes+" envie"+(data.wishes>1?"s":"")+" en attente ":""}${data.fb?"♥ "+data.fb+" souvenir"+(data.fb>1?"s":"")+" à raconter":""}</p>`:"";
-  const html=`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-  body{margin:0;font:16px -apple-system,system-ui;background:radial-gradient(90% 60% at 100% 0%,${TH.p}aa,transparent 60%),radial-gradient(80% 50% at 0% 100%,${TH.s}55,transparent 60%),${TH.h};background-attachment:fixed;color:#fff;padding:22px 18px 40px;min-height:100vh;box-sizing:border-box}
-  h1{font:700 34px Georgia,serif;margin:8px 0 2px}.sub{opacity:.75;margin:0 0 14px;font-size:14px}.bd{color:${TH.s};font-weight:600;font-size:14px}
-  h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;opacity:.7;margin:22px 0 8px}
-  .it{background:rgba(255,255,255,.09);border-left:4px solid var(--c);border-radius:16px;padding:12px 14px;margin-bottom:8px;display:grid;gap:2px;backdrop-filter:blur(8px)}
-  .it b{color:${TH.s};font-size:14px}.it span{font:600 17px Georgia,serif}.it small{opacity:.7}.none{opacity:.8}
-  .tip{margin-top:26px;font-size:13px;opacity:.7;line-height:1.4}</style>
-  <h1>Together</h1><p class="sub">${data&&data.names?esc(data.names.join(" & ")):""}</p>${badges}${rows}
-  <p class="tip">Pour ajouter ou modifier, ouvre l'icône Together sur ton écran d'accueil.</p>`;
-  const wv=new WebView();await wv.loadHTML(html);await wv.present(true);Script.complete();return;
-}
-
 // ---------- couleurs ----------
 const rgb=h=>{h=String(h||"#000000").replace("#","");if(h.length===3)h=h.split("").map(c=>c+c).join("");const n=parseInt(h,16)||0;return [n>>16&255,n>>8&255,n&255];};
 const hex=a=>"#"+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join("");
@@ -195,6 +175,81 @@ function drawCircular(){const S=76,c=new DrawContext();c.size=new Size(S,S);c.op
     txt(c,dep?"départ":next.a?"journée":"rdv",0,S/2+5,S,12,fSmall(9),C("#ffffff",.8),"c");}
   else logo(c,S/2,S/2,9,2,1,"#ffffff","#ffffff");
   return c.getImage();}
+
+// ---------- lancé depuis l'app Scriptable (toucher le widget, ou ▶) : aperçu au style de Together ----------
+function svgIcon(key,col,size,sw){const src=ICONS[key];if(!src)return "";let o="";
+  for(const part of src.split(";")){const f=part[0]==="f",n=(f?part.slice(1):part).split(",").map(Number);
+    if(f&&n.length===3){o+=`<circle cx="${n[0]/10}" cy="${n[1]/10}" r="${Math.max(.8,n[2]/10)}" fill="${col}"/>`;continue;}
+    const pts=[];for(let i=0;i+1<n.length;i+=2)pts.push(n[i]/10+","+n[i+1]/10);
+    o+=f?`<polygon points="${pts.join(" ")}" fill="${col}"/>`:`<polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="${sw||1.8}" stroke-linecap="round" stroke-linejoin="round"/>`;}
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${o}</svg>`;}
+function rings(h,a,b){return `<svg viewBox="0 0 40 24" height="${h}" width="${h*40/24}" aria-hidden="true"><circle cx="14" cy="12" r="8.5" fill="none" stroke="${a}" stroke-width="3"/><circle cx="26" cy="12" r="8.5" fill="none" stroke="${b}" stroke-width="3"/><path d="M14 3.5a8.5 8.5 0 0 1 7.6 4.7" fill="none" stroke="${a}" stroke-width="3"/></svg>`;}
+function previewHtml(){
+  const T=Object.assign({b:"#EDEEF5",u:"#FFFFFF",i:"#16163A",m:"#606181",l:"#DCDDEA"},TH),dark=lum(T.b)<0.4;
+  const names=(data&&data.names)||[];
+  const todayTxt=cap(new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}));
+  let heroH="";
+  if(next){const p=progress(),R=46,L=2*Math.PI*R;
+    heroH=`<section class="hero" style="--c:${esc(EVC)}">
+      <div class="wm">${svgIcon(next.m,"#ffffff",230,1.2)||rings(150,"#ffffff","#ffffff")}</div>
+      <div class="dial"><svg viewBox="0 0 110 110" width="110" height="110"><circle cx="55" cy="55" r="${R}" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="7"/>
+        <circle cx="55" cy="55" r="${R}" fill="none" stroke="${ACC}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(p*L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 55 55)" class="arc"/></svg>
+        <div class="ic">${svgIcon(next.m,"#ffffff",40,1.8)||rings(26,ACC,"#ffffff")}</div></div>
+      <div class="ht"><p class="kick">${esc(kicker())}</p><h3>${esc(next.t)}</h3>
+        <p class="meta">${dep?`<span class="go">Départ ${hm(next.d)}</span>`:""}${esc(meta())}</p>${next.k?`<p class="mk">${esc(next.k)}</p>`:""}</div></section>`;}
+  else heroH=`<section class="hero none"><div class="ic">${rings(54,ACC,"#ffffff")}</div><div class="ht"><h3>${data?"Rien de prévu":"Ouvre Together"}</h3><p class="meta">${data?"Et si on sortait ?":"une fois pour afficher vos évènements ici"}</p></div></section>`;
+  const L7=["D","L","M","M","J","V","S"];let wk="";
+  for(let i=0;i<7;i++){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+i);const evs=items.filter(e=>dayN(e.s)===i);
+    wk+=`<div class="wd${i===0?" on":""}"><small>${L7[d.getDay()]}</small><b>${d.getDate()}</b><i>${evs.slice(0,3).map(e=>`<u style="background:${esc(e.c)}"></u>`).join("")}</i></div>`;}
+  const chips=data&&(data.wishes||data.fb)?`<div class="chips">${data.wishes?`<span>★ ${data.wishes} envie${data.wishes>1?"s":""} à exaucer</span>`:""}${data.fb?`<span>♥ ${data.fb} souvenir${data.fb>1?"s":""} à raconter</span>`:""}</div>`:"";
+  let rows="",last="",n=0;
+  for(const x of rest){const d=day(x.s);if(d!==last){rows+=`<h4>${esc(d)}</h4>`;last=d;}
+    rows+=`<article style="--c:${esc(x.c)};--d:${(n++)*60}ms"><div class="tm">${x.a?"<small>Journée</small>":`<b>${hm(x.s)}</b>`}${x.d&&x.d>now?`<small>dép. ${hm(x.d)}</small>`:""}</div>
+      <div class="bub">${svgIcon(x.m,"#ffffff",22,2)||"<em></em>"}</div>
+      <div class="tx"><b>${esc(x.t)}</b>${x.l||x.k?`<small>${esc([x.l,x.k].filter(Boolean).join(" · "))}</small>`:""}</div>${x.w?`<span class="who">${esc(x.w)}</span>`:""}</article>`;}
+  if(data&&!rest.length&&next)rows=`<p class="empty">Rien d'autre de prévu pour l'instant.</p>`;
+  return `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Fraunces:opsz,wght@9..144,500..800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:${T.b};--su:${T.u};--ink:${T.i};--mu:${T.m};--hair:${T.l};--p:${T.p};--s:${ACC};--hero:${BG};--f:"Bricolage Grotesque",-apple-system,system-ui,sans-serif;--fd:"Fraunces",Georgia,serif;color-scheme:${dark?"dark":"light"}}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(70% 380px at 100% -80px,color-mix(in oklab,var(--p) 30%,transparent),transparent 70%),var(--bg);color:var(--ink);font:16px/1.35 var(--f);padding:18px 16px 40px;-webkit-font-smoothing:antialiased}
+header{display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px;letter-spacing:-.01em}
+.duo{display:flex}.duo span{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;background:var(--p);border:2px solid var(--bg)}.duo span+span{margin-left:-9px;background:color-mix(in oklab,var(--s) 85%,#000);color:#1a1000}
+.today{font:800 30px/1.1 var(--fd);letter-spacing:-.02em;margin:18px 2px 14px}
+.hero{position:relative;overflow:hidden;border-radius:28px;padding:20px 18px;color:#fff;display:flex;gap:16px;align-items:center;min-height:170px;
+  background:radial-gradient(90% 90% at 100% 0%,color-mix(in oklab,var(--p) 75%,transparent),transparent 60%),radial-gradient(80% 90% at 0% 100%,color-mix(in oklab,var(--c,var(--p)) 70%,transparent),transparent 60%),var(--hero);
+  box-shadow:0 22px 44px -24px color-mix(in oklab,var(--c,var(--p)) 80%,transparent);animation:up .5s cubic-bezier(.2,.8,.2,1) both}
+.hero .wm{position:absolute;right:-50px;bottom:-60px;opacity:.09;transform:rotate(-13deg)}
+.dial{position:relative;flex:none;width:110px;height:110px}.dial .ic{position:absolute;inset:0;display:grid;place-items:center}
+.arc{filter:drop-shadow(0 0 6px ${ACC});animation:draw 1.1s cubic-bezier(.2,.8,.2,1) both}
+@keyframes draw{from{stroke-dasharray:0 999}}
+.ht{position:relative;min-width:0}.kick{margin:0;color:var(--s);font-weight:800;font-size:12px;letter-spacing:.06em}
+.hero h3{font:800 26px/1.08 var(--fd);margin:4px 0 8px;letter-spacing:-.01em}.meta{margin:0;font-weight:600;font-size:14px;opacity:.88;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.go{background:var(--s);color:#1a1000;border-radius:99px;padding:3px 10px;font-weight:800;font-size:12px}.mk{margin:8px 0 0;font-size:12px;opacity:.65}
+.hero.none{justify-content:flex-start}.hero.none .ic{flex:none}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:14px 0 4px}
+.wd{background:var(--su);border:1px solid var(--hair);border-radius:16px;padding:8px 0 7px;display:grid;justify-items:center;gap:1px}
+.wd small{font-size:10px;font-weight:700;color:var(--mu)}.wd b{font-size:17px;font-weight:800}.wd i{display:flex;gap:3px;height:6px}.wd u{width:6px;height:6px;border-radius:50%}
+.wd.on{background:var(--p);border-color:transparent;color:#fff}.wd.on small{color:rgba(255,255,255,.8)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}.chips span{background:color-mix(in oklab,var(--s) 18%,var(--su));border:1px solid color-mix(in oklab,var(--s) 45%,transparent);border-radius:99px;padding:7px 12px;font-weight:700;font-size:13px}
+h2{font:800 20px var(--fd);margin:24px 2px 4px}h4{margin:16px 4px 8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+article{display:flex;align-items:center;gap:12px;background:var(--su);border:1px solid var(--hair);border-radius:20px;padding:12px 14px;margin-bottom:8px;position:relative;overflow:hidden;animation:up .45s var(--d) cubic-bezier(.2,.8,.2,1) both}
+article::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.tm{width:52px;flex:none;display:grid}.tm b{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}.tm small{font-size:11px;color:var(--mu);font-weight:600}
+.bub{width:40px;height:40px;border-radius:14px;background:var(--c);display:grid;place-items:center;flex:none;box-shadow:0 8px 16px -10px var(--c)}.bub em{width:8px;height:8px;border-radius:50%;background:#fff}
+.tx{min-width:0;flex:1;display:grid}.tx b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tx small{color:var(--mu);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who{width:24px;height:24px;border-radius:50%;background:var(--hair);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none}
+.empty{color:var(--mu)}.tip{margin:26px 4px 0;font-size:13px;color:var(--mu);text-align:center}
+@keyframes up{from{opacity:0;transform:translateY(10px)}}
+</style>
+<header><div class="brand">${rings(22,ACC,T.p)}Together</div><div class="duo">${names.slice(0,2).map(x=>`<span>${esc(String(x).slice(0,1).toUpperCase())}</span>`).join("")}</div></header>
+<h1 class="today">${esc(todayTxt)}</h1>
+${heroH}<div class="week">${wk}</div>${chips}
+${rest.length||next?`<h2>Ensuite</h2>`:""}${rows}
+<p class="tip">Pour ajouter ou modifier, ouvre l'icône Together sur ton écran d'accueil.</p></html>`;}
+if(!config.runsInWidget&&config.runsInApp){
+  const wv=new WebView();await wv.loadHTML(previewHtml());await wv.present(true);Script.complete();return;
+}
 
 // ---------- assemblage ----------
 const w=new ListWidget();w.refreshAfterDate=new Date(now+15*6e4);

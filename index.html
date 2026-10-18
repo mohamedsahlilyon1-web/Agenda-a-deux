@@ -1874,7 +1874,8 @@ function widgetTheme(){
   let cs=null;try{cs=getComputedStyle(document.documentElement);}catch(_){}
   const v=n=>{const x=cs?String(cs.getPropertyValue(n)||"").trim():"";return /^#[0-9a-f]{6}$/i.test(x)?x:null;};
   const sk=currentSkin();
-  return {h:v("--hero")||"#1E1A5E",p:v("--line")||"#4338CA",s:v("--sun")||"#FFB547",f:SKIN_W[sk]?sk:"encre"};
+  return {h:v("--hero")||"#1E1A5E",p:v("--line")||"#4338CA",s:v("--sun")||"#FFB547",f:SKIN_W[sk]?sk:"encre",
+    b:v("--bg")||"#EDEEF5",u:v("--surface")||"#FFFFFF",i:v("--ink")||"#16163A",m:v("--muted")||"#606181",l:v("--hair")||"#DCDDEA"};
 }
 function widgetData(){
   const now=Date.now();
@@ -3548,7 +3549,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="38";
+const APP_V="39";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
