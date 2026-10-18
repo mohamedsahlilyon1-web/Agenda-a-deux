@@ -1850,12 +1850,42 @@ function pushItems(){
   }
   return items.sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,150);
 }
+// Icônes des thèmes converties en tracés simples (le widget Scriptable ne sait pas lire le SVG)
+const WICON={};
+function iconLines(k){
+  if(!MOTIFS[k])return "";if(WICON[k]!=null)return WICON[k];
+  const NS="http://www.w3.org/2000/svg",svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("width","24");svg.setAttribute("height","24");
+  svg.style.cssText="position:absolute;left:-200px;top:0;visibility:hidden";svg.innerHTML=MOTIFS[k].svg;document.body.appendChild(svg);
+  const out=[];
+  const sample=(g,a,b,fill)=>{const L=b-a;if(!(L>0.05)){const p=g.getPointAtLength(a);out.push("f"+Math.round(p.x*10)+","+Math.round(p.y*10)+",8");return;}
+    const n=Math.max(4,Math.min(60,Math.ceil(L/0.6))),pts=[];
+    for(let i=0;i<=n;i++){const p=g.getPointAtLength(a+L*i/n+(i===0?0.001:0)-(i===n?0.001:0));pts.push(Math.round(p.x*10),Math.round(p.y*10));}
+    out.push((fill?"f":"")+pts.join(","));};
+  try{for(const g of svg.querySelectorAll("path,circle,rect,line,polyline,polygon,ellipse")){
+    const fill=(g.getAttribute("fill")||"")==="currentColor";
+    if(g.tagName==="path"){const parts=(g.getAttribute("d")||"").split(/(?=[Mm])/).filter(x=>x.trim());let acc="",prev=0;
+      for(const part of parts){acc+=part;const t=document.createElementNS(NS,"path");t.setAttribute("d",acc);svg.appendChild(t);const L=t.getTotalLength();sample(t,prev,L,fill);prev=L;t.remove();}}
+    else{const L=g.getTotalLength();if(L)sample(g,0,L,fill);}}}catch(_){}
+  svg.remove();return WICON[k]=out.join(";");
+}
+const SKIN_W={encre:1,aurore:1,tokyo:1,velours:1,jardin:1,riviera:1,bonbon:1,metro:1};
+function widgetTheme(){
+  let cs=null;try{cs=getComputedStyle(document.documentElement);}catch(_){}
+  const v=n=>{const x=cs?String(cs.getPropertyValue(n)||"").trim():"";return /^#[0-9a-f]{6}$/i.test(x)?x:null;};
+  const sk=currentSkin();
+  return {h:v("--hero")||"#1E1A5E",p:v("--line")||"#4338CA",s:v("--sun")||"#FFB547",f:SKIN_W[sk]?sk:"encre"};
+}
 function widgetData(){
   const now=Date.now();
   // Le widget montre tout l'agenda du couple, sans tenir compte du filtre choisi à l'écran
   const up=[...events.values()].filter(e=>startOf(e).getTime()>now-3600000).sort((a,b)=>startOf(a)-startOf(b)).slice(0,12);
-  return {names:memberIds().map(firstName),
-    items:up.map(e=>{const k=motifOf(e);return {t:(e.title||"Évènement").slice(0,40),s:startOf(e).getTime(),d:(+e.travelMin||0)>0?departOf(e).getTime():0,l:e.location?String(shortAddr(e.location)).slice(0,40):"",c:k?MOTIFS[k].c:"#6D5DF6",k:k?MOTIFS[k].name:"",a:(e.allDay||/toute la journ/i.test(e.notes||"")||e.time==="00:00")?1:0};}),
+  const ic={};
+  const items=up.map(e=>{const k=motifOf(e);if(k&&ic[k]==null)ic[k]=iconLines(k);const w=whoOf(e);
+    return {t:(e.title||"Évènement").slice(0,40),s:startOf(e).getTime(),d:(+e.travelMin||0)>0?departOf(e).getTime():0,l:e.location?String(shortAddr(e.location)).slice(0,40):"",
+      c:k?MOTIFS[k].c:"#6D5DF6",k:k?MOTIFS[k].name:"",m:k||"",w:w==="both"?"":firstName(w).slice(0,1).toUpperCase(),
+      a:(e.allDay||/toute la journ/i.test(e.notes||"")||e.time==="00:00")?1:0};});
+  return {names:memberIds().map(firstName),items,ic,th:widgetTheme(),
     wishes:wishTodos().length,fb:feedbackDue().length};
 }
 let pushSyncT=null;
@@ -2939,6 +2969,7 @@ function applySkin(id){
   if(id==="encre") document.documentElement.removeAttribute("data-skin"); else document.documentElement.setAttribute("data-skin",id);
   try{localStorage.setItem("a2.skin",id);}catch(_){}
   syncBarColor();
+  try{if(typeof syncPush==="function")syncPush();}catch(_){} // le widget prend les couleurs du thème
 }
 function syncBarColor(){
   requestAnimationFrame(()=>{const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#EDEEF5");});
@@ -3517,7 +3548,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="37";
+const APP_V="38";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
