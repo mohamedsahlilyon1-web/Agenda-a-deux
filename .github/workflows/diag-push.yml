@@ -1,0 +1,40 @@
+name: Diagnostic notifications
+on:
+  push:
+    branches: [main]
+    paths: ["diag/trigger.txt"]
+permissions:
+  contents: write
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lire l'état du serveur (compteurs seulement)
+        run: |
+          API=https://api.cloudflare.com/client/v4; AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          URL=$(jq -r .url push.json)
+          ACC=$(curl -s -H "$AUTH" "$API/accounts" | jq -r '.result[0].id')
+          KV=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces?per_page=100" | jq -r '.result[] | select(.title=="together-push-KV") | .id' | head -1)
+          KEY_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/key")
+          IDX=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/index")
+          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"couples\":[" > diag/result.json
+          first=1
+          for id in $(echo "$IDX" | jq -r '.[]?'); do
+            V=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/c:$id")
+            TOK=$(echo "$V" | jq -r .token)
+            S=$(echo "$V" | jq -c '{subs:((.subs//{})|map_values(length)),sched:((.sched//[])|length),nextAt:((.sched//[])|map(.at)|min),done:((.done//[])|length),wAt:(.wAt//0),widgets:((.widgets//{})|map_values({items:((.items//[])|length),wishes,fb})),oldWidget:(.widget!=null)}')
+            W=""
+            for u in $(echo "$V" | jq -r '(.subs//{})|keys[]'); do
+              C=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u" | jq -c '{items:((.data.items//[])|length),at}')
+              W="$W\"${u:0:4}…\":$C,"
+            done
+            [ $first = 1 ] || echo "," >> diag/result.json; first=0
+            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"widgetApi\":{${W%,}}}" >> diag/result.json
+          done
+          echo "]}" >> diag/result.json
+          cat diag/result.json
+          git config user.name "together-bot"; git config user.email "together-bot@users.noreply.github.com"
+          git add diag/result.json; git commit -m "Diagnostic notifications" && git push
