@@ -1852,9 +1852,10 @@ function pushItems(){
 }
 function widgetData(){
   const now=Date.now();
-  const up=[...events.values()].filter(e=>startOf(e).getTime()>now-3600000&&passWho(e)).sort((a,b)=>startOf(a)-startOf(b)).slice(0,6);
+  // Le widget montre tout l'agenda du couple, sans tenir compte du filtre choisi à l'écran
+  const up=[...events.values()].filter(e=>startOf(e).getTime()>now-3600000).sort((a,b)=>startOf(a)-startOf(b)).slice(0,12);
   return {names:memberIds().map(firstName),
-    items:up.map(e=>{const k=motifOf(e);return {t:(e.title||"Évènement").slice(0,40),s:startOf(e).getTime(),d:(+e.travelMin||0)>0?departOf(e).getTime():0,l:e.location?String(shortAddr(e.location)).slice(0,40):"",c:k?MOTIFS[k].c:"#6D5DF6",k:k?MOTIFS[k].name:""};}),
+    items:up.map(e=>{const k=motifOf(e);return {t:(e.title||"Évènement").slice(0,40),s:startOf(e).getTime(),d:(+e.travelMin||0)>0?departOf(e).getTime():0,l:e.location?String(shortAddr(e.location)).slice(0,40):"",c:k?MOTIFS[k].c:"#6D5DF6",k:k?MOTIFS[k].name:"",a:(e.allDay||/toute la journ/i.test(e.notes||"")||e.time==="00:00")?1:0};}),
     wishes:wishTodos().length,fb:feedbackDue().length};
 }
 let pushSyncT=null;
@@ -3516,7 +3517,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="36";
+const APP_V="37";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
