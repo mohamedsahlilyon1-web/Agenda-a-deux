@@ -25,7 +25,7 @@ jobs:
           for id in $(echo "$IDX" | jq -r '.[]?'); do
             V=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/c:$id")
             TOK=$(echo "$V" | jq -r .token)
-            S=$(echo "$V" | jq -c '{subs:((.subs//{})|map_values(length)),sched:((.sched//[])|length),nextAt:((.sched//[])|map(.at)|min),done:((.done//[])|length),wAt:(.wAt//0),widgets:((.widgets//{})|map_values({items:((.items//[])|length),wishes,fb})),oldWidget:(.widget!=null)}')
+            S=$(echo "$V" | jq -c '{subs:((.subs//{})|length),sched:((.sched//[])|length),nextAt:((.sched//[])|map(.at)|min),done:((.done//[])|length),wAt:(.wAt//0),widgets:((.widgets//{})|[.[]|{items:((.items//[])|length),wishes,fb}]),oldWidget:(.widget!=null)}')
             W=""
             for u in $(echo "$V" | jq -r '(.subs//{})|keys[]'); do
               C=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u" | jq -c '{items:((.data.items//[])|length),at}')

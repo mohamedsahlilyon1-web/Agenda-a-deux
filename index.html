@@ -1799,7 +1799,9 @@ async function ensurePushToken(){
 async function pushPost(path,body){
   const base=await pushUrl(),tok=pushToken();
   if(!base||!tok||!coupleId)return null;
-  try{const r=await fetch(base+path,{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({couple:coupleId,token:tok,...body})});return r.ok?await r.json().catch(()=>({ok:true})):null;}catch(_){return null;}
+  const payload=JSON.stringify({couple:coupleId,token:tok,...body});
+  // « keepalive » refuse les envois de plus de 64 Ko : on ne l'utilise que pour les petits messages
+  try{const r=await fetch(base+path,{method:"POST",headers:{"Content-Type":"application/json"},keepalive:payload.length<60000,body:payload});return r.ok?await r.json().catch(()=>({ok:true})):null;}catch(_){return null;}
 }
 // Prévenir l'autre téléphone d'une action
 function pushTo(uids,title,body,tag){
@@ -1846,7 +1848,7 @@ function pushItems(){
         body:leave?"Départ maintenant pour arriver à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+".":(hasTrip(ev)?"Départ à "+hhmm(departOf(ev))+(ev.location?" pour "+shortAddr(ev.location):"")+".":(ev.location?shortAddr(ev.location):"Rappel"))});});
     if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
   }
-  return items.sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,200);
+  return items.sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,150);
 }
 function widgetData(){
   const now=Date.now();
@@ -1860,7 +1862,7 @@ function syncPush(now){
   if(pushSyncT&&!now)return; // déjà prévu : on ne repousse pas sans fin
   clearTimeout(pushSyncT);
   pushSyncT=setTimeout(async()=>{pushSyncT=null;
-    if(!pushToken()||!coupleId||!myId)return;
+    if(!pushToken()||!coupleId||!myId||firstSnap)return;
     let items,widget;try{items=pushItems();widget=widgetData();}catch(_){return;}
     const sig=JSON.stringify([items,widget]);
     if(lsGet("a2.pushSig")===sig)return;
@@ -3514,7 +3516,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="35";
+const APP_V="36";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
