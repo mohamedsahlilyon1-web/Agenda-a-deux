@@ -426,6 +426,22 @@ header{flex-wrap:wrap;row-gap:4px}
 .empty{border:none;background:var(--surface);box-shadow:var(--lift);border-radius:26px;padding:34px 18px}
 .empty strong{font-size:1.4rem;font-variation-settings:"wdth" 85;letter-spacing:-.02em}
 .cal-banner{border-radius:22px}
+.cp-hero{display:flex;gap:14px;align-items:center;margin:4px 0 12px}.cp-hero h2{margin:0 0 4px;font-family:var(--fd,inherit);font-size:23px;line-height:1.1}
+.cp-sub{margin:0;color:var(--muted);font-size:14.5px}
+.cp-cal{flex:none;width:58px;height:62px;border-radius:16px;background:var(--surface);border:1px solid var(--hair);display:grid;grid-template-rows:20px 1fr;overflow:hidden;box-shadow:0 12px 24px -16px var(--line);transform:rotate(-6deg);animation:cpPop .5s cubic-bezier(.2,1.4,.4,1) both}
+.cp-cal b{background:#E5484D;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.06em;display:grid;place-items:center}.cp-cal i{font-style:normal;font-weight:800;font-size:26px;display:grid;place-items:center;color:var(--ink)}
+.cp-who{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:color-mix(in oklab,var(--hair) 70%,transparent);margin-bottom:12px}
+.cp-who button{font:inherit;font-weight:700;font-size:14px;border:0;border-radius:11px;padding:9px 6px;background:transparent;color:var(--muted)}.cp-who button.on{background:var(--surface);color:var(--ink);box-shadow:0 2px 8px -4px rgba(0,0,0,.3)}
+.cp-list{display:grid;gap:10px;max-height:52vh;overflow:auto;padding:2px}
+.cp-item{--m:var(--line);position:relative;display:grid;grid-template-columns:44px 1fr;gap:4px 12px;align-items:center;background:var(--surface);border:1px solid var(--hair);border-radius:20px;padding:12px 12px 12px 16px;overflow:hidden;animation:cpIn .4s var(--d) cubic-bezier(.2,.8,.2,1) both;transition:opacity .2s,transform .2s}
+.cp-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--m)}
+.cp-item.gone{opacity:0;transform:translateX(30px) scale(.97)}
+.cp-ic{width:44px;height:44px;border-radius:14px;background:var(--m);color:#fff;display:grid;place-items:center;box-shadow:0 8px 16px -10px var(--m)}.cp-ic svg{width:24px;height:24px}
+.cp-txt{min-width:0;display:grid;gap:1px}.cp-txt strong{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cp-txt span{color:var(--ink);opacity:.8;font-size:13.5px}.cp-txt small{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-act{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.cp-act .btn{padding:8px 16px;min-height:0}.cp-add{background:var(--m);color:#fff;border-color:transparent}
+.cp-foot{display:flex;justify-content:space-between;gap:10px}
+@keyframes cpIn{from{opacity:0;transform:translateY(12px)}}@keyframes cpPop{from{opacity:0;transform:rotate(-20deg) scale(.6)}}
 .go{border-radius:20px}
 
 /* Barre d'action flottante : parler ou ajouter */
@@ -2676,7 +2692,8 @@ function blankDraft(){
   const d=new Date(Date.now()+86400000);
   return {title:"",category:"rdv",date:ymd(d),time:"10:00",durationMin:60,location:"",origin:homeAddr(),mode:settings.mode||"car",travelMin:0,marginMin:10,travelNote:"",reminders:[],notes:""};
 }
-function closeSheet(){if(typeof recOn!=="undefined"&&recOn){try{REC.abort();}catch(_){}recOn=false;}$("#sheet-root").textContent="";inboxRefresh=null;}
+function closeSheet(){if(typeof recOn!=="undefined"&&recOn){try{REC.abort();}catch(_){}recOn=false;}$("#sheet-root").textContent="";inboxRefresh=null;
+  if(typeof calPopPending!=="undefined"&&calPopPending){calPopPending=false;maybeCalPopup();}}
 function sheetShell(label,children){
   return el("div",{class:"sheet-bg",onclick:e=>{if(e.target===e.currentTarget)closeSheet();}},
     el("div",{class:"sheet",role:"dialog","aria-modal":"true","aria-label":label},el("div",{class:"grab"}),...children));
@@ -3318,9 +3335,85 @@ async function startInbox(){
   fs.doc("inbox/"+inboxKey).onSnapshot(snap=>{
     inboxText=snap.exists?String(snap.data().texte||""):"";
     importBadge();if(inboxRefresh)inboxRefresh();
+    maybeCalPopup();
   },()=>{});
 }
 function importDuplicate(it){return [...events.values()].some(e=>norm(e.title)===norm(it.title)&&e.date===it.date&&e.time===it.time);}
+// Ajoute un évènement du calendrier dans Together (trajet, rappels et thème calculés comme d'habitude)
+async function importCalItem(it,who){
+  const d=blankDraft();
+  Object.assign(d,{title:it.title.slice(0,80),date:it.date,time:it.time,category:guessCat(it.title),notes:it.allDay?"Toute la journée":""});
+  if(who)d.who=who;
+  d.marginMin=DEF_MARGIN[d.category]??10;d.durationMin=DEF_DUR[d.category]||60;
+  const pl=placeFor(it.location)||placeByTitle(it.title);
+  d.location=pl?pl.address:(it.location||"");
+  if(d.location&&!it.allDay){try{const r=await estimateTrip(d);if(r.ok){d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;}}catch(_){}}
+  d.reminders=suggestReminders(d);
+  try{await db.doc("events/"+db.collection("events").doc().id).set(buildBody(d,{...d,calendarAdded:{[myId]:Date.now()+86400000*365}}));return true;}catch(e){return false;}
+}
+
+/* ---------- Nouvel évènement dans le calendrier : fenêtre à l'ouverture de l'app ---------- */
+const calKey=it=>norm(it.title)+"|"+it.date+"|"+(it.allDay?"":it.time);
+function calSeenSet(){try{const s=localStorage.getItem("a2.calSeen");return s==null?null:new Set(JSON.parse(s));}catch(_){return new Set();}}
+function calSeenAdd(keys){const set=calSeenSet()||new Set();for(const k of keys)set.add(k);try{localStorage.setItem("a2.calSeen",JSON.stringify([...set].slice(-500)));}catch(_){}}
+let calLater=new Set(),calPopT=null,calPopPending=false;
+function calFresh(){const seen=calSeenSet()||new Set();return inboxItems().filter(it=>!importDuplicate(it)&&!seen.has(calKey(it))&&!calLater.has(calKey(it)));}
+function maybeCalPopup(){
+  clearTimeout(calPopT);
+  calPopT=setTimeout(()=>{
+    if(!inboxText||firstSnap||!myId||!coupleId||document.visibilityState==="hidden")return;
+    // Toute première fois : on retient ce qui est déjà là, sans tout ressortir d'un coup
+    if(calSeenSet()==null){calSeenAdd(inboxItems().map(calKey));return;}
+    const fresh=calFresh();if(!fresh.length)return;
+    if($("#sheet-root").childElementCount){calPopPending=true;return;}
+    openCalPopup(fresh);
+  },600);
+}
+function calWhen(it){const d=startOf(it),n=Math.round((new Date(it.date+"T12:00:00")-new Date(ymd(new Date())+"T12:00:00"))/864e5);
+  const dl=n===0?"Aujourd'hui":n===1?"Demain":d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}).replace(/^./,c=>c.toUpperCase());
+  return dl+(it.allDay?", toute la journée":" à "+it.time.replace(":","h"));}
+function openCalPopup(list){
+  const root=$("#sheet-root");root.textContent="";
+  let items=list.slice(0,12),who=lsGet("a2.calWho")||"both";
+  const box=el("div",{class:"cp-list"});
+  const head=el("p",{class:"cp-sub"});
+  const allBtn=el("button",{type:"button",class:"btn primary"});
+  const whoSeg=el("div",{class:"cp-who",role:"group","aria-label":"Pour qui ?"});
+  function drawWho(){whoSeg.textContent="";
+    [["both","Pour nous deux"],[myId,"Pour moi"]].forEach(([v,t])=>whoSeg.append(el("button",{type:"button",class:who===v?"on":"","aria-pressed":String(who===v),onclick:()=>{who=v;lsSet("a2.calWho",v);drawWho();}},t)));}
+  function done(it){items=items.filter(x=>x!==it);if(!items.length){closeSheet();scheduleRender();}else draw();}
+  function draw(){
+    box.textContent="";
+    head.textContent=items.length>1?items.length+" nouveaux évènements dans ton calendrier. Tu veux les ajouter dans Together ?":"Un nouvel évènement dans ton calendrier. Tu veux l'ajouter dans Together ?";
+    allBtn.textContent=items.length>1?"Tout ajouter ("+items.length+")":"Ajouter";
+    items.forEach((it,i)=>{
+      const k=motifOf({title:it.title,category:guessCat(it.title)});
+      const add=el("button",{type:"button",class:"btn cp-add"},"Ajouter");
+      const card=el("article",{class:"cp-item",style:(k?"--m:"+MOTIFS[k].c+";":"")+"--d:"+(i*70)+"ms"},
+        el("span",{class:"cp-ic",html:k?motifSvg(k):'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>'}),
+        el("div",{class:"cp-txt"},el("strong",{},it.title),el("span",{},calWhen(it)),it.location?el("small",{},it.location):null),
+        el("div",{class:"cp-act"},add,el("button",{type:"button",class:"btn quiet cp-no","aria-label":"Ignorer « "+it.title+" »",onclick:()=>{calSeenAdd([calKey(it)]);card.classList.add("gone");setTimeout(()=>done(it),220);}},"Ignorer")));
+      add.onclick=async()=>{add.disabled=true;add.textContent="…";calSeenAdd([calKey(it)]);
+        const ok=await importCalItem(it,who);
+        if(ok){if(who==="both"){try{pushOther("Nouveau dans l'agenda",it.title+" · "+calWhen(it));}catch(_){}}toast("« "+it.title+" » ajouté");card.classList.add("gone");setTimeout(()=>done(it),220);}
+        else{add.disabled=false;add.textContent="Réessayer";}};
+      box.append(card);
+    });
+  }
+  allBtn.onclick=async()=>{allBtn.disabled=true;let n=0;const sel=items.slice();
+    for(const it of sel){allBtn.textContent="Ajout… "+(n+1)+"/"+sel.length;calSeenAdd([calKey(it)]);if(await importCalItem(it,who))n++;}
+    if(n&&who==="both"){try{pushOther("Nouveau dans l'agenda",n>1?n+" évènements ajoutés":sel[0].title);}catch(_){}}
+    closeSheet();scheduleRender();toast(n+" évènement"+(n>1?"s ajoutés":" ajouté")+" dans Together");};
+  const later=()=>{items.forEach(it=>calLater.add(calKey(it)));closeSheet();};
+  drawWho();draw();
+  root.append(sheetShell("Nouveau dans ton calendrier",[
+    el("div",{class:"cp-hero"},el("span",{class:"cp-cal","aria-hidden":"true"},el("b",{},new Date().toLocaleDateString("fr-FR",{month:"short"}).replace(".","")),el("i",{},String(new Date().getDate()))),
+      el("div",{},el("h2",{},"Nouveau dans ton calendrier"),head)),
+    whoSeg,box,
+    el("div",{class:"sheet-foot cp-foot"},el("button",{type:"button",class:"btn quiet",onclick:later},"Plus tard"),allBtn)]));
+  // fermer en touchant à côté = « plus tard »
+  const bg=root.querySelector(".sheet-bg");if(bg)bg.addEventListener("click",e=>{if(e.target===bg)items.forEach(it=>calLater.add(calKey(it)));},true);
+}
 function openImport(){
   const root=$("#sheet-root");root.textContent="";
   const ta=el("textarea",{id:"imp-text",rows:"5",class:"q-input",placeholder:"Colle ici ce que le raccourci a copié"});
@@ -3372,14 +3465,7 @@ function openImport(){
     go.disabled=true;let done=0;
     for(const it of sel){
       go.textContent="Import en cours… "+(done+1)+"/"+sel.length;
-      const d=blankDraft();
-      Object.assign(d,{title:it.title.slice(0,80),date:it.date,time:it.time,category:guessCat(it.title),notes:it.allDay?"Toute la journée":""});
-      d.marginMin=DEF_MARGIN[d.category]??10;d.durationMin=DEF_DUR[d.category]||60;
-      const pl=placeFor(it.location)||placeByTitle(it.title);
-      d.location=pl?pl.address:(it.location||"");
-      if(d.location&&!it.allDay){try{const r=await estimateTrip(d);if(r.ok){d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;}}catch(_){}}
-      d.reminders=suggestReminders(d);
-      try{await db.doc("events/"+db.collection("events").doc().id).set(buildBody(d,{...d,calendarAdded:{[myId]:Date.now()+86400000*365}}));done++;}catch(e){}
+      if(await importCalItem(it))done++;
     }
     closeSheet();importBadge();toast(done+" évènement"+(done>1?"s importés":" importé")+" pour vous deux");
   };
@@ -3549,7 +3635,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="39";
+const APP_V="40";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -3638,7 +3724,7 @@ function startVoice(ta,btn,help,onDone,retry){
     else fallback(false);
   }
 }
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&typeof syncPush==="function")syncPush(true);});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&typeof syncPush==="function")syncPush(true);if(document.visibilityState==="visible"&&typeof maybeCalPopup==="function")maybeCalPopup();});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible"&&recOn){try{REC.abort();}catch(_){}recOn=false;micIdle(recBtn);}});
 
 function openQuickAdd(voice){
@@ -3776,8 +3862,9 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
         }
       }
     }
-    firstSnap=false;
+    const wasFirst=firstSnap;firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
+    if(wasFirst)maybeCalPopup();
     scheduleRender();
   },()=>notice("La synchronisation s'est interrompue. Vérifie ta connexion puis rouvre l'app."));
 })();
