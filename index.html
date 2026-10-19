@@ -255,7 +255,7 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .sign .sign-btn{grid-column:1 / -1;justify-self:start;margin-top:8px;background:var(--sun-ink);color:var(--sun);border-color:transparent}
 .sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
 @media (max-width:430px){h1{font-size:1.25rem;white-space:nowrap}.brand{gap:8px}header .round{width:38px;height:38px}header .round svg{width:18px;height:18px}}
-#btn-import{position:relative}
+#btn-import,#btn-shop{position:relative}
 .imp-dot{position:absolute;top:-5px;right:-5px;z-index:2;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#E5193C;color:#fff;font-family:system-ui,-apple-system,sans-serif;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--bg);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 .imp-start{display:flex;flex-direction:column;gap:6px;align-items:stretch}
 .imp-big{justify-content:center;padding:14px 18px;font-size:1.05rem}
@@ -426,6 +426,58 @@ header{flex-wrap:wrap;row-gap:4px}
 .empty{border:none;background:var(--surface);box-shadow:var(--lift);border-radius:26px;padding:34px 18px}
 .empty strong{font-size:1.4rem;font-variation-settings:"wdth" 85;letter-spacing:-.02em}
 .cal-banner{border-radius:22px}
+/* ----- listes de courses ----- */
+.shop-dot{background:#16A34A!important;color:#fff!important}
+.shop-pill-row{margin-top:8px;display:flex}
+.shop-pill{--m2:var(--m,#16A34A);display:inline-flex;align-items:center;gap:7px;border:1px solid color-mix(in oklab,var(--m2) 35%,transparent);background:color-mix(in oklab,var(--m2) 12%,var(--surface));color:var(--ink);border-radius:999px;padding:5px 11px 5px 8px;font:inherit;font-weight:800;font-size:.84rem}
+.shop-pill>span{width:18px;height:18px;color:var(--m2);display:grid}.shop-pill svg{width:18px;height:18px}
+.shop-pill .sp-bar{width:38px;height:5px;border-radius:9px;background:color-mix(in oklab,var(--m2) 22%,transparent);overflow:hidden;display:block}.shop-pill .sp-bar u{display:block;height:100%;background:var(--m2);border-radius:9px}
+.shop-pill.full{background:var(--m2);color:#fff}.shop-pill.full>span{color:#fff}.shop-pill.full .sp-bar{background:rgba(255,255,255,.35)}.shop-pill.full .sp-bar u{background:#fff}
+.hero-pill{margin-top:10px;justify-self:start;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;backdrop-filter:blur(6px)}.hero-pill>span{color:#fff}.hero-pill .sp-bar{background:rgba(255,255,255,.25)}.hero-pill .sp-bar u{background:var(--sun)}
+.shop-peek{display:flex;flex-wrap:wrap;gap:6px}.shop-peek span{--a:#94A3B8;font-size:.85rem;font-weight:700;padding:4px 10px 4px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--hair);display:inline-flex;align-items:center;gap:6px}
+.shop-peek span::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--a)}.shop-peek .more::before{display:none}
+.shop-open{align-self:flex-start;background:var(--m,var(--line));border-color:transparent}.shop-open svg{width:18px;height:18px}
+.sheet-tall{max-height:96%;min-height:72%}
+.shop-sheet{--m:#16A34A;display:flex;flex-direction:column;gap:12px}
+.shop-dyn{display:flex;flex-direction:column;gap:12px}
+.shop-top{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center}
+.shop-ring{position:relative;width:64px;height:64px;color:var(--ink)}.shop-ring>span{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:.95rem;color:var(--m)}.shop-ring>span svg{width:26px;height:26px}
+.sr-arc{transition:stroke-dasharray .5s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 5px color-mix(in oklab,var(--m) 55%,transparent))}
+.shop-tt h2{margin:0;font-family:var(--fd,inherit);font-size:1.45rem;line-height:1.1;letter-spacing:-.01em;overflow-wrap:anywhere}
+.shop-tt p{margin:3px 0 0;color:var(--muted);font-size:.88rem}.shop-tt .shop-count{color:var(--ink);font-weight:700}
+.shop-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}.shop-tabs::-webkit-scrollbar{display:none}
+.shop-tabs button{--t:var(--line);flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--hair);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font:inherit;font-weight:700;font-size:.86rem}
+.shop-tabs button span{display:grid;width:16px;height:16px;color:var(--t)}.shop-tabs button svg{width:16px;height:16px}
+.shop-tabs button.on{background:var(--ink);color:var(--bg);border-color:transparent}.shop-tabs button.on span{color:inherit}
+.shop-awake{margin:0;display:flex;align-items:center;gap:8px;font-size:.84rem;font-weight:700;color:var(--m)}.shop-awake i{width:8px;height:8px;border-radius:50%;background:var(--m);box-shadow:0 0 0 0 var(--m);animation:awake 1.8s infinite}
+@keyframes awake{70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.shop-addrow{display:grid;grid-template-columns:1fr auto auto;gap:8px;position:sticky;top:-10px;z-index:2;background:var(--bg);padding:6px 0}
+.shop-in{border:1.5px solid var(--hair);background:var(--surface);border-radius:16px;padding:13px 14px;font:inherit;font-size:1.02rem;color:var(--ink);min-width:0}.shop-in:focus{outline:none;border-color:var(--m)}
+.shop-mic{width:50px;border-radius:16px;border:1.5px solid var(--hair);background:var(--surface);color:var(--m);display:grid;place-items:center}.shop-mic svg{width:22px;height:22px}
+.shop-plus{width:50px;justify-content:center;font-size:1.5rem;padding:0;border-radius:16px;background:var(--m);border-color:transparent}
+.shop-sug{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.shop-sug .lab{width:100%}.shop-sug .pchip{border-style:dashed}
+.shop-groups{display:flex;flex-direction:column;gap:6px}
+.shop-aisle{--a:#94A3B8;display:flex;align-items:center;gap:8px;margin:10px 2px 2px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.shop-aisle i{width:10px;height:10px;border-radius:3px;background:var(--a);transform:rotate(45deg)}.shop-aisle span{margin-left:auto;font-weight:800;color:var(--a)}
+.shop-item{--a:#94A3B8;display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--hair);border-radius:18px;padding:8px;position:relative;overflow:hidden}.shop-item.new{animation:siIn .3s cubic-bezier(.2,.8,.2,1) both}
+.shop-item::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--a)}
+.si-check{flex:none;width:46px;height:46px;border-radius:14px;border:0;background:transparent;display:grid;place-items:center;padding:0}
+.si-check i{width:30px;height:30px;border-radius:50%;border:2.5px solid color-mix(in oklab,var(--a) 70%,var(--hair));display:grid;place-items:center;color:transparent;transition:all .2s}
+.si-check svg{width:18px;height:18px;transform:scale(.4);transition:transform .25s cubic-bezier(.2,1.6,.4,1)}
+.shop-item.done .si-check i{background:var(--a);border-color:var(--a);color:#fff}.shop-item.done .si-check svg{transform:scale(1)}
+.si-t{flex:1;min-width:0;font-weight:700;font-size:1.05rem;overflow-wrap:anywhere;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.si-q{font-size:.8rem;font-weight:800;padding:2px 8px;border-radius:999px;background:color-mix(in oklab,var(--a) 16%,transparent);color:color-mix(in oklab,var(--a) 75%,var(--ink))}
+.shop-item.done .si-t{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted);font-weight:500}
+.si-price{border:1px solid var(--hair);background:var(--bg);border-radius:10px;padding:6px 9px;font:inherit;font-weight:800;font-size:.88rem;color:var(--ink)}.si-price.empty{color:var(--muted);font-weight:600;border-style:dashed}
+.si-by{flex:none;width:24px;height:24px;border-radius:50%;background:var(--hair);display:grid;place-items:center;font-size:.72rem;font-weight:800}
+.si-x{flex:none;border:0;background:none;color:var(--muted);font-size:1.35rem;width:34px;height:40px}
+.shop-done{border-top:1px dashed var(--hair);padding-top:10px;display:flex;flex-direction:column;gap:6px}.shop-done summary{font-weight:800;color:var(--muted);cursor:pointer;padding:4px 2px}
+.shop-done .btn{align-self:flex-start;margin-top:4px}
+.shop-empty{display:grid;justify-items:center;gap:6px;padding:26px 10px;color:var(--muted);text-align:center}.shop-empty svg{width:46px;height:46px;color:var(--m);opacity:.7}.shop-empty p{margin:0}
+.shop-foot{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));background:var(--bg);padding:10px 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.shop-total{margin-right:auto;display:grid}.shop-total small{color:var(--muted);font-weight:600}.shop-total b{font-size:1.4rem;font-family:var(--fd,inherit)}
+.shop-foot .btn.primary{background:var(--m);border-color:transparent}
+@keyframes siIn{from{opacity:0;transform:translateY(6px)}}
 .cp-hero{display:flex;gap:14px;align-items:center;margin:4px 0 12px}.cp-hero h2{margin:0 0 4px;font-family:var(--fd,inherit);font-size:23px;line-height:1.1}
 .cp-sub{margin:0;color:var(--muted);font-size:14.5px}
 .cp-cal{flex:none;width:58px;height:62px;border-radius:16px;background:var(--surface);border:1px solid var(--hair);display:grid;grid-template-rows:20px 1fr;overflow:hidden;box-shadow:0 12px 24px -16px var(--line);transform:rotate(-6deg);animation:cpPop .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -773,7 +825,7 @@ body.film-on{overflow:hidden}
       <svg class="brand-mark" viewBox="0 0 30 30" aria-hidden="true"><circle cx="11" cy="15" r="7.5" fill="none" stroke="var(--sun)" stroke-width="3.2"/><circle cx="19" cy="15" r="7.5" fill="none" stroke="var(--line)" stroke-width="3.2"/><path d="M16.2 8.6a7.5 7.5 0 0 1 2.2 2.4" fill="none" stroke="var(--sun)" stroke-width="3.2"/></svg>
       <h1>Together</h1>
     </div>
-    <div style="display:flex;gap:8px"><button class="round" id="btn-import" aria-label="Importer depuis mon calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5 12 18l2.5-2.5"/></svg></button>
+    <div style="display:flex;gap:8px"><button class="round" id="btn-shop" aria-label="Liste de courses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.2l2.3 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg></button><button class="round" id="btn-import" aria-label="Importer depuis mon calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5 12 18l2.5-2.5"/></svg></button>
     <button class="round" id="btn-theme" aria-label="Thème"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor"/></svg></button>
     <button class="round" id="btn-settings" aria-label="Réglages communs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>
     <div class="today"><button type="button" class="today-d" id="today-d" aria-label="Voir le mois"></button><div class="duo" id="duo"></div></div>
@@ -943,6 +995,7 @@ async function render(){
   {const pp=pushPromptCard();if(pp)list.append(pp);}
   if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
   syncPush();
+  autoMergeShop();shopBadge();
   const pend=calPending();
   // Bandeau masquable : il ne revient que si un nouvel évènement est à ajouter
   const pendSig=pend.map(e=>e.id).sort().join(",");
@@ -1009,6 +1062,7 @@ function renderNext(upcoming){
     trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||ev.title))):null,
     trip?el("div",{class:"trip-meta"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null].filter(Boolean));
   if(trip&&IS_IOS&&canWrite){const b=alarmButton(ev,"sign-btn");if(b)n.append(b);}
+  if(isShopping(ev))n.append(shopPill(ev,"hero-pill"));
 }
 function hasTripEv(e){return (+e.travelMin||0)>0;}
 function renderToday(){
@@ -1078,6 +1132,7 @@ const MOTIFS={
   sport:{name:"Sport",c:"#EA580C",re:/sport|salle|gym|fitness|foot|piscine|nage|running|course (a )?pied|footing|yoga|pilates|padel|tennis|muscu|velo|rando|match|basket|boxe|danse/,svg:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>'},
   voyage:{name:"Voyage",c:"#0891B2",re:/voyage|\bvol\b|avion|aeroport|\btrain\b|\bgare\b|tgv|vacances|hotel|week-?end|valise|airbnb/,svg:'<path d="M10.5 13.5 3 11l1.5-1.5 8 .5 4.5-4.5c1-1 2.5-1.2 3-.5.7.5.5 2-.5 3L15 12.5l.5 8L14 22l-2.5-7.5L8 18v2.5L6.5 22l-1-3.5L2 17.5 3.5 16H6z"/>'},
   travail:{name:"Travail",c:"#475569",re:/travail|reunion(?! (de |des )?parents)|boulot|bureau|entretien|rendez-vous pro|client|formation|conference|seminaire/,svg:'<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>'},
+  shopping:{name:"Shopping",c:"#DB2777",re:/shopping|soldes|\bvetements?\b|\bhabits\b|fringues|\bzara\b|h ?& ?m\b|primark|kiabi|uniqlo|decathlon|\bikea\b|centre commercial|galeries lafayette|\bboutique|\bfnac\b|\bdarty\b|sephora|nocibe|\bmall\b|outlet|chaussures|cadeaux? (pour|de noel)|lego store|apple store|leroy merlin|castorama|maisons du monde/,svg:'<path d="M5 8h14l-1 12.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20.5z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/><path d="M9.5 14.5c.6 1 1.4 1.5 2.5 1.5s1.9-.5 2.5-1.5"/>'},
   style:{name:"Coiffeur, beauté",c:"#9333EA",re:/coiff|barbier|manucure|ongle|esthetic|\bspa\b|massage|institut|maquill|epilation/,svg:'<circle cx="6" cy="6.5" r="3"/><circle cx="6" cy="17.5" r="3"/><path d="M8.5 8 20 18M8.5 16 20 6"/>'},
   famille:{name:"Famille, amis",c:"#D97706",re:/maman|papa|parents|famille|mamie|papi|grand-?mere|grand-?pere|frere|soeur|cousin|tante|oncle|copain|copine|amis|potes|bebe|creche|nounou/,svg:'<path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M12 17.5s-3-1.8-3-3.6c0-1 .8-1.7 1.6-1.7.6 0 1.1.3 1.4.8.3-.5.8-.8 1.4-.8.8 0 1.6.7 1.6 1.7 0 1.8-3 3.6-3 3.6z"/>'},
   animal:{name:"Animaux, véto",c:"#A16207",re:/veto|veterinaire|chien|chat\b|chiot|chaton|toilettage|animalerie|croquettes|vaccin du chien|pension/,svg:'<circle cx="6" cy="10" r="2"/><circle cx="10" cy="5.5" r="2"/><circle cx="14" cy="5.5" r="2"/><circle cx="18" cy="10" r="2"/><path d="M12 11c-2.8 0-5 3.7-5 6.2 0 1.6 1.2 2.6 2.7 2.6 1 0 1.5-.5 2.3-.5s1.3.5 2.3.5c1.5 0 2.7-1 2.7-2.6 0-2.5-2.2-6.2-5-6.2z"/>'},
@@ -1161,26 +1216,227 @@ function whoFilterBar(){
 }
 
 /* ---------- Liste de courses partagée ---------- */
-function isShopping(ev){return motifOf(ev)==="panier"||ev.category==="courses";}
+/* ---------- Listes de courses et de shopping ---------- */
+// Rayons dans l'ordre d'un magasin. Les mots sont comparés sans accents, au début des mots.
+const AISLES=[
+  {id:"fruits",n:"Fruits et légumes",c:"#16A34A",w:"pomme,poire,banane,orange,citron,fraise,framboise,myrtille,raisin,kiwi,ananas,mangue,avocat,tomate,salade,laitue,roquette,mache,carotte,oignon,ail,echalote,patate,pomme de terre,courgette,aubergine,poivron,concombre,champignon,brocoli,chou,epinard,haricot vert,poireau,persil,coriandre,menthe,basilic,ciboulette,legume,fruit,melon,pasteque,peche,nectarine,abricot,cerise,prune,clementine,mandarine,pamplemousse,radis,betterave,gingembre,citron vert,celeri,fenouil,potiron,courge,mais,petit pois,endive,artichaut,asperge,datte,figue,grenade"},
+  {id:"pain",n:"Boulangerie",c:"#D97706",w:"pain,baguette,brioche,croissant,pain au chocolat,chocolatine,viennoiserie,pain de mie,biscotte,tortilla,wrap,pita,naan,galette,crepe,muffin"},
+  {id:"frais",n:"Crèmerie et frais",c:"#0EA5E9",w:"lait,beurre,oeuf,yaourt,yogourt,fromage,creme,emmental,gruyere,mozzarella,burrata,parmesan,feta,camembert,brie,comte,raclette,reblochon,chevre,skyr,petit suisse,fromage blanc,margarine,houmous,pate a tarte,pate feuilletee,pate brisee,gnocchi,ravioli frais,dessert,compote fraiche,mascarpone,ricotta,lait d'avoine,kefir"},
+  {id:"viande",n:"Viandes et poissons",c:"#DC2626",w:"poulet,boeuf,steak,viande,hache,dinde,porc,agneau,veau,merguez,saucisse,jambon,lardon,chorizo,salami,saucisson,bacon,saumon,poisson,crevette,cabillaud,colin,escalope,cordon bleu,nugget,cuisse,filet,cote,roti,brochette,kebab,thon frais,moules,calamar,surimi,blanc de poulet,knack"},
+  {id:"epicerie",n:"Épicerie",c:"#CA8A04",w:"pate,spaghetti,penne,tagliatelle,riz,farine,sucre,sel,poivre,huile,vinaigre,cafe,the,infusion,cereale,muesli,flocon,chocolat,biscuit,gateau,cookie,confiture,miel,nutella,pate a tartiner,conserve,thon,sardine,sauce,ketchup,mayonnaise,moutarde,epice,curry,paprika,cumin,lentille,pois chiche,haricot rouge,semoule,couscous,quinoa,boulgour,soupe,chips,bonbon,compote,levure,bouillon,olive,noix,amande,cacahuete,pistache,noisette,raisin sec,coulis,tomate concassee,concentre,lait de coco,cornichon,mais en boite,puree,croutons,chapelure,maizena,vanille,cacao,barre,gaufre,madeleine,pain d'epice,sirop d'erable"},
+  {id:"boissons",n:"Boissons",c:"#7C3AED",w:"eau,jus,soda,coca,cola,fanta,sprite,ice tea,biere,vin,champagne,cidre,sirop,limonade,perrier,san pellegrino,orangina,schweppes,energy,red bull,lait de soja,smoothie,boisson"},
+  {id:"surgeles",n:"Surgelés",c:"#2563EB",w:"surgele,glace,pizza,frite,poisson pane,legumes surgeles,epinard surgele,sorbet,esquimau,cornet,glacon"},
+  {id:"hygiene",n:"Hygiène et beauté",c:"#DB2777",w:"shampoing,shampooing,apres-shampoing,savon,gel douche,dentifrice,brosse a dent,fil dentaire,bain de bouche,deodorant,deo,rasoir,mousse a raser,coton,coton tige,mouchoir,papier toilette,pq,serviette hygienique,tampon,protege slip,creme hydratante,creme solaire,maquillage,demaquillant,vernis,couche,lingette,parfum,gel,laque,elastique,pansement,doliprane,paracetamol,vitamine"},
+  {id:"maison",n:"Maison et entretien",c:"#64748B",w:"lessive,liquide vaisselle,produit vaisselle,eponge,sac poubelle,essuie-tout,essuie tout,sopalin,javel,nettoyant,desinfectant,papier alu,aluminium,film alimentaire,papier cuisson,pile,ampoule,adoucissant,pastille,tablette lave-vaisselle,sel lave-vaisselle,serpillere,balai,allumette,bougie,sac congelation,gant,vinaigre blanc,bicarbonate,desodorisant,anti-calcaire"},
+  {id:"animaux",n:"Animaux",c:"#A16207",w:"croquette,litiere,patee,friandise chat,friandise chien,os a macher"},
+  {id:"bebe",n:"Bébé",c:"#F472B6",w:"lait bebe,petit pot,lait infantile,couche bebe,biberon,tetine,liniment"},
+];
+const SHOP_AISLES=[
+  {id:"vet",n:"Vêtements",c:"#DB2777",w:"pull,jean,pantalon,robe,tee-shirt,tshirt,t-shirt,chemise,veste,manteau,doudoune,jupe,short,chaussette,culotte,slip,boxer,soutien-gorge,pyjama,sweat,hoodie,legging,blouson,gilet,costume,maillot,echarpe,bonnet,gant,ceinture,cravate,collant,body"},
+  {id:"chaus",n:"Chaussures",c:"#EA580C",w:"chaussure,basket,botte,bottine,sandale,escarpin,mocassin,tong,chausson,sneaker,talon"},
+  {id:"beaute",n:"Beauté",c:"#C026D3",w:"parfum,maquillage,rouge a levre,mascara,fond de teint,creme,serum,vernis,palette,soin"},
+  {id:"deco",n:"Maison et déco",c:"#0D9488",w:"coussin,bougie,cadre,plaid,vaisselle,assiette,verre,tasse,mug,rideau,tapis,lampe,vase,drap,housse,serviette de bain,linge,meuble,etagere,plante,miroir,boite,rangement,couverture"},
+  {id:"tech",n:"High-tech",c:"#2563EB",w:"chargeur,cable,ecouteur,casque,coque,telephone,ordinateur,souris,clavier,ecran,tablette,montre,enceinte,batterie,cle usb,disque,jeu video,console,manette"},
+  {id:"acc",n:"Accessoires",c:"#9333EA",w:"sac,portefeuille,bijou,collier,bracelet,bague,boucle d'oreille,lunette,montre,parapluie,valise,sac a dos"},
+  {id:"cadeau",n:"Cadeaux",c:"#E11D48",w:"cadeau,carte cadeau,jouet,livre,peluche,lego,puzzle,jeu"},
+];
+const AISLE_OTHER={id:"autre",n:"Autres",c:"#94A3B8"};
+const AISLE_RX=new Map();
+function aisleRx(a){if(!AISLE_RX.has(a.id))AISLE_RX.set(a.id,new RegExp("(^|[^a-z])("+a.w.split(",").map(x=>norm(x).replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/ /g,"[ -]")).sort((x,y)=>y.length-x.length).join("|")+")"));return AISLE_RX.get(a.id);}
+function aisleOf(t,kind){const n=norm(t).replace(/œ/g,"oe").replace(/æ/g,"ae"),L=kind==="shop"?SHOP_AISLES:AISLES;
+  // le plus long mot reconnu gagne (« lait de coco » va en épicerie, pas en crèmerie)
+  let best=null,len=0,pos=1e9;for(const a of L){const m=n.match(aisleRx(a));if(!m)continue;const at=m.index+m[1].length;
+    if(m[2].length>len||(m[2].length===len&&at<pos)){best=a;len=m[2].length;pos=at;}}
+  return best?best.id:"autre";}
+function aisleInfo(id,kind){return (kind==="shop"?SHOP_AISLES:AISLES).find(a=>a.id===id)||AISLE_OTHER;}
+function shopKind(ev){return ev&&motifOf(ev)==="shopping"?"shop":"food";}
+function isShopping(ev){const k=motifOf(ev);return k==="panier"||k==="shopping"||ev.category==="courses";}
+const shopPushAt={};
+function pushShop(title,body){const k=title;if(Date.now()-(shopPushAt[k]||0)<5*60000)return;shopPushAt[k]=Date.now();try{pushOther(title,body,"shop");}catch(_){}}
+const shopId=()=>Math.random().toString(36).slice(2,10);
+// « 2 baguettes », « œufs x12 », « 1 kg de pommes », « pull 39,90 € » → {t,q,p}
+function parseShopItem(raw,kind){
+  let s=String(raw||"").replace(/\s+/g," ").trim().replace(/[.!?]+$/,"");if(!s)return null;
+  let p=null,q="";
+  const pm=s.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|euros?\b|eur\b)/i);if(pm){p=Math.round(parseFloat(pm[1].replace(",","."))*100)/100;s=s.replace(pm[0]," ").trim();}
+  let m=s.match(/\s*(?:x|×)\s*(\d+)$/i)||s.match(/\s*\((\d+)\)$/);if(m){q=m[1];s=s.slice(0,m.index).trim();}
+  m=s.match(/^(\d+(?:[.,]\d+)?)\s*(kg|g|grammes?|l|litres?|cl|ml|paquets?|boites?|bouteilles?|packs?|sachets?|pots?|tranches?|pieces?)?\b\.?\s*(?:de |d'|d’)?/i);
+  if(m&&m[0].trim()){q=(m[1]+(m[2]?" "+m[2].toLowerCase().replace(/^grammes?$/,"g").replace(/^litres?$/,"l"):"")).trim();s=s.slice(m[0].length).trim();}
+  else{const w=s.match(/^(un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|douze)\s+/i);
+    if(w){const N={un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,douze:12}[w[1].toLowerCase()];if(N>1)q=String(N);s=s.slice(w[0].length);}}
+  s=s.replace(/^(?:(?:encore du|encore des|encore de la|quelques|de la|du|des|de|le|la|les|un|une)\s+|(?:de l|l|d)['’]\s*)/i,"").trim();
+  if(!s||s.length<2)return null;
+  s=s.charAt(0).toUpperCase()+s.slice(1);
+  return {id:shopId(),t:s.slice(0,60),q:q.slice(0,12),p,a:aisleOf(s,kind),done:false,by:myId,at:Date.now()};
+}
+function splitShop(text,kind){return String(text||"").replace(/(\d),(\d)/g,"$1.$2").split(/,|;|\n| et puis | puis | et (?=(?:du|de la|des|de l'|un|une|\d|[a-zà-ÿ]))/i).map(x=>parseShopItem(x,kind)).filter(Boolean);}
+function mergeShop(list,add){const out=list.map(x=>({...x}));
+  for(const it of add){const k=norm(it.t);const ex=out.find(x=>norm(x.t)===k);
+    if(ex&&!ex.done){if(it.q&&!ex.q)ex.q=it.q;if(it.p!=null&&ex.p==null)ex.p=it.p;continue;}
+    if(ex&&ex.done){Object.assign(ex,{done:false,by:it.by,at:it.at});continue;}
+    out.push(it);}
+  return out.slice(0,200);}
+function itemsOf(ev){return (Array.isArray(ev&&ev.items)?ev.items:[]).filter(x=>x&&x.t).map((x,i)=>({id:x.id||("i"+i),q:"",p:null,a:x.a||aisleOf(x.t,shopKind(ev)),...x}));}
+
+// La liste « À racheter » partagée (config/shop) et les articles achetés souvent
+let shopList={items:[],freq:{}},shopRefresh=null,shopMerging=false;
+function pendingItems(){return (shopList.items||[]).filter(x=>x&&x.t);}
+async function savePending(list){try{await db.doc("config/shop").set({items:list.slice(0,200),updatedBy:myId,updatedAt:Date.now()},{merge:true});}catch(_){toast("Liste non enregistrée. Vérifie ta connexion.");}}
+async function saveEvItems(ev,list,extra){try{await db.doc("events/"+ev.id).update({items:list.slice(0,200),updatedBy:myId,updatedAt:Date.now(),...(extra||{})});return true;}catch(_){toast("Liste non enregistrée. Vérifie ta connexion.");return false;}}
+// Les prochaines courses alimentaires (dans les 7 jours) reçoivent automatiquement la liste « À racheter »
+function nextGroceries(){const now=Date.now();return [...events.values()].filter(e=>isShopping(e)&&shopKind(e)==="food"&&!e.shopDone&&startOf(e).getTime()>now-3*3600000&&startOf(e).getTime()<now+7*864e5).sort((a,b)=>startOf(a)-startOf(b))[0]||null;}
+async function autoMergeShop(){
+  if(shopMerging||firstSnap||!myId)return;const pend=pendingItems();if(!pend.length)return;
+  const ev=nextGroceries();if(!ev)return;
+  shopMerging=true;
+  try{const ok=await saveEvItems(ev,mergeShop(itemsOf(ev),pend));
+    if(ok){await savePending([]);toast(pend.length+" article"+(pend.length>1?"s":"")+" ajouté"+(pend.length>1?"s":"")+" à « "+ev.title+" »");}}
+  finally{shopMerging=false;}
+}
+// Où va un article qu'on ajoute « à la liste » : les prochaines courses, sinon « À racheter »
+function shopTarget(){return nextGroceries();}
+async function addToShop(text,ev){
+  const target=ev||shopTarget();const kind=target?shopKind(target):"food";
+  const add=splitShop(text,kind);if(!add.length)return [];
+  if(target){await saveEvItems(target,mergeShop(itemsOf(target),add));}
+  else await savePending(mergeShop(pendingItems(),add));
+  if(otherId())pushShop(target?"Liste : "+target.title:"À racheter",firstName(myId)+" a ajouté "+add.map(x=>x.t).join(", ").slice(0,110));
+  return add;
+}
+function bumpFreq(items){const f={...(shopList.freq||{})};
+  for(const it of items){const k=norm(it.t).slice(0,40);if(!k)continue;const o=f[k]||{t:it.t,a:it.a,n:0};f[k]={t:o.t,a:it.a||o.a,n:(o.n||0)+1,last:Date.now()};}
+  const keep=Object.entries(f).sort((a,b)=>(b[1].n-a[1].n)||(b[1].last-a[1].last)).slice(0,120);
+  try{db.doc("config/shop").set({freq:Object.fromEntries(keep)},{merge:true});}catch(_){}}
+const SHOP_STARTERS=["Lait","Pain","Œufs","Beurre","Bananes","Pâtes","Tomates","Papier toilette","Eau","Café"];
+function shopSuggestions(cur,kind){
+  if(kind==="shop")return [];
+  const have=new Set(cur.filter(x=>!x.done).map(x=>norm(x.t)));
+  const f=Object.values(shopList.freq||{}).filter(x=>x&&x.t).sort((a,b)=>(b.n-a.n)||((b.last||0)-(a.last||0))).map(x=>x.t);
+  const out=[];for(const t of [...f,...SHOP_STARTERS]){if(!have.has(norm(t))&&!out.some(o=>norm(o)===norm(t)))out.push(t);if(out.length>=8)break;}
+  return out;}
+// « ajoute du lait et des œufs », « il faut racheter du PQ », « mets des pâtes sur la liste »
+function shopIntent(text,p){
+  const n=norm(text);
+  const lead=/^(ajoute|rajoute|mets|note|ecris|il faut (re)?acheter|il faut racheter|il faudrait (re)?acheter|on n'a plus( de| d')?|y a plus( de| d')?|il n'y a plus( de| d')?|plus de|acheter|achete|racheter|rachete|penser a acheter|pense a acheter)\b/;
+  const listy=/\b(a|sur|dans) (la|ma|notre) liste\b|\bliste de courses\b|\bliste\b|\ba racheter\b|\baux courses\b|\bpour les courses\b/;
+  const noWhen=!p||(p.assumed&&p.assumed.date&&p.assumed.time);
+  if(!(lead.test(n)&&(listy.test(n)||noWhen)))return null;
+  let s=String(text).replace(/^\s*(ajoute|rajoute|mets|note|écris|ecris|il faut (re)?acheter|il faut racheter|il faudrait (re)?acheter|on n'a plus|on n’a plus|y a plus|il n'y a plus|il n’y a plus|plus|acheter|achète|achete|racheter|rachète|rachete|pense[rz]? à acheter|pense[rz]? a acheter)\s*/i,"");
+  s=s.replace(/\s*(à|a|sur|dans|pour)\s+(la|ma|notre|les)\s+(liste( de courses| des courses| de shopping)?|courses)\s*$/i,"").replace(/\s*(à racheter|aux courses)\s*$/i,"");
+  const items=splitShop(s,"food");
+  if(!items.length)return null;
+  // sans mot « liste », il faut au moins un produit reconnu, pour ne pas confondre avec un rendez-vous
+  if(!listy.test(n)&&!items.some(x=>x.a!=="autre"))return null;
+  return s;
+}
+
+// Petit badge sur les cartes : panier + « 3/8 »
+const CART_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.3 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>';
+const BAG_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20.5z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></svg>';
+function shopPill(ev,cls){
+  const it=itemsOf(ev),d=it.filter(x=>x.done).length;
+  const label=it.length?d+"/"+it.length:"Liste";
+  return el("button",{type:"button",class:"shop-pill"+(cls?" "+cls:"")+(it.length&&d===it.length?" full":""),"aria-label":"Ouvrir la liste ("+(it.length?d+" sur "+it.length:"vide")+")",
+    onclick:e=>{e.stopPropagation();openShop(ev.id);}},el("span",{html:shopKind(ev)==="shop"?BAG_SVG:CART_SVG}),el("b",{class:"num"},label),
+    it.length?el("i",{class:"sp-bar"},el("u",{style:"width:"+Math.round(d/it.length*100)+"%"})):null);
+}
+// Aperçu dans la carte ouverte
 function shopBlock(ev){
-  const items=Array.isArray(ev.items)?ev.items.filter(x=>x&&x.t):[];
+  const items=itemsOf(ev),done=items.filter(x=>x.done).length,kind=shopKind(ev);
   const box=el("div",{class:"shop"});
-  const done=items.filter(x=>x.done).length;
-  const save=async list=>{try{await db.doc("events/"+ev.id).update({items:list.slice(0,150),updatedBy:myId,updatedAt:Date.now()});}catch(_){toast("Liste non enregistrée. Vérifie ta connexion.");}};
-  box.append(el("div",{class:"shop-h"},el("span",{class:"lab"},"Liste de courses"),el("span",{class:"note num"},items.length?done+" sur "+items.length+" dans le panier":"Vide pour l'instant")));
-  const ul=el("div",{class:"shop-list"});
-  items.forEach((it,i)=>{
-    const cb=el("input",{type:"checkbox",id:"sh-"+ev.id+"-"+i});cb.checked=!!it.done;
-    cb.onchange=()=>{const l=items.map(x=>({...x}));l[i].done=cb.checked;l[i].by=myId;save(l);};
-    ul.append(el("div",{class:"shop-row"+(it.done?" done":"")},cb,el("label",{for:cb.id},it.t),
-      el("button",{type:"button",class:"x","aria-label":"Retirer "+it.t,onclick:()=>save(items.filter((_,j)=>j!==i))},"×")));
-  });
-  const inp=el("input",{type:"text",placeholder:"Ajouter : lait, pain, œufs…","aria-label":"Ajouter un article",enterkeyhint:"done"});
-  const add=()=>{const v=inp.value.split(/[,;\n]/).map(x=>x.trim()).filter(Boolean).map(x=>x.slice(0,60));if(!v.length)return;inp.value="";save([...items,...v.map(t=>({t,done:false,by:myId}))]);};
-  inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add();}});
-  box.append(ul,el("div",{class:"shop-add"},inp,el("button",{type:"button",class:"btn primary",onclick:add},"Ajouter")));
-  if(done) box.append(el("button",{type:"button",class:"btn quiet",onclick:()=>save(items.filter(x=>!x.done))},"Retirer les articles cochés"));
+  const left=items.filter(x=>!x.done);
+  box.append(el("div",{class:"shop-h"},el("span",{class:"lab"},kind==="shop"?"Liste de shopping":"Liste de courses"),el("span",{class:"note num"},items.length?done+" sur "+items.length+" dans le panier":"Vide pour l'instant")));
+  if(left.length)box.append(el("div",{class:"shop-peek"},...left.slice(0,6).map(x=>el("span",{style:"--a:"+aisleInfo(x.a,kind).c},x.t+(x.q?" ×"+x.q.replace(/^(\d+)$/,"$1"):""))),left.length>6?el("span",{class:"more"},"+"+(left.length-6)):null));
+  box.append(el("button",{type:"button",class:"btn primary shop-open",onclick:()=>openShop(ev.id),html:(kind==="shop"?BAG_SVG:CART_SVG)+"<span>"+(items.length?"Ouvrir la liste":"Préparer la liste")+"</span>"}));
   return box;
+}
+let wakeLock=null;
+async function keepAwake(on){try{if(on&&navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>{wakeLock=null;});}else if(!on&&wakeLock){await wakeLock.release();wakeLock=null;}}catch(_){wakeLock=null;}}
+const euro=v=>(Math.round(v*100)/100).toLocaleString("fr-FR",{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2})+" €";
+
+// La grande liste : « À racheter » ou la liste d'un évènement (mode magasin)
+function openShop(evId){
+  const root=$("#sheet-root");root.textContent="";
+  let sel=evId||null;
+  const seenIds=new Set();
+  const sheetBody=el("div",{class:"shop-sheet"}),topBox=el("div",{class:"shop-dyn"}),botBox=el("div",{class:"shop-dyn"});
+  const input=el("input",{type:"text",class:"shop-in",placeholder:"Lait, 2 baguettes, œufs x12…","aria-label":"Ajouter des articles",enterkeyhint:"done",autocomplete:"off"});
+  const micBtn=el("button",{type:"button",class:"shop-mic",html:MIC_SVG,"aria-label":"Dicter des articles"});
+  const micHelp=el("div",{class:"mic-help",hidden:true});
+  const addNow=async()=>{const v=input.value.trim();if(!v)return;input.value="";const ev=sel?events.get(sel):null;
+    const add=splitShop(v,ev?shopKind(ev):"food");if(!add.length)return;
+    if(ev)await saveEvItems(ev,mergeShop(itemsOf(ev),add));else await savePending(mergeShop(pendingItems(),add));
+    if(otherId())pushShop(ev?"Liste : "+ev.title:"À racheter",firstName(myId)+" a ajouté "+add.map(x=>x.t).join(", ").slice(0,110));
+    input.focus();};
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addNow();}});
+  micBtn.onclick=()=>startVoice(input,micBtn,micHelp,()=>{const t=input.value;const s=shopIntent(t,null)||t;input.value=s;addNow();});
+  const addRow=el("div",{class:"shop-addrow"},input,micBtn,el("button",{type:"button",class:"btn primary shop-plus","aria-label":"Ajouter",onclick:addNow},"+"));
+  function draw(){
+    const ev=sel?events.get(sel):null;if(sel&&!ev){sel=null;}
+    const kind=ev?shopKind(ev):"food";
+    const items=ev?itemsOf(ev):pendingItems().map(x=>({id:x.id||shopId(),a:x.a||aisleOf(x.t,"food"),...x}));
+    const done=items.filter(x=>x.done),left=items.filter(x=>!x.done);
+    const save=list=>ev?saveEvItems(ev,list):savePending(list);
+    const today=ev&&ymd(startOf(ev))===ymd(new Date());
+    keepAwake(!!ev&&today);
+    topBox.textContent="";botBox.textContent="";
+    // tête : anneau de progression + titre
+    const pct=items.length?done.length/items.length:0,R=26,C=2*Math.PI*R;
+    const k=ev?motifOf(ev):"panier";const col=k&&MOTIFS[k]?MOTIFS[k].c:"#16A34A";
+    sheetBody.style.setProperty("--m",col);
+    const others=[...events.values()].filter(e=>isShopping(e)&&startOf(e).getTime()>Date.now()-6*3600000).sort((a,b)=>startOf(a)-startOf(b)).slice(0,6);
+    const tabs=el("div",{class:"shop-tabs",role:"tablist"},
+      el("button",{type:"button",role:"tab",class:!ev?"on":"","aria-selected":String(!ev),onclick:()=>{sel=null;draw();}},"À racheter"+(pendingItems().length?" · "+pendingItems().length:"")),
+      ...others.map(e=>el("button",{type:"button",role:"tab",class:ev&&ev.id===e.id?"on":"","aria-selected":String(!!(ev&&ev.id===e.id)),style:"--t:"+(MOTIFS[motifOf(e)]||{c:"#16A34A"}).c,onclick:()=>{sel=e.id;draw();}},
+        el("span",{html:shopKind(e)==="shop"?BAG_SVG:CART_SVG}),e.title.length>18?e.title.slice(0,17)+"…":e.title)));
+    const sub=ev?(startOf(ev).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+" à "+ev.time.replace(":","h")+(ev.location?" · "+shortAddr(ev.location):"")).replace(/^./,c=>c.toUpperCase())
+      :(nextGroceries()?"":"Notez au fil de la semaine : tout ira dans les prochaines courses.");
+    topBox.append(el("div",{class:"shop-top"},
+      el("div",{class:"shop-ring",html:`<svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="${R}" fill="none" stroke="currentColor" stroke-opacity=".14" stroke-width="6"/><circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--m)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(pct*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 32 32)" class="sr-arc"/></svg><span>${items.length?Math.round(pct*100)+"%":(kind==="shop"?BAG_SVG:CART_SVG)}</span>`}),
+      el("div",{class:"shop-tt"},el("h2",{},ev?ev.title:"À racheter"),sub?el("p",{},sub):null,
+        el("p",{class:"shop-count num"},items.length?(left.length?left.length+" à prendre":"Tout est dans le panier")+(done.length?" · "+done.length+" pris":""):"Liste vide")),
+      el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+      tabs);
+    if(ev&&today)topBox.append(el("p",{class:"shop-awake"},el("i"),"Mode magasin : l'écran reste allumé"));
+    const sug=shopSuggestions(items,kind);
+    if(sug.length)botBox.append(el("div",{class:"shop-sug"},el("span",{class:"lab"},"Souvent achetés"),...sug.map(t=>el("button",{type:"button",class:"pchip",onclick:async()=>{const it=parseShopItem(t,kind);if(it)await save(mergeShop(items,[it]));}},"+ "+t))));
+    // articles à prendre, groupés par rayon
+    const list=el("div",{class:"shop-groups"});
+    const L=kind==="shop"?SHOP_AISLES:AISLES;
+    const groups=[...L,AISLE_OTHER].map(a=>({a,its:left.filter(x=>(x.a||"autre")===a.id||(a===AISLE_OTHER&&!L.some(z=>z.id===x.a)))})).filter(g=>g.its.length);
+    const toggle=async(it,on)=>{const l=items.map(x=>x.id===it.id?{...x,done:on,by:myId,at:Date.now()}:x);await save(l);
+      if(on){bumpFreq([it]);if(ev&&l.length&&l.every(x=>x.done)){try{pushOther("Courses terminées","Tout est dans le panier : "+l.length+" article"+(l.length>1?"s":"")+" pour « "+ev.title+" ».","shop");}catch(_){}toast("Tout est dans le panier !");}}};
+    const row=(it,a)=>{const by=it.by&&it.by!==myId&&otherId()?firstName(it.by).slice(0,1):"";
+      const r=el("div",{class:"shop-item"+(it.done?" done":"")+(seenIds.has(it.id)?"":" new"),style:"--a:"+a.c},
+        el("button",{type:"button",class:"si-check","aria-pressed":String(!!it.done),"aria-label":(it.done?"Remettre ":"Prendre ")+it.t,onclick:()=>{r.classList.toggle("done");toggle(it,!it.done);}},el("i",{html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'})),
+        el("span",{class:"si-t"},it.t,it.q?el("small",{class:"si-q num"},/^\d+$/.test(it.q)?"×"+it.q:it.q):null),
+        kind==="shop"?el("button",{type:"button",class:"si-price num"+(it.p==null?" empty":""),onclick:async()=>{const v=prompt("Prix de « "+it.t+" » (en €) :",it.p!=null?String(it.p).replace(".",","):"");if(v==null)return;const n=parseFloat(String(v).replace(",",".").replace(/[^\d.]/g,""));await save(items.map(x=>x.id===it.id?{...x,p:isNaN(n)?null:Math.round(n*100)/100}:x));}},it.p!=null?euro(it.p):"Prix"):null,
+        by?el("span",{class:"si-by",title:"Ajouté ou pris par "+firstName(it.by)},by):null,
+        el("button",{type:"button",class:"si-x","aria-label":"Retirer "+it.t,onclick:()=>save(items.filter(x=>x.id!==it.id))},"×"));
+      seenIds.add(it.id);return r;};
+    for(const g of groups){list.append(el("h4",{class:"shop-aisle",style:"--a:"+g.a.c},el("i"),g.a.n,el("span",{class:"num"},String(g.its.length))));for(const it of g.its)list.append(row(it,g.a));}
+    if(!items.length)list.append(el("div",{class:"shop-empty",html:(kind==="shop"?BAG_SVG:CART_SVG)+"<p>"+(ev?"Ajoute ce qu'il faut prendre, ou dicte-le au micro.":"Rien à racheter pour l'instant.")+"</p>"}));
+    botBox.append(list);
+    if(done.length){const det=el("details",{class:"shop-done",open:left.length===0},el("summary",{},"Dans le panier ("+done.length+")"),
+      ...done.map(it=>row(it,aisleInfo(it.a,kind))),
+      el("button",{type:"button",class:"btn quiet",onclick:()=>save(left)},"Vider le panier"));botBox.append(det);}
+    // pied : total (shopping), terminer les courses
+    const foot=el("div",{class:"sheet-foot shop-foot"});
+    if(kind==="shop"&&ev){const tot=items.reduce((s,x)=>s+(x.p||0),0),bought=done.reduce((s,x)=>s+(x.p||0),0);
+      foot.append(el("div",{class:"shop-total"},el("small",{},"Total"+(done.length&&done.length<items.length?" (pris : "+euro(bought)+")":"")),el("b",{class:"num"},euro(tot))),
+        el("button",{type:"button",class:"btn quiet",disabled:!tot,onclick:async()=>{try{await db.doc("events/"+ev.id).update({cost:Math.round(tot*100)/100,updatedBy:myId,updatedAt:Date.now()});toast("Budget de la sortie : "+euro(tot));}catch(_){toast("Budget non enregistré.");}}},"Mettre au budget"));}
+    if(ev&&items.length){foot.append(el("button",{type:"button",class:"btn primary",onclick:async()=>{
+        const miss=items.filter(x=>!x.done);
+        if(miss.length&&confirm(miss.length+" article"+(miss.length>1?"s":"")+" pas trouvé"+(miss.length>1?"s":"")+". Les remettre dans « À racheter » pour la prochaine fois ?")){
+          await saveEvItems(ev,items.filter(x=>x.done),{shopDone:true});await savePending(mergeShop(pendingItems(),miss.map(x=>({...x,id:shopId(),done:false}))));}
+        else await saveEvItems(ev,items,{shopDone:true});
+        keepAwake(false);closeSheet();toast(kind==="shop"?"Shopping terminé":"Courses terminées");}},kind==="shop"?"Terminer le shopping":"Terminer les courses"));}
+    if(foot.childNodes.length)botBox.append(foot);
+  }
+  sheetBody.append(topBox,addRow,micHelp,botBox);
+  shopRefresh=draw;draw();
+  root.append(sheetShell("Liste de courses",[sheetBody]));
+  const sh=root.querySelector(".sheet");if(sh)sh.classList.add("sheet-tall");
 }
 
 /* ---------- Météo des sorties en extérieur (Open-Meteo, gratuit) ---------- */
@@ -2004,6 +2260,7 @@ function stop(ev,who){
       el("div",{class:"where"},mk?el("span",{class:"motif-chip",html:motifSvg(mk)+"<span>"+MOTIFS[mk].name+"</span>"}):null,[mk?"":(CATS[ev.category]||"Autre"),ev.location].filter(Boolean).join(", ")),
       tags.childNodes.length?tags:null,
       links,
+      isShopping(ev)&&!expanded.has(ev.id)?el("div",{class:"shop-pill-row"},shopPill(ev)):null,
       isShopping(ev)?el("div",{class:"more-info"},shopBlock(ev)):null,
       expanded.has(ev.id)&&wantsWeather(ev)?el("div",{class:"more-info"},wxBlock(ev)):null,
       (()=>{const m=memBlock(ev);return m?el("div",{class:"more-info"},m):null;})(),
@@ -2586,7 +2843,8 @@ function buildBody(x,d,overrides){
     ...((y.motif||d.motif)?{motif:y.motif||d.motif}:{}),
     who:(y.who||d.who||"both"),
     ...((+y.cost||0)>0?{cost:+y.cost}:{}),
-    ...(Array.isArray(y.items)||Array.isArray(d.items)?{items:(y.items||d.items).slice(0,150)}:{})};
+    ...(Array.isArray(y.items)||Array.isArray(d.items)?{items:(y.items||d.items).slice(0,200)}:{}),
+    ...(y.shopDone||d.shopDone?{shopDone:true}:{})};
 }
 async function saveEventDraft(x,d,repeat){
   if(!x.title){toast("Donne un titre à l'évènement.");return false;}
@@ -2693,6 +2951,7 @@ function blankDraft(){
   return {title:"",category:"rdv",date:ymd(d),time:"10:00",durationMin:60,location:"",origin:homeAddr(),mode:settings.mode||"car",travelMin:0,marginMin:10,travelNote:"",reminders:[],notes:""};
 }
 function closeSheet(){if(typeof recOn!=="undefined"&&recOn){try{REC.abort();}catch(_){}recOn=false;}$("#sheet-root").textContent="";inboxRefresh=null;
+  if(typeof shopRefresh!=="undefined"&&shopRefresh){shopRefresh=null;keepAwake(false);}
   if(typeof calPopPending!=="undefined"&&calPopPending){calPopPending=false;maybeCalPopup();}}
 function sheetShell(label,children){
   return el("div",{class:"sheet-bg",onclick:e=>{if(e.target===e.currentTarget)closeSheet();}},
@@ -3313,6 +3572,14 @@ function inboxItems(){
   const from=new Date();from.setHours(0,0,0,0);const to=new Date(from);to.setMonth(to.getMonth()+1);
   return parseImport(inboxText).filter(it=>{const t=startOf(it).getTime();return t>=from.getTime()&&t<to.getTime();});
 }
+function shopBadge(){
+  const b=$("#btn-shop");if(!b)return;const ev=nextGroceries();
+  const n=pendingItems().length+(ev?itemsOf(ev).filter(x=>!x.done).length:0);
+  let dot=b.querySelector(".imp-dot");
+  if(!n){if(dot)dot.remove();return;}
+  if(!dot){dot=el("span",{class:"imp-dot shop-dot"});b.append(dot);}
+  dot.textContent=n>99?"99+":String(n);
+}
 function importBadge(){
   const b=$("#btn-import");if(!b)return;
   const n=inboxItems().filter(it=>!importDuplicate(it)).length;
@@ -3635,7 +3902,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="40";
+const APP_V="41";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -3656,6 +3923,7 @@ function registerSW(){
 
 /* ---------- Wire up ---------- */
 $("#btn-settings").onclick=openSettings;
+$("#btn-shop").onclick=()=>openShop((nextGroceries()||{}).id||null);
 $("#fab").onclick=()=>openQuickAdd(false);
 $("#btn-mem").onclick=()=>openJournal();
 $("#tab-agenda").onclick=()=>setView("agenda");$("#tab-wishes").onclick=()=>setView("wishes");$("#tab-mem").onclick=()=>setView("mem");
@@ -3763,6 +4031,9 @@ function openQuickAdd(voice){
   if(voice) startVoice(ta,micBtn,micHelp,()=>go.click());
 }
 async function prepareText(text,b,label){
+  // « ajoute du lait et des œufs » : ça va dans la liste de courses, pas dans l'agenda
+  try{const p0=parseText(text,{places:[]});const s0=shopIntent(text,p0);
+    if(s0){const add=await addToShop(s0);if(add.length){closeSheet();const t=shopTarget();toast("Ajouté à la liste : "+add.map(x=>x.t).join(", "));openShop(t?t.id:null);return;}}}catch(_){}
   b.disabled=true;b.textContent="";b.append(el("span",{class:"spinner"}),"Calcul du trajet…");
   const info=[];
   try{
@@ -3848,6 +4119,7 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
   db.doc("config/templates").onSnapshot(snap=>{templates=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:null;if(templatesRefresh)templatesRefresh();},()=>{});
   db.doc("config/brands").onSnapshot(snap=>{brands=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:[];refreshBrandUI();},()=>{});
   startInbox();
+  db.doc("config/shop").onSnapshot(snap=>{const x=snap.exists?snap.data():{};shopList={items:Array.isArray(x.items)?x.items:[],freq:x.freq&&typeof x.freq==="object"?x.freq:{}};scheduleRender();if(shopRefresh)shopRefresh();},()=>{});
   db.doc("config/home").onSnapshot(snap=>{if(snap.exists){const x=snap.data();settings={home:x.home||"",mode:x.mode||"car"};}},()=>{});
   db.collection("events").orderBy("startTs").onSnapshot(snap=>{
     if(!firstSnap){
@@ -3858,13 +4130,20 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
           const prev=events.get(ch.doc.id);
           const who=(couple&&couple.names&&couple.names[x.updatedBy])||"L'autre";
           if(!prev) toast(who+" a ajouté « "+x.title+" »");
-          else if(prev.updatedAt!==x.updatedAt) toast(who+" a modifié « "+x.title+" »");
+          else if(prev.updatedAt!==x.updatedAt){
+            const a=itemsOf(prev),b2=itemsOf(x),was=new Map(a.map(i=>[norm(i.t),i]));
+            const took=b2.filter(i=>i.done&&!(was.get(norm(i.t))||{}).done&&was.has(norm(i.t))),added=b2.filter(i=>!was.has(norm(i.t)));
+            if(took.length) toast(who+" a pris « "+took.map(i=>i.t).slice(0,3).join(", ")+" »"+(took.length>3?" et "+(took.length-3)+" autres":""));
+            else if(added.length) toast(who+" a ajouté « "+added.map(i=>i.t).slice(0,3).join(", ")+" » à la liste");
+            else if(JSON.stringify(a)===JSON.stringify(b2)) toast(who+" a modifié « "+x.title+" »");
+          }
         }
       }
     }
     const wasFirst=firstSnap;firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     if(wasFirst)maybeCalPopup();
+    if(shopRefresh)shopRefresh();
     scheduleRender();
   },()=>notice("La synchronisation s'est interrompue. Vérifie ta connexion puis rouvre l'app."));
 })();
