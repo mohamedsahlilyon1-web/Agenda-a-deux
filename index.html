@@ -3906,7 +3906,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="42";
+const APP_V="43";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -4078,10 +4078,40 @@ $("#input").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctr
 
 setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>startOf(a)-startOf(b)).filter(e=>startOf(e).getTime()>Date.now()-3*3600000));},30000);
 
+/* ---------- Démarrage instantané : dernière copie de l'agenda gardée sur le téléphone ---------- */
+const BOOT_KEY="a2.boot";let bootSaveT=null,booted=false;
+function saveBoot(){
+  clearTimeout(bootSaveT);
+  bootSaveT=setTimeout(()=>{
+    if(firstSnap||!coupleId||!myId)return;
+    const from=Date.now()-60*864e5;
+    const ev=[...events.values()].filter(e=>startOf(e).getTime()>from).sort((a,b)=>startOf(a)-startOf(b)).slice(0,600)
+      .map(e=>{const o={...e};delete o.routeGeo;delete o.route;return o;});
+    const data={v:1,c:coupleId,me:myId,at:Date.now(),couple,ev,wi:[...wishes.values()].slice(0,200),pl:[...places.values()].slice(0,100),sh:shopList,mem:[...memories.values()].slice(0,300).map(m=>{const o={...m};delete o.cover;return o;})};
+    try{localStorage.setItem(BOOT_KEY,JSON.stringify(data));}
+    catch(_){try{data.mem=[];data.ev=data.ev.slice(-200);localStorage.setItem(BOOT_KEY,JSON.stringify(data));}catch(_){}}
+  },1200);
+}
+function bootFromCache(){
+  try{
+    const cid=lsGet(COUPLE_KEY);if(!cid)return false;
+    const b=JSON.parse(localStorage.getItem(BOOT_KEY)||"null");
+    if(!b||b.c!==cid||!Array.isArray(b.ev))return false;
+    coupleId=cid;myId=b.me||null;user=userShim;couple=b.couple||null;
+    events=new Map(b.ev.map(e=>[e.id,e]));
+    wishes=new Map((b.wi||[]).map(w=>[w.id,w]));
+    places=new Map((b.pl||[]).map(x=>[x.id,x]));
+    memories=new Map((b.mem||[]).map(x=>[x.id,x]));
+    if(b.sh&&Array.isArray(b.sh.items))shopList=b.sh;
+    booted=true;render();
+    return true;
+  }catch(_){return false;}
+}
 (async function init(){
   registerSW();
+  bootFromCache();
   const cfg=readFbConfig();
-  if(!window.firebase){notice("Connexion internet nécessaire au premier lancement.");render();return;}
+  if(!window.firebase){notice(booted?"Hors connexion : voici la dernière version de votre agenda.":"Connexion internet nécessaire au premier lancement.");render();return;}
   if(!cfg){showSetup();return;}
   try{firebase.initializeApp(cfg);}catch(e){}
   fs=firebase.firestore();
@@ -4098,8 +4128,8 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
   if(!coupleId){showPair(m?m[1].toUpperCase():"");return;}
   db=makeDb("couples/"+coupleId);
   fs.doc("couples/"+coupleId).onSnapshot(s=>{
-    if(!s.exists){lsSet(COUPLE_KEY,null);location.reload();return;}
-    couple=s.data();syncRecovery();if(events.size)scheduleRender();
+    if(!s.exists){lsSet(COUPLE_KEY,null);lsSet(BOOT_KEY,null);location.reload();return;}
+    couple=s.data();syncRecovery();if(events.size)scheduleRender();saveBoot();
   },e=>{notice("Accès à votre agenda impossible. Quitte puis rejoins-le avec le code.");});
   const hint=installHint();if(hint){const n=$("#notice");n.textContent="";n.append(...hint.childNodes);n.hidden=false;}
   db.collection("wishes").onSnapshot(snap=>{
@@ -4107,14 +4137,14 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
     wishNotify(wishes);
     const bw=$("#btn-wish");bw.hidden=false;const n=wishList().filter(w=>!w.planned).length,td=wishTodos().length;bw.textContent=(td?"● ":"")+(n?"Nos envies ("+n+")":"Nos envies");
     if(openWishes.redraw)openWishes.redraw();updateTabs();
-    scheduleRender();
+    scheduleRender();saveBoot();
   },()=>{});
   db.doc("config/shortcuts").onSnapshot(snap=>{scLinks=snap.exists?snap.data():{};},()=>{});
   db.collection("memories").onSnapshot(snap=>{
     memories=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     if(view==="mem")renderMemView();updateTabs();
     const bm=$("#btn-mem");bm.hidden=false;bm.textContent=memories.size?"Nos souvenirs ("+memories.size+")":"Nos souvenirs";
-    if(events.size)scheduleRender();
+    if(events.size)scheduleRender();saveBoot();
   },()=>{});
   db.collection("places").onSnapshot(snap=>{
     places=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
@@ -4148,6 +4178,7 @@ setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>star
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     if(wasFirst)maybeCalPopup();
     if(shopRefresh)shopRefresh();
+    saveBoot();
     scheduleRender();
   },()=>notice("La synchronisation s'est interrompue. Vérifie ta connexion puis rouvre l'app."));
 })();
