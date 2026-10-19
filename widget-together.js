@@ -2,7 +2,9 @@
 // Tout le visuel est dessiné à la main (DrawContext) : halos, grain, anneau du compte à rebours, icônes des thèmes.
 const fm=FileManager.local(),cache=fm.joinPath(fm.documentsDirectory(),"together-widget.json");
 let data=null;
-try{const j=await new Request(API).loadJSON();data=j.data;if(data)fm.writeString(cache,JSON.stringify(data));}catch(e){}
+// Ouvert en touchant le widget : on montre tout de suite la dernière copie, sans attendre le réseau trop longtemps
+const fromTap=!config.runsInWidget&&typeof args!=="undefined"&&args.queryParameters&&args.queryParameters.from==="widget";
+try{const rq=new Request(API);if(!config.runsInWidget)rq.timeoutInterval=fm.fileExists(cache)?2.5:8;const j=await rq.loadJSON();data=j.data;if(data)fm.writeString(cache,JSON.stringify(data));}catch(e){}
 if(!data&&fm.fileExists(cache)){try{data=JSON.parse(fm.readString(cache));}catch(e){}}
 const fam=config.widgetFamily||"medium",now=Date.now();
 const items=((data&&data.items)||[]).filter(x=>x.s>(x.a?now-864e5:now-3600000)).sort((a,b)=>a.s-b.s);
@@ -248,13 +250,16 @@ ${heroH}<div class="week">${wk}</div>${chips}
 ${rest.length||next?`<h2>Ensuite</h2>`:""}${rows}
 <p class="tip">Pour ajouter ou modifier, ouvre l'icône Together sur ton écran d'accueil.</p></html>`;}
 if(!config.runsInWidget&&config.runsInApp){
-  const wv=new WebView();await wv.loadHTML(previewHtml());await wv.present(true);Script.complete();return;
+  const wv=new WebView();await wv.loadHTML(previewHtml());await wv.present(true);
+  // Après « Close » : retour direct à l'écran d'accueil, pas à la liste des scripts
+  if(fromTap){try{App.close();}catch(e){}}
+  Script.complete();return;
 }
 
 // ---------- assemblage ----------
 const w=new ListWidget();w.refreshAfterDate=new Date(now+15*6e4);
 // toucher le widget ouvre la liste dans Scriptable (iOS ne permet pas d'ouvrir directement une app web)
-try{w.url="scriptable:///run/"+encodeURIComponent(Script.name());}catch(e){}
+try{w.url="scriptable:///run/"+encodeURIComponent(Script.name())+"?from=widget";}catch(e){}
 if(fam==="accessoryCircular"){w.addSpacer();const im=w.addImage(drawCircular());im.centerAlignImage();w.addSpacer();}
 else if(fam==="accessoryInline"){w.addText(next?(dep?"Départ "+hm(next.d):next.a?short(next.s):hm(next.s))+" · "+next.t:"Together : rien de prévu");}
 else if(fam==="accessoryRectangular"){
