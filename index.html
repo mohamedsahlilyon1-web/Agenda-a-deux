@@ -480,6 +480,9 @@ header{flex-wrap:wrap;row-gap:4px}
 .shop-total{margin-right:auto;display:grid}.shop-total small{color:var(--muted);font-weight:600}.shop-total b{font-size:1.4rem;font-family:var(--fd,inherit)}
 .shop-foot .btn.primary{background:var(--m);border-color:transparent}
 @keyframes siIn{from{opacity:0;transform:translateY(6px)}}
+#next{touch-action:manipulation;cursor:pointer;-webkit-user-select:none;user-select:none}
+.swipe.flash{animation:cardFlash 1.5s cubic-bezier(.2,.8,.2,1)}
+@keyframes cardFlash{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--sun) 90%,transparent);transform:scale(.985)}25%{box-shadow:0 0 0 5px color-mix(in oklab,var(--sun) 70%,transparent);transform:scale(1.01)}100%{box-shadow:0 0 0 14px transparent;transform:none}}
 .cp-hero{display:flex;gap:14px;align-items:center;margin:4px 0 12px}.cp-hero h2{margin:0 0 4px;font-family:var(--fd,inherit);font-size:23px;line-height:1.1}
 .cp-sub{margin:0;color:var(--muted);font-size:14.5px}
 .cp-cal{flex:none;width:58px;height:62px;border-radius:16px;background:var(--surface);border:1px solid var(--hair);display:grid;grid-template-rows:20px 1fr;overflow:hidden;box-shadow:0 12px 24px -16px var(--line);transform:rotate(-6deg);animation:cpPop .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -607,7 +610,7 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .who{display:inline-flex;flex:none;margin-right:2px}
 .who b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.66rem;font-weight:800;color:#fff;border:2px solid var(--surface)}
 .who b+b{margin-left:-8px}
-.who-filter{margin:-6px 0 2px}
+.who-filter{margin:-6px 0 2px}#who-bar .who-filter{margin:0}#who-bar[hidden]{display:none}
 .who-filter .pchip{background:transparent}
 .who-filter .pchip.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 /* Courses */
@@ -754,7 +757,7 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .tabbar .fab-mic{position:static;width:44px;height:44px;border:none;background:color-mix(in oklab,var(--line) 12%,transparent);color:var(--line);box-shadow:none}
 .tabbar .fab-mic svg{width:22px;height:22px}
 @media (max-width:360px){.tab{min-width:52px;padding:6px 6px}}
-body[data-view="wishes"] :is(#week,#next,#list,.links-row),body[data-view="mem"] :is(#week,#next,#list,.links-row){display:none!important}
+body[data-view="wishes"] :is(#week,#who-bar,#next,#list,.links-row),body[data-view="mem"] :is(#week,#who-bar,#next,#list,.links-row){display:none!important}
 #view-wishes,#view-mem{display:none;flex-direction:column;gap:12px}
 body[data-view="wishes"] #view-wishes,body[data-view="mem"] #view-mem{display:flex}
 #btn-mem,#btn-wish{display:none!important}
@@ -833,6 +836,7 @@ body.film-on{overflow:hidden}
     <div class="today"><button type="button" class="today-d" id="today-d" aria-label="Voir le mois"></button><div class="duo" id="duo"></div></div>
   </header>
   <nav class="week" id="week" aria-label="Cette semaine"></nav>
+  <div id="who-bar" hidden></div>
   <div id="next" class="sign" hidden></div>
 
   <div id="notice" class="notice" hidden></div>
@@ -993,7 +997,7 @@ async function render(){
   const list=$("#list");list.textContent="";openFront=null;
   const who=id=>({name:id===myId?"toi":((ps[id]&&ps[id].name)||"l'autre"),color:(ps[id]&&ps[id].color)||"var(--muted)"});
   renderNext(upcoming.filter(passWho));
-  const wf=whoFilterBar();if(wf)list.append(wf);
+  {const wb=$("#who-bar");wb.textContent="";const wf=whoFilterBar();if(wf)wb.append(wf);wb.hidden=!wf;}
   {const pp=pushPromptCard();if(pp)list.append(pp);}
   if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
   syncPush();
@@ -1036,7 +1040,8 @@ function renderNext(upcoming){
   renderToday();renderWeek();
   const ev=upcoming.find(e=>(hasTripEv(e)?departOf(e):startOf(e)).getTime()>now-15*60000);
   const ref=ev?(hasTripEv(ev)?departOf(ev):startOf(ev)):null;
-  if(!ev||ref-now>7*86400000){n.hidden=true;return;}
+  if(!ev||ref-now>7*86400000){n.hidden=true;delete n.dataset.ev;return;}
+  n.dataset.ev=ev.id;
   const trip=hasTripEv(ev);
   const mins=Math.round((ref-now)/60000);
   const sameDay=ymd(ref)===ymd(new Date());
@@ -2273,7 +2278,7 @@ function stop(ev,who){
   if(ev.location&&expanded.has(ev.id)) front.append(routeBlock(ev));
 
   const isOpen=expanded.has(ev.id);
-  const wrap=el("article",{class:"swipe"+(isOpen?" open":"")+(mk?" themed":""),style:motifStyle(mk),"data-mk":mk||null});
+  const wrap=el("article",{class:"swipe"+(isOpen?" open":"")+(mk?" themed":""),style:motifStyle(mk),"data-mk":mk||null,"data-id":ev.id});
   front.setAttribute("tabindex","0");front.setAttribute("role","button");front.setAttribute("aria-expanded",isOpen?"true":"false");
   const toggle=()=>{
     if(expanded.has(ev.id)) expanded.delete(ev.id); else expanded.add(ev.id);
@@ -3906,7 +3911,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="43";
+const APP_V="44";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -3927,6 +3932,21 @@ function registerSW(){
 
 /* ---------- Wire up ---------- */
 $("#btn-settings").onclick=openSettings;
+// Double toucher sur la grande carte « Prochain départ » : on va à l'évènement, ouvert
+async function openFromHero(){
+  const id=$("#next").dataset.ev;if(!id||!events.has(id))return;
+  if(view!=="agenda")setView("agenda");
+  const sel='.swipe[data-id="'+id+'"]';
+  if(!passWho(events.get(id))&&typeof whoFilter!=="undefined")whoFilter="all";
+  expanded.add(id);await render();
+  const card=document.querySelector(sel);if(!card)return;
+  card.scrollIntoView({behavior:"smooth",block:"center"});
+  card.classList.remove("flash");void card.offsetWidth;card.classList.add("flash");
+  setTimeout(()=>card.classList.remove("flash"),1600);
+}
+{let lastTap=0;$("#next").addEventListener("click",e=>{
+  if(e.target.closest("button,a,input"))return;
+  const t=Date.now();if(t-lastTap<380){lastTap=0;e.preventDefault();openFromHero();}else lastTap=t;});}
 $("#btn-shop").onclick=()=>openShop((nextGroceries()||{}).id||null);
 $("#fab").onclick=()=>openQuickAdd(false);
 $("#btn-mem").onclick=()=>openJournal();
