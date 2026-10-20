@@ -1,5 +1,5 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
-// Déploiement : 2026-10-20 (calendrier Together pour l'app Calendrier, CarPlay et Siri)
+// Déploiement : 2026-10-20 (journal des envois et versions des téléphones, pour le diagnostic)
 // Envoie les notifications Web Push aux iPhone, garde les rappels programmés
 // et publie pour chacun un calendrier .ics auquel l'iPhone s'abonne.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
@@ -58,18 +58,28 @@ async function sendPush(env, sub, msg) {
 }
 async function sendTo(env, subs, uids, msg) {
   let changed = false, sent = 0;
+  const codes = [];
   for (const uid of uids) {
     const list = subs[uid] || [];
     const keep = [];
+    if (!list.length) codes.push({ to: String(uid).slice(0, 4), st: -1 }); // aucun abonnement pour ce téléphone
     for (const s of list) {
       let st = 0; try { st = await sendPush(env, s, msg); } catch (e) { st = 0; }
+      codes.push({ to: String(uid).slice(0, 4), st });
       if (st === 404 || st === 410) { changed = true; continue; }
       if (st >= 200 && st < 300) sent++;
       keep.push(s);
     }
     if (keep.length !== list.length) subs[uid] = keep;
   }
-  return { changed, sent };
+  return { changed, sent, codes };
+}
+// Journal des derniers envois (type, destinataire abrégé, réponse du service d'Apple) : pour comprendre une notification perdue
+async function logSends(env, id, kind, entries) {
+  if (!entries || !entries.length) return;
+  const L = (await env.KV.get("l:" + id, "json")) || [], at = Date.now();
+  for (const c of entries) L.push({ at, k: kind, t: String(c.tag || "").split("-")[0].slice(0, 12), to: c.to, st: c.st });
+  await env.KV.put("l:" + id, JSON.stringify(L.slice(-40)));
 }
 const cors = (req) => ({ "Access-Control-Allow-Origin": ORIGIN_OK(req.headers.get("Origin")) ? (req.headers.get("Origin") || "*") : "null",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Max-Age": "86400" });
@@ -165,12 +175,16 @@ export default {
       const subs = await getSubs(env, id, c);
       const r = await sendTo(env, subs, to, { title: clean(b.title, 120), body: clean(b.body, 300), tag: clean(b.tag, 60), url: clean(b.url, 200) });
       if (r.changed) await putSubs(env, id, subs);
-      return json(req, { ok: true, sent: r.sent });
+      try { await logSends(env, id, "n", r.codes.map((c) => ({ ...c, tag: b.tag }))); } catch (_) {}
+      return json(req, { ok: true, sent: r.sent, codes: r.codes.map((c) => c.st) });
     }
     if (path === "/api/schedule") {
       const now = Date.now(), done = new Set(await getDone(env, id, c));
       c.sched = (Array.isArray(b.items) ? b.items : []).slice(0, 200).map((x) => ({ id: clean(x.id, 120), to: (Array.isArray(x.to) ? x.to : [x.to]).map((u) => clean(u, 80)).slice(0, 2), at: +x.at || 0, title: clean(x.title, 120), body: clean(x.body, 300), tag: clean(x.tag, 60) }))
         .filter((x) => x.id && x.at > now - 60000 && x.at < now + 40 * 86400000 && !done.has(x.id));
+      // dernière synchronisation de chaque téléphone, avec la version de l'app (aide au diagnostic)
+      const who = clean(b.uid, 80);
+      if (who) { c.seen = c.seen && typeof c.seen === "object" ? c.seen : {}; c.seen[who] = { v: clean(b.v, 12) || "<51", at: now }; }
       await putCouple(env, id, c);
       // widgets : celui de ce téléphone, et celui de l'autre (sans toucher à ses couleurs)
       const W = await getWidgets(env, id, c), me = clean(b.uid, 80);
@@ -217,7 +231,9 @@ export default {
       if (!due.length) continue;
       const subs = await getSubs(env, id, c);
       let changed = false;
-      for (const x of due) { if (now - x.at < 15 * 60000) { const r = await sendTo(env, subs, x.to, { title: x.title, body: x.body, tag: x.tag }); changed = changed || r.changed; } doneList.push(x.id); done.add(x.id); }
+      const sentCodes = [];
+      for (const x of due) { if (now - x.at < 15 * 60000) { const r = await sendTo(env, subs, x.to, { title: x.title, body: x.body, tag: x.tag }); changed = changed || r.changed; for (const cd of r.codes) sentCodes.push({ ...cd, tag: x.tag }); } doneList.push(x.id); done.add(x.id); }
+      try { await logSends(env, id, "s", sentCodes); } catch (_) {}
       await putDone(env, id, doneList);
       if (changed) await putSubs(env, id, subs);
     }

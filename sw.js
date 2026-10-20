@@ -1,5 +1,5 @@
 // Garde l'app disponible même avec une connexion faible. Les données restent synchronisées par Firebase.
-const CACHE = "agenda-a-deux-v50";
+const CACHE = "agenda-a-deux-v51";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})); self.skipWaiting(); });
 // Bibliothèques externes à version fixe (Firebase, Leaflet) : gardées sur le téléphone, chargées instantanément

@@ -2176,8 +2176,8 @@ async function pushPost(path,body){
 // Prévenir l'autre téléphone d'une action
 function pushTo(uids,title,body,tag,url){
   const to=(Array.isArray(uids)?uids:[uids]).filter(u=>u&&u!==myId);
-  if(!to.length||!pushToken())return;
-  pushPost("/api/notify",{to,title,body,tag:tag||"",url:url||"./"});
+  if(!to.length||!pushToken())return Promise.resolve(null);
+  return pushPost("/api/notify",{to,title,body,tag:tag||"",url:url||"./"});
 }
 function pushOther(title,body,tag){const o=otherId();if(o)pushTo([o],title,body,tag);}
 function pushSupported(){return "Notification" in window&&"serviceWorker" in navigator&&"PushManager" in window;}
@@ -2289,11 +2289,11 @@ function hashStr(s){let h1=0xdeadbeef,h2=0x41c6ce57;
 async function syncPushNow(){
   if(!pushToken()||!coupleId||!myId||firstSnap)return false;
   let items,widget,widgets,cals;try{items=pushItems();widget=widgetData();widgets=widgetsAll();cals=calFeeds();}catch(_){return false;}
-  const sig=hashStr(JSON.stringify([items,widget,widgets])),csig=hashStr(JSON.stringify(cals));
+  const sig=hashStr(JSON.stringify([APP_V,items,widget,widgets])),csig=hashStr(JSON.stringify(cals));
   // les calendriers ne partent que s'ils ont changé (ils sont plus gros que le reste)
   const calNew=lsGet("a2.calSig")!==csig;
   if(lsGet("a2.pushSig")===sig&&!calNew)return true;
-  const r=await pushPost("/api/schedule",{uid:myId,items,widget,widgets,...(calNew?{cals}:{})});
+  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,items,widget,widgets,...(calNew?{cals}:{})});
   if(r){lsSet("a2.pushSig",sig);lsSet("a2.calSig",csig);}
   return !!r;
 }
@@ -2320,6 +2320,20 @@ function notifSection(){
         el("button",{type:"button",class:"btn quiet",onclick:()=>{lsSet("a2.push","");enablePush();}},"Réactiver")));
     else{const b=el("button",{type:"button",class:"btn primary"},"Activer les notifications");b.onclick=async()=>{if(await enablePush(b))closeSheet();};
       box.append(el("p",{class:"note"},IS_IOS&&!isStandalone()?"Ouvre Together depuis son icône sur l'écran d'accueil, puis reviens ici.":"Reçois les départs, les rappels et les propositions de sorties, même quand l'app est fermée."),b);}
+    // vérifier que les notifications arrivent bien chez l'autre
+    const oth=otherId();
+    if(oth&&pushToken()){
+      const on=firstName(oth),res=el("p",{class:"note test-res",hidden:true});
+      const tb=el("button",{type:"button",class:"btn"},"Tester sur le téléphone de "+on);
+      tb.onclick=async()=>{tb.disabled=true;res.hidden=false;res.textContent="Envoi…";
+        const r=await pushPost("/api/notify",{to:[oth],title:"Test Together",body:firstName(myId)+" vérifie que les notifications arrivent bien sur ton téléphone.",tag:"test",url:"./"});
+        tb.disabled=false;const codes=(r&&r.codes)||[];
+        res.textContent=!r?"Le serveur de notifications ne répond pas. Réessaie dans un moment.":
+          r.sent>0?"✓ Notification acceptée pour le téléphone de "+on+". Si rien n'apparaît chez "+on+" : Réglages de son iPhone, Notifications, Together, Autoriser les notifications.":
+          (codes.includes(-1)||!codes.length)?"Le téléphone de "+on+" n'est pas inscrit aux notifications : sur son iPhone, ouvre Together, Réglages communs, Notifications, puis « Activer » ou « Réactiver ».":
+          "Apple a refusé la notification (code "+codes.join(", ")+") : sur son iPhone, ouvre Together, Réglages communs, Notifications, puis « Réactiver ».";};
+      box.append(tb,res);
+    }
     // widget
     box.append(el("div",{class:"pgroup-h"},"Widget sur l'écran d'accueil"));
     if(!pushToken()){box.append(el("p",{class:"note"},"Active d'abord les notifications sur l'un de vos deux téléphones : le widget utilise le même serveur."));return;}
@@ -2475,9 +2489,10 @@ function carSection(){
   return box;
 }
 // Les notifications de ce téléphone sont-elles toujours branchées ? (une mise à jour ou iOS peut les couper)
-let pushBroken=false,pushChecked=false;
+let pushBroken=false,pushChecked=false,pushDenied=false;
 async function checkPush(){
   if(pushChecked||!pushSupported()||!isStandalone()||!coupleId||!myId)return;
+  if(lsGet("a2.push")==="1"&&Notification.permission!=="granted"){pushChecked=true;pushDenied=true;scheduleRender();return;}
   if(Notification.permission!=="granted"||lsGet("a2.push")!=="1")return;
   pushChecked=true;
   try{
@@ -2498,6 +2513,12 @@ async function checkPush(){
   }catch(_){}
 }
 function pushPromptCard(){
+  if(pushDenied&&pushSupported()&&isStandalone()&&Notification.permission!=="granted"){
+    const b=el("button",{type:"button",class:"btn primary"},"Réessayer");
+    b.onclick=async()=>{if(await enablePush(b)){pushDenied=false;render();}};
+    return el("div",{class:"cal-banner push-ask"},el("div",{class:"cal-txt"},el("strong",{},"Notifications coupées sur cet iPhone"),
+      el("span",{},"Pour les remettre : Réglages de l'iPhone, Notifications, Together, Autoriser les notifications. Sans elles, "+firstName(otherId()||myId)+" ne peut pas te prévenir.")),b);
+  }
   if(pushBroken&&pushSupported()&&isStandalone()&&!pushOn()){
     const b=el("button",{type:"button",class:"btn primary"},"Réactiver");
     b.onclick=async()=>{if(await enablePush(b)){pushBroken=false;render();}};
@@ -4303,7 +4324,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="50";
+const APP_V="51";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -4572,8 +4593,9 @@ function canStartTrip(ev){
 function fixOf(p){const c=(p&&p.coords)||{},n=(x,d)=>x!=null&&Number.isFinite(+x)?+(+x).toFixed(d):null;
   return {lat:+(+c.latitude).toFixed(6),lon:+(+c.longitude).toFixed(6),acc:Math.round(+c.accuracy||0),spd:n(c.speed,1),
     hdg:c.heading!=null&&Number.isFinite(+c.heading)&&+c.heading>=0&&(+c.speed||0)>0.5?Math.round(+c.heading):null,t:Date.now()};}
+// ms : attente totale (la fenêtre « Autoriser la position ? » en fait partie) ; la mesure elle-même a 15 s
 function getFix(ms){return new Promise(res=>{let done=false;const end=v=>{if(!done){done=true;res(v);}};setTimeout(()=>end(null),ms);
-  try{navigator.geolocation.getCurrentPosition(p=>end(fixOf(p)),e=>end(e&&e.code===1?"denied":null),{enableHighAccuracy:true,maximumAge:20000,timeout:ms});}catch(_){end(null);}});}
+  try{navigator.geolocation.getCurrentPosition(p=>end(fixOf(p)),e=>end(e&&e.code===1?"denied":null),{enableHighAccuracy:true,maximumAge:20000,timeout:Math.min(ms,15000)});}catch(_){end(null);}});}
 async function tripTarget(ev){
   const m=ev.routeGeo&&(ev.routeGeo.marks||[])[0];
   if(m&&okPt(m.at))return {lat:+m.at.lat,lon:+m.at.lon};
@@ -4596,7 +4618,7 @@ async function startTrip(id,btn){
   if(!navigator.geolocation){toast("Ce téléphone ne donne pas sa position.");return false;}
   const lbl=btn?btn.textContent:"";if(btn){btn.disabled=true;btn.textContent="Position…";}
   try{
-    const fix=await getFix(12000);
+    const fix=await getFix(45000);
     if(fix==="denied"){toast("Position refusée. Pour l'autoriser : Réglages de l'iPhone, Confidentialité, Service de localisation.");return false;}
     if(!fix){toast("Position introuvable pour l'instant. Réessaie dans un instant.");return false;}
     const target=await tripTarget(ev);
@@ -4606,7 +4628,11 @@ async function startTrip(id,btn){
       title:String(ev.title||"").slice(0,80),target:{...target,addr:String(ev.pickup||"").slice(0,200)},...r,near:r.eta-now<=6*60000?now:0};
     await db.doc("trips/"+id).set(doc);trips.set(id,{id,...doc});
     await db.doc("tripPos/"+id).set({...fix,bg:false});tripPos.set(id,{...fix,bg:false});
-    pushTo([ev.pickupWho],firstName(myId)+" est en route","Arrivée prévue vers "+hhmm(new Date(r.eta))+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id);
+    pushTo([ev.pickupWho],firstName(myId)+" est en route","Arrivée prévue vers "+hhmm(new Date(r.eta))+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id)
+      .then(res=>{const ok=!!(res&&res.sent>0),cur=trips.get(id);if(cur)cur.notified=ok?1:-1;
+        db.doc("trips/"+id).update({notified:ok?1:-1}).catch(()=>{});
+        if(!ok)toast("La notification n'a pas pu partir vers le téléphone de "+firstName(ev.pickupWho)+(res&&res.codes&&res.codes.includes(-1)?" : ses notifications ne sont pas activées dans Together.":"."));
+        tripTick(true);});
     beginShare(id,fix);
     if(tripUIOpen(id)){tripUI.key="";tripPanel();}else openTrip(id);
     syncPush(true);scheduleRender();
@@ -4936,7 +4962,7 @@ function tripFill(S){
     sub=S.stale?["Arrivée prévue",S.remain!=null&&S.remain>0?"à "+kmTxt(S.remain)+" "+agoShort(S.age):""].filter(Boolean).join(" · "):
       [inMin==null?"":inMin<=0?"Arrivée imminente":"Dans "+fmtDur(inMin),S.remain!=null&&S.remain>0?kmTxt(S.remain):""].filter(Boolean).join(" · ");
     if(!S.pos)st="En attente de la position…";
-    else if(S.live)st=S.mine?(t.seenAt?on+" suit ton trajet en direct":"Ta position est partagée en direct avec "+on):"Position en direct";
+    else if(S.live)st=S.mine?(t.seenAt?on+" suit ton trajet en direct":t.notified===-1?"Partagé en direct, mais la notification n'a pas pu partir vers le téléphone de "+on:"Ta position est partagée en direct avec "+on):"Position en direct";
     else{stale=true;st=S.mine?"Signal GPS faible : ta position n'est pas mise à jour":"Dernière position reçue "+agoShort(S.age)+(S.pos.bg?" : Together n'est plus ouvert chez "+on:"");}
   }else if(S.phase==="here"){
     k=S.mine?"Sur place":on+" est en bas";big=t.hereAt?hhmm(new Date(t.hereAt)):"";
