@@ -523,6 +523,11 @@ header{flex-wrap:wrap;row-gap:4px}
 .in-note-b{font-size:.92rem;color:var(--ink);opacity:.82;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 @media (prefers-reduced-motion:reduce){.in-note{transition:none}}
 /* Trajet en direct */
+.tp-lock{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:var(--surface);border:1px solid var(--hair)}
+.tp-lock.on{background:var(--ok-soft);border-color:transparent}
+.tp-lock-ic{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--hero,#1E1A5E);color:var(--sun,#FFB547)}
+.tp-lock-tx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.tp-lock-tx strong{font-size:.95rem}.tp-lock-tx small{font-size:.8rem;color:var(--muted);line-height:1.3}
+.tp-lock .btn{flex:none}
 .sheet:has(.tp-sheet){padding:0;gap:0;max-height:94%;overflow:hidden;position:relative}
 .sheet:has(.tp-sheet)>.grab{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:600;margin:0;background:rgba(0,0,0,.28);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
 .tp-sheet{display:flex;flex-direction:column;min-height:0;max-height:94vh}
@@ -4355,7 +4360,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="52";
+const APP_V="53";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -4780,7 +4785,7 @@ function onTripsSnap(snap){
     const old=prev.get(t.id)||{};
     if(t.to===myId&&!tripUIOpen(t.id)){
       const dn=firstName(t.by),open=()=>openTrip(t.id);
-      if(t.stage==="go"&&old.stage!=="go")inNote(dn+" est en route",(+t.eta>0?"Arrivée prévue vers "+hhmm(new Date(+t.eta))+". ":"")+"Touche pour suivre le trajet en direct.",open,15000);
+      if(t.stage==="go"&&old.stage!=="go")inNote(dn+" est en route",(+t.eta>0?"Arrivée prévue vers "+hhmm(new Date(+t.eta))+". ":"")+"Touche pour suivre le trajet en direct.",()=>{open();if(lsGet("a2.lockFollow")!=="0")lockStart(t.id,true);},15000);
       else if(t.stage==="here"&&old.stage!=="here")inNote(dn+" est en bas",dn+" t'attend"+waitWhere(t.target&&t.target.addr)+".",open,15000);
       else if(t.stage==="go"&&t.near&&!old.near)inNote(dn+" arrive dans 5 min","Touche pour suivre le trajet en direct.",open,12000);
     }
@@ -4807,7 +4812,9 @@ function watchTripPos(){
 let heroT=0,heroTimer=null;
 function refreshHero(){if(events.size)renderNext([...events.values()].sort((a,b)=>startOf(a)-startOf(b)).filter(e=>startOf(e).getTime()>Date.now()-3*3600000).filter(passWho));}
 function heroSoon(now){clearTimeout(heroTimer);heroTimer=setTimeout(()=>{heroT=Date.now();refreshHero();},now?30:Math.max(0,4000-(Date.now()-heroT)));}
-function tripTick(force){if(tripUIOpen()){tripUI.st=null;if(force)tripPanel();}heroSoon(false);}
+let lockTickAt=0;
+function tripTick(force){if(tripUIOpen()){tripUI.st=null;if(force)tripPanel();}heroSoon(false);
+  if(typeof lockTrip!=="undefined"&&lockTrip&&(force||Date.now()-lockTickAt>1000)){lockTickAt=Date.now();lockUpdate(false);}}
 /* ce que montre la carte : toujours la vraie position (la dernière reçue si elle n'arrive plus) */
 function tripState(id){
   const t=trips.get(id)||null,ev=events.get(id)||null,now=Date.now();
@@ -4944,7 +4951,7 @@ const kmTxt=m=>m==null?"":m<950?Math.max(10,Math.round(m/10)*10)+" m":(m/1000).t
 function tripPanel(){
   const U=tripUI;if(!U||!U.box.isConnected)return;
   const S=U.st||(U.st=tripState(U.id));
-  const key=[S.mine?"d":"p",S.phase,S.t&&S.t.reply?S.t.reply.at:0].join(":");
+  const key=[S.mine?"d":"p",S.phase,S.t&&S.t.reply?S.t.reply.at:0,lockOn(S.id)?1:0].join(":");
   if(U.key!==key){U.key=key;tripBuild(S);}
   tripFill(S);
 }
@@ -4978,7 +4985,15 @@ function tripBuild(S){
     }else if(S.phase==="together")A.append(...nav(true),close);
     else A.append(close);
   }else{
-    if(S.phase==="go"||S.phase==="here"){for(const r of ["Je descends","Dans 2 min","Dans 5 min"])A.append(el("button",{type:"button",class:"btn"+(r==="Je descends"?" primary":""),onclick:()=>tripReply(T(),r)},r));}
+    if(S.phase==="go"||S.phase==="here"){for(const r of ["Je descends","Dans 2 min","Dans 5 min"])A.append(el("button",{type:"button",class:"btn"+(r==="Je descends"?" primary":""),onclick:()=>tripReply(T(),r)},r));
+      if(lockSupported()){
+        const on=lockOn(S.id),LK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+        P.append(el("div",{class:"tp-lock"+(on?" on":"")},
+          el("span",{class:"tp-lock-ic",html:LK}),
+          el("span",{class:"tp-lock-tx"},el("strong",{},on?"Affiché sur l'écran verrouillé":"Suivre sur l'écran verrouillé"),
+            el("small",{},on?"Verrouille ton iPhone : l'heure d'arrivée et la distance s'y mettent à jour en direct.":"Le trajet s'affiche en direct sur l'écran verrouillé, comme une course Uber. Ta musique se met en pause pendant le suivi.")),
+          on?el("button",{type:"button",class:"btn quiet",onclick:()=>lockStop(true)},"Arrêter"):el("button",{type:"button",class:"btn primary",onclick:()=>lockStart(S.id)},"Activer")));
+      }}
     else A.append(close);
   }
 }
@@ -5017,7 +5032,7 @@ function tripHero(n,t){
   const big=here?(t.hereAt?hhmm(new Date(t.hereAt)):""):(S.eta?hhmm(new Date(S.eta)):"");
   const inT=here?(S.mine?"Message envoyé à "+on:on+" t'attend"):(inMin==null?"":S.stale?"Arrivée prévue vers "+hhmm(new Date(S.eta)):inMin<=0?"Arrivée imminente":"Arrivée dans "+fmtDur(inMin));
   const b=el("button",{type:"button",class:"btn sign-btn"},S.mine?"Voir le trajet":"Suivre en direct");
-  b.onclick=e=>{e.stopPropagation();openTrip(t.id);};
+  b.onclick=e=>{e.stopPropagation();openTrip(t.id);if(!S.mine&&lsGet("a2.lockFollow")!=="0")lockStart(t.id,true);};
   n.append(el("div",{class:"k"},el("span",{class:"tl-live"+(S.stale?" stale":""),"aria-hidden":"true"}),k),
     el("div",{class:"big num"},big),el("div",{class:"in"},inT),
     el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.stale&&!here?" · dernière position "+agoShort(S.age):"")),b);
@@ -5047,6 +5062,113 @@ document.addEventListener("visibilitychange",()=>{
     if(tripLive(t)){if(share.lastFix)db.doc("tripPos/"+share.id).set({...share.lastFix,bg:true}).catch(()=>{});if(t.stage==="go")pauseNote(t,true);}
   }else{pauseNote(null,false);endWatch();share.watch=geoWatch();share.sentAt=0;keepAwake(true);}
 });
+
+/* ---------- Écran verrouillé : le trajet en direct dans le lecteur « En cours de lecture » de l'iPhone ----------
+   Une app web ne peut pas créer d'« Activité en direct » comme Uber (réservé aux apps de l'App Store).
+   Astuce : Together joue un son silencieux ; l'iPhone affiche alors son lecteur sur l'écran verrouillé et dans
+   l'île dynamique, et c'est Together qui en écrit le titre, le sous-titre, l'image et la barre de progression :
+   l'heure d'arrivée, la distance et le temps restant s'y mettent à jour en direct. Un son qui joue garde aussi
+   Together éveillé, téléphone verrouillé, pour recevoir chaque nouvelle position. */
+let lockTrip=null;
+function lockSupported(){return "mediaSession" in navigator&&typeof MediaMetadata!=="undefined";}
+function lockOn(id){return !!(lockTrip&&(!id||lockTrip.id===id));}
+// 30 s de silence (8 kHz, 8 bits, mono), joués en boucle
+function silentWavUrl(seconds){
+  const rate=8000,n=rate*seconds,buf=new ArrayBuffer(44+n),v=new DataView(buf);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+  w(0,"RIFF");v.setUint32(4,36+n,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,rate,true);v.setUint32(28,rate,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,"data");v.setUint32(40,n,true);
+  new Uint8Array(buf,44).fill(128);
+  return URL.createObjectURL(new Blob([buf],{type:"audio/wav"}));
+}
+// à lancer depuis un toucher (l'iPhone n'autorise le son qu'ainsi)
+async function lockStart(id,quiet){
+  if(!lockSupported()){if(!quiet)toast("Ce téléphone ne permet pas l'affichage sur l'écran verrouillé.");return false;}
+  if(lockOn(id))return true;
+  lockStop();
+  const a=new Audio(),url=silentWavUrl(30);a.loop=true;a.preload="auto";a.src=url;
+  try{await a.play();}catch(e){URL.revokeObjectURL(url);if(!quiet)toast("L'iPhone a refusé de lancer l'affichage. Touche à nouveau le bouton.");return false;}
+  lockTrip={id,audio:a,url,timer:null,art:"",artKey:"",key:"",hereAt:0};
+  lsSet("a2.lockFollow","1");
+  const ms=navigator.mediaSession,h=(k,f)=>{try{ms.setActionHandler(k,f);}catch(_){}};
+  h("pause",()=>lockStop(true));h("stop",()=>lockStop(true));h("play",()=>{a.play().catch(()=>{});});
+  for(const k of ["previoustrack","nexttrack","seekbackward","seekforward","seekto"])h(k,null);
+  // un appel ou une autre musique a repris la main : on s'efface (sans se battre avec elle), le bouton revient
+  a.addEventListener("pause",()=>{if(lockTrip&&lockTrip.audio===a&&!lockTrip.stopping)lockStop(false);});
+  lockUpdate(true);
+  lockTrip.timer=setInterval(()=>lockUpdate(false),5000);
+  if(!quiet)toast("C'est prêt : verrouille ton iPhone, le trajet s'affiche sur l'écran verrouillé.");
+  if(tripUIOpen())tripPanel();
+  return true;
+}
+function lockStop(byUser){
+  const L=lockTrip;if(!L)return;
+  L.stopping=true;lockTrip=null;clearInterval(L.timer);
+  try{L.audio.pause();L.audio.removeAttribute("src");L.audio.load();}catch(_){}
+  try{URL.revokeObjectURL(L.url);}catch(_){}
+  try{navigator.mediaSession.metadata=null;navigator.mediaSession.playbackState="none";}catch(_){}
+  if(byUser)lsSet("a2.lockFollow","0");
+  if(tripUIOpen())tripPanel();
+}
+// Image du lecteur : l'heure d'arrivée en grand, et le trajet avec la voiture qui avance vers l'autre
+function lockArt(S){
+  // dessinée sur 512, enregistrée en 384 px JPEG (léger : l'image change pendant tout le trajet)
+  const c=document.createElement("canvas");c.width=c.height=384;const g=c.getContext("2d");if(!g)return "icons/icon-512.png";g.scale(.75,.75);
+  const cs=getComputedStyle(document.documentElement),col=(n,d)=>(cs.getPropertyValue(n)||"").trim()||d;
+  const hero=col("--hero","#1E1A5E"),sun=col("--sun","#FFB547"),line=col("--line","#4338CA");
+  const gr=g.createLinearGradient(0,0,512,512);gr.addColorStop(0,hero);gr.addColorStop(1,line);g.fillStyle=gr;g.fillRect(0,0,512,512);
+  g.fillStyle="rgba(255,255,255,.07)";g.beginPath();g.arc(430,70,170,0,Math.PI*2);g.fill();
+  const t=S.t||{},here=S.phase==="here",F="-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif";
+  g.fillStyle="rgba(255,255,255,.75)";g.font="600 34px "+F;g.fillText(here?"Sur place":"Arrivée",44,82);
+  g.fillStyle=sun;g.font="800 150px "+F;g.fillText(here?(t.hereAt?hhmm(new Date(t.hereAt)):"En bas"):(S.eta?hhmm(new Date(S.eta)):"…"),36,226);
+  const m=S.eta?Math.max(0,Math.round((S.eta-Date.now())/60000)):null;
+  g.fillStyle="#fff";g.font="700 40px "+F;
+  g.fillText(here?firstName(t.by)+" est en bas":S.stale?"Position d'il y a "+agoShort(S.age).replace("il y a ",""):m==null?"En route":m<=0?"Arrivée imminente":"Dans "+fmtDur(m),44,292);
+  // le trajet : ligne, partie faite, voiture, et l'autre au bout
+  const x0=70,x1=442,y=402,p=here?1:Math.max(0,Math.min(1,S.done||0)),xc=x0+(x1-x0)*p;
+  g.lineCap="round";g.lineWidth=14;g.strokeStyle="rgba(255,255,255,.25)";g.beginPath();g.moveTo(x0,y);g.lineTo(x1,y);g.stroke();
+  g.strokeStyle=sun;g.beginPath();g.moveTo(x0,y);g.lineTo(Math.max(x0+1,xc),y);g.stroke();
+  g.fillStyle="#fff";g.beginPath();g.arc(x1,y,30,0,Math.PI*2);g.fill();
+  g.fillStyle=hero;g.font="800 30px "+F;g.textAlign="center";g.textBaseline="middle";g.fillText(firstName(t.to||myId).charAt(0).toUpperCase(),x1,y+1);
+  g.save();g.translate(Math.min(xc,x1-52),y);g.globalAlpha=S.stale?.55:1;
+  g.fillStyle="#fff";g.beginPath();g.roundRect?g.roundRect(-30,-17,60,34,15):g.rect(-30,-17,60,34);g.fill();
+  g.fillStyle=hero;g.fillRect(4,-12,14,24);g.fillStyle=sun;g.beginPath();g.arc(26,-9,3.5,0,Math.PI*2);g.arc(26,9,3.5,0,Math.PI*2);g.fill();
+  g.restore();
+  g.textAlign="left";g.textBaseline="alphabetic";g.fillStyle="rgba(255,255,255,.7)";g.font="600 28px "+F;
+  g.fillText(here?"Together":S.remain!=null&&S.remain>0?kmTxt(S.remain)+" · Together":"Together",44,476);
+  try{return c.toDataURL("image/jpeg",.86);}catch(_){return "icons/icon-512.png";}
+}
+// Titre, sous-titre, image et barre de progression du lecteur, recalculés toutes les 5 s (et à chaque nouvelle position)
+function lockUpdate(force){
+  const L=lockTrip;if(!L)return;
+  const S=tripState(L.id),t=S.t,now=Date.now();
+  if(!t||S.phase==="stop"||S.phase==="together"||S.phase==="ready"){lockStop();return;}
+  const by=firstName(t.by);let title,artist;
+  if(S.phase==="here"){
+    if(!L.hereAt)L.hereAt=now;
+    if(now-L.hereAt>4*60000){lockStop();return;}   // quelques minutes après « en bas », le lecteur s'en va
+    title=by+" est en bas";artist=by+" t'attend"+waitWhere(t.target&&t.target.addr)+".";
+  }else{
+    const m=S.eta?Math.max(0,Math.round((S.eta-now)/60000)):null;
+    title=by+(S.eta?" arrive à "+hhmm(new Date(S.eta)):" est en route");
+    artist=[S.stale?"Dernière position "+agoShort(S.age):m==null?"":m<=0?"Arrivée imminente":"Dans "+fmtDur(m),S.remain!=null&&S.remain>0?kmTxt(S.remain):""].filter(Boolean).join(" · ");
+  }
+  const album="Together · "+(t.title||"trajet");
+  const artKey=[S.phase,Math.round((S.done||0)*30),S.eta?hhmm(new Date(S.eta)):"",S.stale?1:0,S.remain!=null?Math.round(S.remain/100):""].join("|");
+  if(force||artKey!==L.artKey||!L.art){L.artKey=artKey;L.art=lockArt(S);}
+  const key=[title,artist,L.artKey].join("|");
+  try{
+    if(force||key!==L.key){L.key=key;
+      navigator.mediaSession.metadata=new MediaMetadata({title,artist,album,artwork:[{src:L.art,sizes:"384x384",type:L.art.startsWith("data:image/jpeg")?"image/jpeg":"image/png"}]});}
+    navigator.mediaSession.playbackState="playing";
+    // barre de progression de l'écran verrouillé = le trajet ; le temps restant affiché est celui avant l'arrivée
+    if(navigator.mediaSession.setPositionState){
+      if(S.phase==="go"&&S.eta&&t.startedAt){const dur=Math.max(60,(Math.max(S.eta,now)-t.startedAt)/1000);
+        navigator.mediaSession.setPositionState({duration:dur,position:Math.min(dur,Math.max(0,(now-t.startedAt)/1000)),playbackRate:1});}
+      else if(S.phase==="here"){navigator.mediaSession.setPositionState({duration:60,position:60,playbackRate:1});}
+    }
+  }catch(_){}
+}
 
 /* ---------- Démarrage instantané : dernière copie de l'agenda gardée sur le téléphone ---------- */
 const BOOT_KEY="a2.boot";let bootSaveT=null,booted=false;
