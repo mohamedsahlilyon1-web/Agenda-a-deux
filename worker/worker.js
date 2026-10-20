@@ -1,5 +1,5 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
-// Déploiement : 2026-10-20 (journal des envois et versions des téléphones, pour le diagnostic)
+// Déploiement : 2026-10-20 (étiquette « Topic » toujours valide pour Apple ; raison des refus dans le journal)
 // Envoie les notifications Web Push aux iPhone, garde les rappels programmés
 // et publie pour chacun un calendrier .ics auquel l'iPhone s'abonne.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
@@ -48,13 +48,21 @@ async function encryptPayload(sub, text) {
   const rs = new Uint8Array([0, 0, 16, 0]);
   return concat(salt, rs, new Uint8Array([asPub.length]), asPub, ct);
 }
+// « Topic » : Apple refuse (400 BadWebPushTopic) une étiquette dont la longueur n'est pas valide en base64url
+// (« trip-<id> » faisait 25 caractères). On envoie donc toujours 16 caractères tirés de l'étiquette.
+async function topicOf(tag) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(String(tag))));
+  return b64u(h).slice(0, 16);
+}
 async function sendPush(env, sub, msg) {
   const body = await encryptPayload(sub, JSON.stringify(msg));
   const r = await fetch(sub.endpoint, { method: "POST", body, headers: {
     "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream", TTL: "86400", Urgency: "high",
-    ...(msg.tag ? { Topic: String(msg.tag).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 32) || "together" } : {}),
+    ...(msg.tag ? { Topic: await topicOf(msg.tag) } : {}),
     Authorization: await vapidHeader(env, sub.endpoint) } });
-  return r.status;
+  let reason = "";
+  if (r.status >= 400) { try { const j = await r.json(); reason = String((j && j.reason) || "").slice(0, 40); } catch (_) {} }
+  return { st: r.status, reason };
 }
 async function sendTo(env, subs, uids, msg) {
   let changed = false, sent = 0;
@@ -64,8 +72,8 @@ async function sendTo(env, subs, uids, msg) {
     const keep = [];
     if (!list.length) codes.push({ to: String(uid).slice(0, 4), st: -1 }); // aucun abonnement pour ce téléphone
     for (const s of list) {
-      let st = 0; try { st = await sendPush(env, s, msg); } catch (e) { st = 0; }
-      codes.push({ to: String(uid).slice(0, 4), st });
+      let st = 0, rs = ""; try { const x = await sendPush(env, s, msg); st = x.st; rs = x.reason; } catch (e) { st = 0; rs = String(e && e.message || e).slice(0, 40); }
+      codes.push({ to: String(uid).slice(0, 4), st, ...(rs ? { rs } : {}) });
       if (st === 404 || st === 410) { changed = true; continue; }
       if (st >= 200 && st < 300) sent++;
       keep.push(s);
@@ -78,7 +86,7 @@ async function sendTo(env, subs, uids, msg) {
 async function logSends(env, id, kind, entries) {
   if (!entries || !entries.length) return;
   const L = (await env.KV.get("l:" + id, "json")) || [], at = Date.now();
-  for (const c of entries) L.push({ at, k: kind, t: String(c.tag || "").split("-")[0].slice(0, 12), to: c.to, st: c.st });
+  for (const c of entries) L.push({ at, k: kind, t: String(c.tag || "").split("-")[0].slice(0, 12), to: c.to, st: c.st, ...(c.rs ? { rs: c.rs } : {}) });
   await env.KV.put("l:" + id, JSON.stringify(L.slice(-40)));
 }
 const cors = (req) => ({ "Access-Control-Allow-Origin": ORIGIN_OK(req.headers.get("Origin")) ? (req.headers.get("Origin") || "*") : "null",

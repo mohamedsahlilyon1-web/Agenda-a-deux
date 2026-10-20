@@ -38,7 +38,7 @@ jobs:
               CH="$CH$(curl -s -o /dev/null -I -w "%{http_code}" "$URL/cal/$id/$CK/$u.ics"),"
             done
             CAL=$(jq -nc --argjson kc "$KC" --argjson ks "$KS" --arg ch "${CH%,}" '{at:($kc.at//0),feeds:($kc.map|[.[]|{bytes:length,events:([scan("BEGIN:VEVENT")]|length)}]),http:($ch|split(",")),readAgoMin:($ks|[.[]|((now*1000-.)/60000|floor)])}')
-            S=$(jq -nc --argjson v "$V" --argjson sb "$SB" --argjson wd "$WD" --argjson dn "$DN" --argjson cal "$CAL" --argjson lg "$LG" '{seen:(($v.seen//{})|to_entries|map({u:(.key[0:4]),v:.value.v,agoMin:((now*1000-.value.at)/60000|floor)})),log:($lg|.[-15:]|map({agoMin:((now*1000-.at)/60000|floor),k,t,to,st})),subs:($sb|length),subsPer:($sb|[.[]|length]),subsBy:($sb|to_entries|map({u:(.key[0:4]),n:(.value|length)})),sched:(($v.sched//[])|length),nextAt:(($v.sched//[])|map(.at)|min),done:($dn|length),wAt:($wd.at//0),widgets:(($wd.map//{})|[.[]|{items:((.items//[])|length),wishes,fb}]),cal:$cal}')
+            S=$(jq -nc --argjson v "$V" --argjson sb "$SB" --argjson wd "$WD" --argjson dn "$DN" --argjson cal "$CAL" --argjson lg "$LG" '{seen:(($v.seen//{})|to_entries|map({u:(.key[0:4]),v:.value.v,agoMin:((now*1000-.value.at)/60000|floor)})),log:($lg|.[-15:]|map({agoMin:((now*1000-.at)/60000|floor),k,t,to,st,rs})),subs:($sb|length),subsPer:($sb|[.[]|length]),subsBy:($sb|to_entries|map({u:(.key[0:4]),n:(.value|length)})),sched:(($v.sched//[])|length),nextAt:(($v.sched//[])|map(.at)|min),done:($dn|length),wAt:($wd.at//0),widgets:(($wd.map//{})|[.[]|{items:((.items//[])|length),wishes,fb}]),cal:$cal}')
             W=""
             for u in $(echo "$SB" | jq -r 'keys[]'); do
               C=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u" | jq -c '{items:((.data.items//[])|length),at}')

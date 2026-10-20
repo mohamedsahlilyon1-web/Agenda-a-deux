@@ -510,6 +510,18 @@ header{flex-wrap:wrap;row-gap:4px}
 .car-dot{flex:none;width:9px;height:9px;border-radius:50%;margin-top:6px;background:var(--sun);box-shadow:0 0 0 3px color-mix(in srgb,var(--sun) 28%,transparent)}
 .car-line.ok{color:var(--ink)}.car-line.ok .car-dot{background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
 .car-help summary{color:var(--muted);font-weight:700;padding:4px 0;cursor:pointer}
+/* Notification dans l'app (en haut, comme celles de l'iPhone) */
+.in-note{position:fixed;left:0;right:0;top:0;z-index:9999;display:flex;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 8px) 8px 0;pointer-events:none;transform:translateY(-140%);transition:transform .5s cubic-bezier(.2,.9,.25,1.12)}
+.in-note.on{transform:none}
+.in-note-card{pointer-events:auto;width:min(560px,100%);display:flex;gap:11px;align-items:center;text-align:left;padding:11px 14px;border:none;border-radius:24px;color:var(--ink);font:inherit;cursor:pointer;
+  background:color-mix(in srgb,var(--surface) 84%,transparent);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);box-shadow:0 14px 36px -12px rgba(0,0,0,.4),0 0 0 .5px rgba(0,0,0,.1)}
+.in-note-ic{width:38px;height:38px;border-radius:9px;flex:none}
+.in-note-tx{display:flex;flex-direction:column;min-width:0;gap:1px;flex:1}
+.in-note-top{display:flex;justify-content:space-between;gap:10px;font-size:.7rem;color:var(--muted);letter-spacing:.05em}
+.in-note-top b{font-weight:700}.in-note-top i{font-style:normal;letter-spacing:0}
+.in-note-tx strong{font-size:.98rem;font-weight:700;color:var(--ink);line-height:1.25}
+.in-note-b{font-size:.92rem;color:var(--ink);opacity:.82;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media (prefers-reduced-motion:reduce){.in-note{transition:none}}
 /* Trajet en direct */
 .sheet:has(.tp-sheet){padding:0;gap:0;max-height:94%;overflow:hidden;position:relative}
 .sheet:has(.tp-sheet)>.grab{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:600;margin:0;background:rgba(0,0,0,.28);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
@@ -998,6 +1010,25 @@ function toast(msg,actionLabel,action){
   t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,actionLabel?6000:3500);
 }
 function notice(msg){const n=$("#notice");n.textContent=msg||"";n.hidden=!msg;}
+// Notification dans l'app, en haut de l'écran comme celles de l'iPhone : un toucher ouvre ce dont elle parle
+let inNoteT=null;
+function inNote(title,body,onOpen,ms){
+  let n=document.getElementById("in-note");
+  if(!n){n=el("div",{id:"in-note",class:"in-note",role:"status","aria-live":"polite"});document.body.append(n);}
+  n.textContent="";n.classList.remove("on");
+  let swiped=false;
+  const hide=()=>{n.classList.remove("on");clearTimeout(inNoteT);};
+  const card=el("button",{type:"button",class:"in-note-card",onclick:()=>{if(swiped)return;hide();if(onOpen)onOpen();}},
+    el("img",{class:"in-note-ic",src:"icons/icon-192.png",alt:""}),
+    el("span",{class:"in-note-tx"},el("span",{class:"in-note-top"},el("b",{},"TOGETHER"),el("i",{},"maintenant")),el("strong",{},title),body?el("span",{class:"in-note-b"},body):null));
+  // glisser vers le haut pour la faire partir
+  let y0=null;
+  card.addEventListener("touchstart",e=>{y0=e.touches[0].clientY;swiped=false;},{passive:true});
+  card.addEventListener("touchmove",e=>{if(y0!=null&&e.touches[0].clientY-y0<-20){y0=null;swiped=true;hide();}},{passive:true});
+  n.append(card);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>n.classList.add("on")));
+  clearTimeout(inNoteT);inNoteT=setTimeout(hide,ms||9000);
+}
 
 /* ---------- Swipe ---------- */
 let openFront=null;
@@ -4324,7 +4355,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="51";
+const APP_V="52";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -4748,10 +4779,12 @@ function onTripsSnap(snap){
     if(first)continue;
     const old=prev.get(t.id)||{};
     if(t.to===myId&&!tripUIOpen(t.id)){
-      if(t.stage==="go"&&old.stage!=="go")toast(firstName(t.by)+" est en route vers toi","Suivre",()=>openTrip(t.id));
-      else if(t.stage==="here"&&old.stage!=="here")toast(firstName(t.by)+" est en bas","Voir",()=>openTrip(t.id));
+      const dn=firstName(t.by),open=()=>openTrip(t.id);
+      if(t.stage==="go"&&old.stage!=="go")inNote(dn+" est en route",(+t.eta>0?"Arrivée prévue vers "+hhmm(new Date(+t.eta))+". ":"")+"Touche pour suivre le trajet en direct.",open,15000);
+      else if(t.stage==="here"&&old.stage!=="here")inNote(dn+" est en bas",dn+" t'attend"+waitWhere(t.target&&t.target.addr)+".",open,15000);
+      else if(t.stage==="go"&&t.near&&!old.near)inNote(dn+" arrive dans 5 min","Touche pour suivre le trajet en direct.",open,12000);
     }
-    if(t.by===myId&&t.reply&&t.reply.by!==myId&&(!old.reply||old.reply.at!==t.reply.at))toast(firstName(t.reply.by)+" : « "+t.reply.text+" »");
+    if(t.by===myId&&t.reply&&t.reply.by!==myId&&(!old.reply||old.reply.at!==t.reply.at))inNote(firstName(t.reply.by),t.reply.text,()=>openTrip(t.id),10000);
   }
   // trajet lancé sur ce téléphone, app relancée entre-temps : le partage reprend tout seul
   if(!share){const mine=[...trips.values()].find(t=>tripLive(t)&&t.by===myId);if(mine)beginShare(mine.id,null);}
