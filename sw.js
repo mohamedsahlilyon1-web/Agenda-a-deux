@@ -1,5 +1,5 @@
 // Garde l'app disponible même avec une connexion faible. Les données restent synchronisées par Firebase.
-const CACHE = "agenda-a-deux-v48";
+const CACHE = "agenda-a-deux-v49";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})); self.skipWaiting(); });
 // Bibliothèques externes à version fixe (Firebase, Leaflet) : gardées sur le téléphone, chargées instantanément
@@ -38,14 +38,22 @@ self.addEventListener("fetch", (e) => {
 });
 
 // Notifications reçues du serveur Together
+// Toucher une notification ouvre directement ce dont elle parle : « ev-<id> » l'évènement, « trip-<id> » le trajet en direct
+const urlFor = (d) => {
+  if (d.url && d.url !== "./") return d.url;
+  const m = /^(ev|fb|trip)-([A-Za-z0-9]{4,})/.exec(d.tag || "");
+  return m ? "./?" + (m[1] === "trip" ? "trip" : "ev") + "=" + m[2] : "./";
+};
 self.addEventListener("push", (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || "Together", { body: d.body || "", icon: "icons/icon-192.png", badge: "icons/icon-192.png", tag: d.tag || undefined, renotify: !!d.tag, data: { url: d.url || "./" } }));
+  e.waitUntil(self.registration.showNotification(d.title || "Together", { body: d.body || "", icon: "icons/icon-192.png", badge: "icons/icon-192.png", tag: d.tag || undefined, renotify: !!d.tag, data: { url: urlFor(d) } }));
 });
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "./";
   e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((cs) => {
-    for (const c of cs) { if ("focus" in c) return c.focus(); }
-    return self.clients.openWindow ? self.clients.openWindow((e.notification.data && e.notification.data.url) || "./") : null;
+    // l'app est déjà ouverte en arrière-plan : on la ramène et on lui dit quoi montrer
+    for (const c of cs) { if ("focus" in c) return c.focus().then((w) => (w || c).postMessage({ type: "open", url })).catch(() => c.postMessage({ type: "open", url })); }
+    return self.clients.openWindow ? self.clients.openWindow(url) : null;
   }));
 });

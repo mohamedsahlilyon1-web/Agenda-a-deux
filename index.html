@@ -510,6 +510,44 @@ header{flex-wrap:wrap;row-gap:4px}
 .car-dot{flex:none;width:9px;height:9px;border-radius:50%;margin-top:6px;background:var(--sun);box-shadow:0 0 0 3px color-mix(in srgb,var(--sun) 28%,transparent)}
 .car-line.ok{color:var(--ink)}.car-line.ok .car-dot{background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
 .car-help summary{color:var(--muted);font-weight:700;padding:4px 0;cursor:pointer}
+/* Trajet en direct */
+.sheet:has(.tp-sheet){padding:0;gap:0;max-height:94%;overflow:hidden;position:relative}
+.sheet:has(.tp-sheet)>.grab{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:600;margin:0;background:rgba(0,0,0,.28);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
+.tp-sheet{display:flex;flex-direction:column;min-height:0;max-height:94vh}
+.tp-map{height:min(52vh,460px);width:100%;flex:none;position:relative;background:var(--map,#E9EEF3);border-radius:30px 30px 0 0;overflow:hidden;z-index:0}
+.tp-panel{padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0}
+.tp-panel>*{flex-shrink:0}
+.tp-k{font-size:.8rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.tp-row{display:flex;align-items:baseline;gap:4px 14px;flex-wrap:wrap}
+.tp-eta{font-family:var(--fd,var(--f));font-weight:800;font-size:2.7rem;line-height:1;letter-spacing:-.04em;color:var(--ink)}
+.tp-eta:empty{display:none}
+.tp-sub{font-weight:700;color:var(--muted);font-size:1rem}
+.tp-bar{height:6px;border-radius:99px;background:var(--hair);overflow:hidden}
+.tp-bar b{display:block;height:100%;width:0;background:var(--line);border-radius:inherit;transition:width .8s ease}
+.tp-st{display:flex;align-items:center;gap:9px;font-size:.9rem;color:var(--muted);font-weight:600}
+.tp-dot,.tl-live{flex:none;width:10px;height:10px;border-radius:50%;background:#22C55E;animation:tpPulse 1.6s ease-out infinite}
+.tp-st.est .tp-dot,.tl-live.est{background:var(--sun);animation:none}
+@keyframes tpPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+@media (prefers-reduced-motion:reduce){.tp-dot,.tl-live{animation:none}}
+.tp-msg{align-self:flex-start;max-width:92%;background:var(--ok-soft);color:var(--ink);border-radius:18px 18px 18px 5px;padding:9px 13px;font-weight:700}
+.tp-msg.me{align-self:flex-end;border-radius:18px 18px 5px 18px}
+.tp-actions{display:flex;flex-wrap:wrap;gap:8px}.tp-actions .btn{flex:1 1 auto;justify-content:center;text-align:center}
+.tp-go{font-size:1.06rem;padding:14px 18px}
+.tp-note{font-size:.84rem;line-height:1.4;color:var(--muted);margin:0}
+.tp-stop{align-self:flex-start}
+.tp-car,.tp-pin,.tp-dest{background:none;border:none;width:0!important;height:0!important}
+.tp-car-r{position:absolute;left:-22px;top:-22px;width:44px;height:44px;color:var(--line);filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));will-change:transform}
+.tp-car-r svg{display:block}
+.tp-car.est .tp-car-r{opacity:.72}
+.tp-pin-in{position:absolute;left:0;top:0;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.tp-pin-in .tp-av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;font:800 17px var(--f,system-ui);border:3px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.28);overflow:hidden}
+.tp-pin-in .tp-av img{width:100%;height:100%;object-fit:cover}
+.tp-pin-in i{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid #fff;margin-top:-2px;filter:drop-shadow(0 2px 1px rgba(0,0,0,.2))}
+.tp-pin-in span{position:absolute;bottom:calc(100% + 4px);background:var(--surface);color:var(--ink);font:700 11px/1 var(--f,system-ui);padding:4px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.2);white-space:nowrap}
+.tp-dest-in{position:absolute;left:0;top:0;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#E11D48;border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.tp-dest-in span{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);background:var(--surface);color:var(--ink);font:700 11px/1 var(--f,system-ui);padding:4px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.2);white-space:nowrap}
+.sign.trip-live .k{display:flex;align-items:center;gap:9px}
+.sign .go-live{font-size:1.02rem;padding:12px 18px}
 :root:is([data-skin="aurore"],[data-skin="tokyo"],[data-skin="velours"]) .lmap .leaflet-tile{filter:brightness(.75) contrast(1.1) saturate(.7)}
 .cp-hero{display:flex;gap:14px;align-items:center;margin:4px 0 12px}.cp-hero h2{margin:0 0 4px;font-family:var(--fd,inherit);font-size:23px;line-height:1.1}
 .cp-sub{margin:0;color:var(--muted);font-size:14.5px}
@@ -1080,12 +1118,15 @@ let heroShown=false;
 function renderNext(upcoming){
   const n=$("#next"),now=Date.now();
   renderToday();renderWeek();
+  n.classList.remove("trip-live");
+  {const lt=myLiveTrip();if(lt){tripHero(n,lt);return;}}
   const ev0=upcoming.filter(e=>!isAllDay(e)).map(e=>viewFor(e,myId)).find(e=>(hasTripEv(e)?departOf(e):startOf(e)).getTime()>now-15*60000);
   const ev=ev0||null;
-  const ref=ev?(hasTripEv(ev)?departOf(ev):startOf(ev)):null;
+  const ref=ev?(hasTripEv(ev)&&(trips.get(ev.id)||{}).stage!=="together"?departOf(ev):startOf(ev)):null;
   if(!ev||ref-now>7*86400000){n.hidden=true;delete n.dataset.ev;return;}
   n.dataset.ev=ev.id;
-  const trip=hasTripEv(ev);
+  const together=(trips.get(ev.id)||{}).stage==="together";
+  const trip=hasTripEv(ev)&&!together;
   const mins=Math.round((ref-now)/60000);
   const sameDay=ymd(ref)===ymd(new Date());
   const tomorrow=ymd(ref)===ymd(new Date(now+86400000));
@@ -1113,7 +1154,8 @@ function renderNext(upcoming){
     trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||ev.title))):null,
     trip?el("div",{class:"trip-meta"},ev.pickedUp?"Prépare-toi pour "+hhmm(ref)+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Arrivée à "+ev.time+".":fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null,
     trip&&hasPickup(ev)&&!ev.pickedUp?el("div",{class:"pk-hero"},el("b",{class:"num"},hhmm(pickupAt(ev))),"Récupérer "+firstName(ev.pickupWho)+(ev.pickup?" · "+shortAddr(ev.pickup):"")):null].filter(Boolean));
-  if(trip&&IS_IOS&&canWrite){const b=alarmButton(ev,"sign-btn");if(b)n.append(b);}
+  if(canStartTrip(ev)){const b=el("button",{type:"button",class:"btn sign-btn go-live"},"Je pars : prévenir "+firstName(ev.pickupWho));b.onclick=e=>{e.stopPropagation();startTrip(ev.id,b);};n.append(b);}
+  else if(trip&&IS_IOS&&canWrite){const b=alarmButton(ev,"sign-btn");if(b)n.append(b);}
   if(isShopping(ev))n.append(shopPill(ev,"hero-pill"));
 }
 function hasTripEv(e){return (+e.travelMin||0)>0;}
@@ -2132,10 +2174,10 @@ async function pushPost(path,body){
   try{const r=await fetch(base+path,{method:"POST",headers:{"Content-Type":"application/json"},keepalive:payload.length<60000,body:payload});return r.ok?await r.json().catch(()=>({ok:true})):null;}catch(_){return null;}
 }
 // Prévenir l'autre téléphone d'une action
-function pushTo(uids,title,body,tag){
+function pushTo(uids,title,body,tag,url){
   const to=(Array.isArray(uids)?uids:[uids]).filter(u=>u&&u!==myId);
   if(!to.length||!pushToken())return;
-  pushPost("/api/notify",{to,title,body,tag:tag||"",url:"./"});
+  pushPost("/api/notify",{to,title,body,tag:tag||"",url:url||"./"});
 }
 function pushOther(title,body,tag){const o=otherId();if(o)pushTo([o],title,body,tag);}
 function pushSupported(){return "Notification" in window&&"serviceWorker" in navigator&&"PushManager" in window;}
@@ -2170,12 +2212,13 @@ function pushItems(){
     const w=whoOf(ev),to=w==="both"?mem:[w];
     const when=dayParts(startOf(ev))[0].toLowerCase();
     if(hasPickup(ev)&&w==="both"){
-      for(const uid of mem){const v=viewFor(ev,uid),picked=v.pickedUp,dn=firstName(driverOf(ev)),pn=firstName(ev.pickupWho);
+      const tr=trips.get(ev.id),gone=!!tr&&["go","here","together"].includes(tr.stage);
+      if(!gone)for(const uid of mem){const v=viewFor(ev,uid),picked=v.pickedUp,dn=firstName(driverOf(ev)),pn=firstName(ev.pickupWho);
         liveReminders(v).forEach((r,i)=>{const at=remWhen(v,r).getTime();if(at<=now+30000)return;const leave=presetOf(r)==="leave";
           items.push({id:ev.id+":p"+uid.slice(0,6)+":r"+i+":"+at,to:[uid],at,tag:"ev-"+ev.id,
             title:picked?(leave?dn+" passe te prendre maintenant":dn+" passe te prendre à "+hhmm(pickupAt(ev))):(leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+" à "+ev.time),
             body:picked?(ev.title||"Évènement")+" à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+". Prépare-toi pour "+hhmm(pickupAt(ev))+(ev.pickup?" ("+shortAddr(ev.pickup)+")":"")+".":
-              (leave?"Départ maintenant. Tu récupères "+pn+" à "+hhmm(pickupAt(ev))+", puis "+(ev.location?shortAddr(ev.location):"le rendez-vous")+" à "+ev.time+".":"Départ à "+hhmm(departOf(ev))+", "+pn+" à récupérer à "+hhmm(pickupAt(ev))+".")});});}
+              (leave?"Départ maintenant. Tu récupères "+pn+" à "+hhmm(pickupAt(ev))+", puis "+(ev.location?shortAddr(ev.location):"le rendez-vous")+" à "+ev.time+". Touche pour prévenir "+pn+".":"Départ à "+hhmm(departOf(ev))+", "+pn+" à récupérer à "+hhmm(pickupAt(ev))+".")});});}
       if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
       continue;
     }
@@ -2185,6 +2228,11 @@ function pushItems(){
         title:leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+(isAllDay(ev)?"":" à "+ev.time),
         body:leave?"Départ maintenant pour arriver à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+".":(hasTrip(ev)?"Départ à "+hhmm(departOf(ev))+(ev.location?" pour "+shortAddr(ev.location):"")+".":(ev.location?shortAddr(ev.location):"Rappel"))});});
     if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
+  }
+  // trajet en cours : l'autre est prévenu 5 minutes avant l'arrivée prévue, même si Together est fermé chez le conducteur
+  for(const t of trips.values()){
+    if(t.stage!=="go"||!t.to||!(+t.eta>0))continue;const at=+t.eta-5*60000;if(at<=now+30000)continue;
+    items.push({id:"trip:"+t.id+":5",to:[t.to],at,tag:"trip-"+t.id,title:firstName(t.by)+" arrive dans 5 minutes",body:"Environ, d'après son trajet. Touche pour le suivre en direct."});
   }
   return items.sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,150);
 }
@@ -2512,6 +2560,9 @@ function stop(ev,who){
   if(!(inMyCal(ev)&&pushOn())) links.append(el("button",{class:"btn"+((ev.calendarAdded||{})[myId]>=ev.updatedAt?"":" primary"),type:"button",onclick:()=>addToCalendar(ev)},(ev.calendarAdded||{})[myId]>=ev.updatedAt?"Déjà dans le calendrier":"Ajouter au calendrier"));
   links.append(el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
   if(IS_IOS&&(whoOf(ev)==="both"||whoOf(ev)===myId)){const ab=alarmButton(viewFor(ev,myId));if(ab)links.append(ab);}
+  {const lt=tripFor(ev.id);
+    if(canStartTrip(ev))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();startTrip(ev.id,e.currentTarget);}},"Je pars : prévenir "+firstName(ev.pickupWho)));
+    else if(lt&&(lt.to===myId||lt.by===myId))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();openTrip(ev.id);}},lt.by===myId?"Voir le trajet":"Suivre en direct"));}
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
 
@@ -2725,7 +2776,8 @@ async function computeTrip(from,to,mode,arriveAt){
   else if(mode==="transit") min=base*1.6+10;
   else if(mode==="bike") min=km/15*60+3;
   else min=base||km/4.8*60;
-  return {travelMin:Math.max(1,Math.round(min)),distanceKm:Math.round(km*10)/10,path:thin(path,160)};
+  const raw=mode==="car"?base*(isRush(arriveAt)?1.15:1):min;
+  return {travelMin:Math.max(1,Math.round(min)),rawMin:Math.max(1,raw),distanceKm:Math.round(km*10)/10,path:thin(path,160)};
 }
 async function estimateTrip(d){
   // Jamais plus de 12 secondes d'attente, même si un service ne répond pas
@@ -3247,7 +3299,8 @@ function blankDraft(){
   return {title:"",category:"rdv",date:ymd(d),time:"10:00",durationMin:60,location:"",origin:homeAddr(),mode:settings.mode||"car",travelMin:0,marginMin:10,travelNote:"",reminders:[],notes:""};
 }
 function closeSheet(){if(typeof recOn!=="undefined"&&recOn){try{REC.abort();}catch(_){}recOn=false;}$("#sheet-root").textContent="";inboxRefresh=null;
-  if(typeof shopRefresh!=="undefined"&&shopRefresh){shopRefresh=null;keepAwake(false);}
+  if(typeof tripClosed==="function")tripClosed();
+  if(typeof shopRefresh!=="undefined"&&shopRefresh){shopRefresh=null;keepAwake(!!(share&&!share.local));}
   if(typeof calPopPending!=="undefined"&&calPopPending){calPopPending=false;maybeCalPopup();}}
 function sheetShell(label,children){
   return el("div",{class:"sheet-bg",onclick:e=>{if(e.target===e.currentTarget)closeSheet();}},
@@ -4137,6 +4190,7 @@ let lastRemCheck=Date.now();
 setInterval(()=>{
   const now=Date.now();
   for(const e0 of events.values()){const w=whoOf(e0);if(w!=="both"&&w!==myId)continue;const e=viewFor(e0,myId);
+    {const tr=trips.get(e0.id);if(tr&&["go","here","together"].includes(tr.stage))continue;}
     for(const r of liveReminders(e)){const t=remWhen(e,r).getTime();if(t>lastRemCheck&&t<=now)toast(remText(e,r));}}
   lastRemCheck=now;
 },20000);
@@ -4254,7 +4308,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="48";
+const APP_V="49";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -4276,8 +4330,9 @@ function registerSW(){
 /* ---------- Wire up ---------- */
 $("#btn-settings").onclick=openSettings;
 // Double toucher sur la grande carte « Prochain départ » : on va à l'évènement, ouvert
-async function openFromHero(){
-  const id=$("#next").dataset.ev;if(!id||!events.has(id))return;
+function openFromHero(){return openEventCard($("#next").dataset.ev);}
+async function openEventCard(id){
+  if(!id||!events.has(id))return;
   if(view!=="agenda")setView("agenda");
   const sel='.swipe[data-id="'+id+'"]';
   if(!passWho(events.get(id))&&typeof whoFilter!=="undefined")whoFilter="all";
@@ -4478,9 +4533,453 @@ $("#input").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctr
 let renderedDay=ymd(new Date());
 setInterval(()=>{
   if(ymd(new Date())!==renderedDay){renderedDay=ymd(new Date());scheduleRender();return;}
-  if(events.size)renderNext([...events.values()].sort((a,b)=>startOf(a)-startOf(b)).filter(e=>startOf(e).getTime()>Date.now()-3*3600000).filter(passWho));
+  refreshHero();
 },30000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ymd(new Date())!==renderedDay){renderedDay=ymd(new Date());scheduleRender();}});
+
+/* ---------- Trajet en direct : je passe prendre l'autre, qui suit ma voiture sur la carte (comme Uber) ----------
+   iOS ne laisse pas une app web lire la position quand elle n'est pas à l'écran. La position exacte part donc tant que
+   Together est ouvert sur le téléphone du conducteur (avec CarPlay, le guidage est sur l'écran de la voiture et le
+   téléphone reste libre pour ça). Sinon, la voiture continue d'avancer chez l'autre le long du trajet, au rythme prévu
+   (« position estimée »), et se recale dès que Together revient à l'écran. */
+let trips=new Map(),tripPos=new Map(),tripPosOff=new Map(),share=null,tripUI=null,firstTrips=true,tripsReady=false;
+let tripSendMs=4000;                 // au plus une position toutes les 4 s
+const TRIP_HERE_M=120,TRIP_FRESH_S=25;
+const okPt=p=>!!p&&typeof p==="object"&&Number.isFinite(+p.lat)&&Number.isFinite(+p.lon);
+function distM(a,b){const r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lon-a.lon)*r;
+  const h=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*6371000*Math.asin(Math.min(1,Math.sqrt(h)));}
+function bearing(a,b){const r=Math.PI/180,y=Math.sin((b.lon-a.lon)*r)*Math.cos(b.lat*r),x=Math.cos(a.lat*r)*Math.sin(b.lat*r)-Math.sin(a.lat*r)*Math.cos(b.lat*r)*Math.cos((b.lon-a.lon)*r);
+  return (Math.atan2(y,x)/r+360)%360;}
+function pathLen(p){let d=0;for(let i=1;i<p.length;i++)d+=distM(p[i-1],p[i]);return d;}
+// Où en est-on sur le trajet : distance déjà faite et écart à la route (en mètres)
+function along(route,p){
+  const kx=Math.cos(p.lat*Math.PI/180)*111320,ky=110574;let best={s:0,off:Infinity},acc=0;
+  for(let i=0;i<route.length-1;i++){const a=route[i],b=route[i+1],L=distM(a,b);
+    const ax=(a.lon-p.lon)*kx,ay=(a.lat-p.lat)*ky,dx=(b.lon-a.lon)*kx,dy=(b.lat-a.lat)*ky,L2=dx*dx+dy*dy;
+    const t=L2?Math.max(0,Math.min(1,-(ax*dx+ay*dy)/L2)):0,off=Math.hypot(ax+t*dx,ay+t*dy);
+    if(off<best.off)best={s:acc+t*L,off};acc+=L;}
+  return {s:best.s,off:best.off,total:acc};
+}
+function pointAt(route,s){let acc=0;
+  for(let i=0;i<route.length-1;i++){const a=route[i],b=route[i+1],L=distM(a,b);
+    if(acc+L>=s){const t=L?Math.max(0,s-acc)/L:0;return {lat:a.lat+(b.lat-a.lat)*t,lon:a.lon+(b.lon-a.lon)*t,hdg:bearing(a,b)};}acc+=L;}
+  const z=route[route.length-1],y=route[route.length-2]||z;return {lat:z.lat,lon:z.lon,hdg:bearing(y,z)};
+}
+function tripLive(t){return !!t&&(t.stage==="go"||t.stage==="here")&&Date.now()-(t.updatedAt||t.startedAt||0)<4*3600000;}
+function tripFor(id){const t=trips.get(id);return tripLive(t)?t:null;}
+function myLiveTrip(){return [...trips.values()].filter(t=>tripLive(t)&&(t.to===myId||t.by===myId)&&events.has(t.id)).sort((a,b)=>(b.startedAt||0)-(a.startedAt||0))[0]||null;}
+// Le conducteur peut partir de 2 h avant l'heure de départ jusqu'à l'heure du rendez-vous
+function canStartTrip(ev){
+  if(!ev||!tripsReady||!hasPickup(ev)||isAllDay(ev)||driverOf(ev)!==myId)return false;
+  const t=trips.get(ev.id);if(tripLive(t)||(t&&t.stage==="together"))return false;
+  const now=Date.now();return now>=departOf(ev).getTime()-2*3600000&&now<=startOf(ev).getTime()+30*60000;
+}
+function fixOf(p){const c=(p&&p.coords)||{},n=(x,d)=>x!=null&&Number.isFinite(+x)?+(+x).toFixed(d):null;
+  return {lat:+(+c.latitude).toFixed(6),lon:+(+c.longitude).toFixed(6),acc:Math.round(+c.accuracy||0),spd:n(c.speed,1),
+    hdg:c.heading!=null&&Number.isFinite(+c.heading)&&+c.heading>=0&&(+c.speed||0)>0.5?Math.round(+c.heading):null,t:Date.now()};}
+function getFix(ms){return new Promise(res=>{let done=false;const end=v=>{if(!done){done=true;res(v);}};setTimeout(()=>end(null),ms);
+  try{navigator.geolocation.getCurrentPosition(p=>end(fixOf(p)),e=>end(e&&e.code===1?"denied":null),{enableHighAccuracy:true,maximumAge:20000,timeout:ms});}catch(_){end(null);}});}
+async function tripTarget(ev){
+  const m=ev.routeGeo&&(ev.routeGeo.marks||[])[0];
+  if(m&&okPt(m.at))return {lat:+m.at.lat,lon:+m.at.lon};
+  const g=ev.pickup?await geocode(ev.pickup).catch(()=>null):null;
+  return okPt(g)?{lat:+g.lat,lon:+g.lon}:null;
+}
+// Trajet routier depuis là où l'on est ; s'il paraît faux (service en panne), une ligne droite fait l'affaire
+async function tripRoute(from,to,mode){
+  let path=null,min=0;
+  try{const r=await Promise.race([computeTrip(from,to,mode||"car",new Date()),new Promise((_,no)=>setTimeout(()=>no(new Error("lent")),8000))]);
+    const P=((r&&r.path)||[]).filter(okPt);
+    if(P.length>1&&distM(P[0],from)<2500&&distM(P[P.length-1],to)<2500){path=[from,...P,to];min=+r.rawMin||+r.travelMin||0;}}catch(_){}
+  if(!path){path=[from,to];min=distM(from,to)*1.35/1000/({walk:4.8,bike:15,transit:18}[mode]||28)*60;}
+  path=path.map(p=>({lat:+(+p.lat).toFixed(5),lon:+(+p.lon).toFixed(5)}));
+  const L=pathLen(path),v=Math.max(1.2,Math.min(30,L/Math.max(60,min*60)));
+  return {route:path,routeM:Math.round(L),v:+v.toFixed(2),eta:Date.now()+Math.round(L/v*1000)};
+}
+async function startTrip(id,btn){
+  const ev=events.get(id);if(!ev||!canStartTrip(ev))return false;
+  if(!navigator.geolocation){toast("Ce téléphone ne donne pas sa position.");return false;}
+  const lbl=btn?btn.textContent:"";if(btn){btn.disabled=true;btn.textContent="Position…";}
+  try{
+    const fix=await getFix(12000);
+    if(fix==="denied"){toast("Position refusée. Pour l'autoriser : Réglages de l'iPhone, Confidentialité, Service de localisation.");return false;}
+    if(!fix){toast("Position introuvable pour l'instant. Réessaie dans un instant.");return false;}
+    const target=await tripTarget(ev);
+    if(!target){toast("Adresse de "+firstName(ev.pickupWho)+" introuvable : vérifie-la dans l'évènement.");return false;}
+    const r=await tripRoute(fix,target,ev.mode);
+    const now=Date.now(),doc={ev:id,by:myId,to:ev.pickupWho,mode:ev.mode||"car",stage:"go",startedAt:now,updatedAt:now,
+      title:String(ev.title||"").slice(0,80),target:{...target,addr:String(ev.pickup||"").slice(0,200)},...r};
+    await db.doc("trips/"+id).set(doc);trips.set(id,{id,...doc});
+    await db.doc("tripPos/"+id).set({...fix,bg:false});tripPos.set(id,{...fix,bg:false});
+    pushTo([ev.pickupWho],firstName(myId)+" est en route","Arrivée prévue vers "+hhmm(new Date(r.eta))+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id);
+    beginShare(id,fix);
+    if(tripUIOpen(id)){tripUI.key="";tripPanel();}else openTrip(id);
+    syncPush(true);scheduleRender();
+    return true;
+  }catch(e){console.error(e);toast("Départ impossible pour l'instant. Réessaie.");return false;}
+  finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=lbl;}}
+}
+/* le téléphone du conducteur envoie sa position */
+function geoWatch(){try{return navigator.geolocation.watchPosition(onFix,onFixErr,{enableHighAccuracy:true,maximumAge:2000,timeout:30000});}catch(_){return null;}}
+function beginShare(id,fix){
+  endWatch();
+  share={id,watch:null,sentAt:fix?Date.now():0,lastSent:fix||null,lastFix:fix||null,etaAt:0,offN:0,rerouteAt:0,local:false};
+  share.watch=geoWatch();keepAwake(true);lsSet("a2.share",id);
+}
+function endWatch(){if(share&&share.watch!=null){try{navigator.geolocation.clearWatch(share.watch);}catch(_){}share.watch=null;}}
+function endShare(){endWatch();share=null;lsSet("a2.share",null);if(typeof shopRefresh==="undefined"||!shopRefresh)keepAwake(false);}
+function onFixErr(e){if(e&&e.code===1&&share&&!share.local){const t=trips.get(share.id);toast("Position refusée : "+(t?firstName(t.to):"l'autre")+" ne voit plus ton trajet.");if(t)tripStop(t);}}
+function onFix(p){
+  if(!share)return;
+  const fix=fixOf(p);if(!okPt(fix)||!(fix.acc<=250))return;
+  const prev=share.lastFix;
+  if(fix.hdg==null&&prev)fix.hdg=distM(prev,fix)>6?Math.round(bearing(prev,fix)):prev.hdg;
+  share.lastFix=fix;
+  const ev=events.get(share.id),now0=Date.now();
+  if(share.local){   // après la prise en charge : l'aperçu continue ici, rien n'est partagé
+    const g=ev&&ev.routeGeo;
+    if((g&&okPt(g.to)&&distM(fix,g.to)<120)||!ev||now0>startOf(ev).getTime()+30*60000){endShare();tripTick(true);return;}
+    tripTick();return;}
+  const t=trips.get(share.id);
+  if(!t||t.by!==myId||!tripLive(t)){endShare();return;}
+  // le partage ne dure jamais : 15 min sur place au plus, et rien après l'heure du rendez-vous
+  if(t.stage==="here"&&now0-(+t.hereAt||now0)>15*60000){tripTogether(t);return;}
+  if(ev&&now0>startOf(ev).getTime()+45*60000){tripStop(t);return;}
+  const dT=okPt(t.target)?distM(fix,t.target):Infinity;
+  if(t.stage==="go"&&dT<=TRIP_HERE_M+Math.min(fix.acc,60))tripArrived(t);
+  else if(t.stage==="here"&&dT>350){tripTogether(t);return;}
+  const now=Date.now();
+  if(now-share.sentAt>=tripSendMs&&(!share.lastSent||distM(share.lastSent,fix)>12||now-share.sentAt>=15000)){
+    share.sentAt=now;share.lastSent=fix;tripPos.set(t.id,{...fix,bg:false});
+    db.doc("tripPos/"+t.id).set({...fix,bg:false}).catch(()=>{});
+    tripEta(t,fix);
+  }
+  tripTick();
+}
+// Heure d'arrivée d'après ce qu'il reste à faire ; nouveau trajet si l'on a quitté la route prévue
+function tripEta(t,fix){
+  if(t.stage!=="go"||!Array.isArray(t.route)||t.route.length<2||!share)return;
+  const a=along(t.route,fix),now=Date.now();
+  if(a.off>250){
+    share.offN++;
+    if(share.offN>=2&&now-share.rerouteAt>90000){share.rerouteAt=now;share.offN=0;
+      tripRoute(fix,t.target,t.mode).then(r=>{const cur=trips.get(t.id);if(!cur||cur.stage!=="go")return;Object.assign(cur,r,{updatedAt:Date.now()});
+        db.doc("trips/"+t.id).update({...r,updatedAt:Date.now()}).catch(()=>{});tripTick(true);syncPush();});}
+    return;
+  }
+  share.offN=0;
+  const eta=now+Math.round(Math.max(0,a.total-a.s)/Math.max(1.2,+t.v||8)*1000);
+  if(Math.abs(eta-(+t.eta||0))>=60000&&now-share.etaAt>=20000){share.etaAt=now;t.eta=eta;t.updatedAt=now;db.doc("trips/"+t.id).update({eta,updatedAt:now}).catch(()=>{});syncPush();}
+}
+// « en bas de chez vous » pour la maison, sinon l'adresse (ou le nom du lieu enregistré)
+function waitWhere(addr){const p=addr&&placeFor(addr);return p&&p.kind==="home"?" en bas de chez vous":" en bas"+(addr?", "+shortAddr(addr):"");}
+function tripArrived(t){
+  if(!t||t.stage!=="go")return;
+  const now=Date.now(),nm=firstName(t.by);t.stage="here";t.hereAt=now;t.updatedAt=now;
+  db.doc("trips/"+t.id).update({stage:"here",hereAt:now,updatedAt:now}).catch(()=>{});
+  pushTo([t.to],nm+" est en bas",nm+" t'attend"+waitWhere(t.target&&t.target.addr)+".","trip-"+t.id,"./?trip="+t.id);
+  if(!tripUIOpen(t.id))toast("Message envoyé à "+firstName(t.to)+" : tu es en bas");
+  tripTick(true);syncPush(true);
+}
+// L'autre est à bord : le partage s'arrête, l'aperçu du trajet continue sur ce téléphone jusqu'au rendez-vous
+function tripTogether(t){
+  if(!t)return;
+  // d'abord ce téléphone (la base peut répondre tout de suite), ensuite la base
+  if(share&&share.id===t.id){share.local=true;lsSet("a2.share",null);if(!tripUIOpen(t.id))endShare();}
+  const now=Date.now();t.stage="together";t.endedAt=now;t.updatedAt=now;
+  db.doc("trips/"+t.id).update({stage:"together",endedAt:now,updatedAt:now}).catch(()=>{});
+  db.doc("tripPos/"+t.id).delete().catch(()=>{});tripPos.delete(t.id);
+  tripTick(true);syncPush(true);
+}
+function tripStop(t){
+  if(!t)return;
+  if(share&&share.id===t.id)endShare();
+  const now=Date.now();t.stage="stop";t.endedAt=now;t.updatedAt=now;
+  db.doc("trips/"+t.id).update({stage:"stop",endedAt:now,updatedAt:now}).catch(()=>{});
+  db.doc("tripPos/"+t.id).delete().catch(()=>{});tripPos.delete(t.id);
+  tripTick(true);syncPush(true);
+}
+function tripReply(t,text){
+  if(!t)return;
+  const now=Date.now();t.reply={by:myId,text,at:now};
+  db.doc("trips/"+t.id).update({reply:{by:myId,text,at:now},updatedAt:now}).catch(()=>{});
+  pushTo([t.by],firstName(myId),text,"trip-"+t.id+"-r","./?trip="+t.id);
+  if(tripUIOpen(t.id))tripPanel();else toast("Envoyé à "+firstName(t.by)+" : « "+text+" »");
+}
+/* réception : la liste des trajets, et la position de celui qu'on suit */
+function onTripsSnap(snap){
+  const prev=trips,first=firstTrips,now=Date.now();
+  trips=new Map(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));firstTrips=false;tripsReady=true;
+  for(const t of trips.values()){
+    // ménage : un trajet fini depuis plus de 6 h disparaît
+    if(!tripLive(t)&&now-(t.endedAt||t.updatedAt||t.startedAt||0)>6*3600000){db.doc("trips/"+t.id).delete().catch(()=>{});db.doc("tripPos/"+t.id).delete().catch(()=>{});continue;}
+    if(first)continue;
+    const old=prev.get(t.id)||{};
+    if(t.to===myId&&!tripUIOpen(t.id)){
+      if(t.stage==="go"&&old.stage!=="go")toast(firstName(t.by)+" est en route vers toi","Suivre",()=>openTrip(t.id));
+      else if(t.stage==="here"&&old.stage!=="here")toast(firstName(t.by)+" est en bas","Voir",()=>openTrip(t.id));
+    }
+    if(t.by===myId&&t.reply&&t.reply.by!==myId&&(!old.reply||old.reply.at!==t.reply.at))toast(firstName(t.reply.by)+" : « "+t.reply.text+" »");
+  }
+  // trajet lancé sur ce téléphone, app relancée entre-temps : le partage reprend tout seul
+  if(!share){const mine=[...trips.values()].find(t=>tripLive(t)&&t.by===myId);if(mine)beginShare(mine.id,null);}
+  else if(!share.local&&!tripLive(trips.get(share.id)))endShare();
+  watchTripPos();
+  tripTick(true);heroSoon(true);
+  // un trajet commence ou se termine : les cartes de l'agenda changent de bouton
+  const sig=[...trips.values()].map(t=>t.id+":"+t.stage).sort().join(",");
+  if(first||sig!==tripSig){tripSig=sig;scheduleRender();}
+  runPendingLink();
+}
+let tripSig="";
+function watchTripPos(){
+  for(const [id,t] of trips){
+    if(tripLive(t)&&(t.to===myId||t.by===myId)&&!tripPosOff.has(id))
+      tripPosOff.set(id,db.doc("tripPos/"+id).onSnapshot(s=>{if(s.exists)tripPos.set(id,s.data());else tripPos.delete(id);tripTick();},()=>{}));
+  }
+  for(const [id,off] of [...tripPosOff]){if(!tripLive(trips.get(id))){try{off();}catch(_){}tripPosOff.delete(id);}}
+}
+let heroT=0,heroTimer=null;
+function refreshHero(){if(events.size)renderNext([...events.values()].sort((a,b)=>startOf(a)-startOf(b)).filter(e=>startOf(e).getTime()>Date.now()-3*3600000).filter(passWho));}
+function heroSoon(now){clearTimeout(heroTimer);heroTimer=setTimeout(()=>{heroT=Date.now();refreshHero();},now?30:Math.max(0,4000-(Date.now()-heroT)));}
+function tripTick(force){if(tripUIOpen()){tripUI.st=null;if(force)tripPanel();}heroSoon(false);}
+/* ce que montre la carte : position exacte, ou estimée le long du trajet */
+function tripState(id){
+  const t=trips.get(id)||null,ev=events.get(id)||null,now=Date.now();
+  const mine=t?t.by===myId:!!(ev&&hasPickup(ev)&&driverOf(ev)===myId);
+  const S={id,t,ev,mine,phase:t?({go:"go",here:"here",together:"together"}[t.stage]||"stop"):"ready",pt:null,hdg:null,live:false,est:false,age:0,remain:null,eta:t?(+t.eta||null):null,pos:null,done:0};
+  if(!t){const g=ev&&ev.routeGeo;if(g&&okPt(g.from))S.pt={lat:+g.from.lat,lon:+g.from.lon};return S;}
+  const route=Array.isArray(t.route)?t.route.filter(okPt):[];
+  let pos=mine&&share&&share.id===id&&share.lastFix?share.lastFix:(tripPos.get(id)||null);
+  if(!okPt(pos))pos=null;S.pos=pos;
+  if(pos){S.age=Math.max(0,(now-(+pos.t||0))/1000);S.pt={lat:+pos.lat,lon:+pos.lon};S.hdg=pos.hdg;S.live=S.age<=TRIP_FRESH_S&&!pos.bg;}
+  if(S.phase==="go"&&route.length>1){
+    const v=Math.max(1.2,+t.v||8),total=+t.routeM||pathLen(route);
+    if(pos){const a=along(route,pos);
+      if(S.live){S.remain=a.off>250?distM(pos,t.target)*1.3:Math.max(0,a.total-a.s);S.eta=now+S.remain/v*1000;}
+      else if(a.off<=400){const s=Math.max(a.s,Math.min(a.s+v*S.age,a.total-40)),q=pointAt(route,s);
+        S.pt={lat:q.lat,lon:q.lon};S.hdg=q.hdg;S.remain=Math.max(0,a.total-s);S.eta=Math.max(now+S.remain/v*1000,+t.eta||0);S.est=true;}
+      else{S.remain=distM(pos,t.target)*1.3;S.eta=Math.max(now+S.remain/v*1000,+t.eta||0);S.est=true;}
+    }else{const q=pointAt(route,0);S.pt={lat:q.lat,lon:q.lon};S.hdg=q.hdg;S.remain=total;}
+    S.done=Math.max(0,Math.min(1,1-(S.remain||0)/Math.max(1,total)));
+  }
+  if(S.phase==="here"&&okPt(t.target)){S.pt={lat:+t.target.lat,lon:+t.target.lon};S.remain=0;S.done=1;}
+  if(S.phase==="together"){S.pt=null;if(mine&&share&&share.local&&share.lastFix){S.pt={lat:share.lastFix.lat,lon:share.lastFix.lon};S.hdg=share.lastFix.hdg;S.live=true;}}
+  return S;
+}
+/* la fenêtre « Trajet en direct » : carte et panneau du bas, pour celui qui conduit comme pour l'autre */
+function tripUIOpen(id){return !!(tripUI&&(!id||tripUI.id===id)&&tripUI.box.isConnected);}
+function openTrip(id){
+  if(!trips.has(id)&&!events.has(id)){toast("Ce trajet n'existe plus.");return;}
+  if(tripUIOpen(id)){tripPanel();return;}
+  tripClosed();
+  const root=$("#sheet-root");root.textContent="";
+  const mapBox=el("div",{class:"tp-map lmap"}),panel=el("div",{class:"tp-panel"}),box=el("div",{class:"tp-sheet"},mapBox,panel);
+  root.append(sheetShell("Trajet en direct",[box]));
+  tripUI={id,box,mapBox,panel,map:null,car:null,pin:null,dest:null,shown:null,hdg:0,st:null,key:"",ui:{},raf:0,lastDraw:0,lastPanel:0,userMoved:0,fitAt:0,routeSig:""};
+  const t=trips.get(id);
+  if(t&&t.to===myId&&tripLive(t)&&!t.seenAt){t.seenAt=Date.now();db.doc("trips/"+id).update({seenAt:t.seenAt}).catch(()=>{});}
+  if(share&&share.id===id&&!share.local)keepAwake(true);
+  tripPanel();
+  if(!window.L)mapBox.append(el("div",{class:"note",style:"padding:14px"},"Carte indisponible sans connexion."));
+  setTimeout(()=>{tripMapInit();tripLoop();},40);
+}
+function tripClosed(){
+  if(tripUI){cancelAnimationFrame(tripUI.raf);try{if(tripUI.map&&tripUI.map.remove)tripUI.map.remove();}catch(_){}tripUI=null;}
+  if(share&&share.local)endShare();
+}
+function tripLoop(){
+  const U=tripUI;if(!U)return;
+  if(!U.box.isConnected){tripClosed();return;}
+  U.raf=requestAnimationFrame(tripLoop);
+  const now=performance.now();if(now-U.lastDraw<33)return;
+  const dt=U.lastDraw?Math.min(1,(now-U.lastDraw)/1000):0.033;U.lastDraw=now;
+  U.st=tripState(U.id);
+  tripAnimate(dt);
+  if(now-U.lastPanel>1000){U.lastPanel=now;tripPanel();}
+}
+const htmlEsc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function carHtml(mode){
+  if((mode||"car")==="car")return '<div class="tp-car-r"><svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true"><circle cx="22" cy="22" r="20" fill="currentColor" opacity=".18"/><rect x="14" y="6.5" width="16" height="31" rx="7" fill="currentColor" stroke="#fff" stroke-width="2"/><rect x="16.4" y="12.5" width="11.2" height="6.5" rx="2.2" fill="#fff" opacity=".92"/><rect x="16.4" y="20.5" width="11.2" height="8.5" rx="2" fill="#000" opacity=".2"/><rect x="17" y="30.5" width="10" height="4" rx="1.6" fill="#fff" opacity=".7"/><circle cx="17.6" cy="9" r="1.4" fill="#FFF3B0"/><circle cx="26.4" cy="9" r="1.4" fill="#FFF3B0"/></svg></div>';
+  return '<div class="tp-car-r"><svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true"><circle cx="22" cy="22" r="20" fill="currentColor" opacity=".18"/><path d="M22 4.5l7.5 13h-15z" fill="currentColor"/><circle cx="22" cy="24" r="9" fill="currentColor" stroke="#fff" stroke-width="3"/></svg></div>';
+}
+function pinHtml(uid){const a=avatar(uid||myId,"tp-av");return '<div class="tp-pin-in">'+a.outerHTML+'<i></i><span>'+htmlEsc(firstName(uid||myId))+'</span></div>';}
+function tripTargetPt(S){if(S.t&&okPt(S.t.target))return S.t.target;const mk=S.ev&&S.ev.routeGeo&&(S.ev.routeGeo.marks||[])[0];return mk&&okPt(mk.at)?mk.at:null;}
+function tripLinePts(S){
+  const g=S.ev&&S.ev.routeGeo;
+  const legSplit=()=>{if(!g||!okPt(g.from))return null;const path=[g.from,...(g.path||[]).filter(okPt)],mk=(g.marks||[])[0];
+    if(!mk||!okPt(mk.at))return {a:[...path,g.to].filter(okPt),b:[]};
+    let bi=path.length-1,bd=Infinity;path.forEach((q,i)=>{const d=distM(q,mk.at);if(d<bd){bd=d;bi=i;}});
+    return {a:[...path.slice(0,bi+1),mk.at],b:[mk.at,...path.slice(bi+1),g.to].filter(okPt)};};
+  if(S.phase==="together"){const L=legSplit();return L?L.b.map(p=>[p.lat,p.lon]):[];}
+  const r=S.t&&Array.isArray(S.t.route)?S.t.route.filter(okPt):[];
+  if(r.length>1)return r.map(p=>[p.lat,p.lon]);
+  const L=legSplit();return L?L.a.map(p=>[p.lat,p.lon]):[];
+}
+function tripMapInit(){
+  const U=tripUI;if(!U||U.map||!window.L||!U.mapBox.isConnected)return;
+  if(!U.mapBox.offsetWidth){setTimeout(tripMapInit,80);return;}
+  const S=U.st||(U.st=tripState(U.id));
+  const m=L.map(U.mapBox,{zoomControl:false,attributionControl:true});
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(m);
+  U.map=m;
+  const col=(getComputedStyle(document.documentElement).getPropertyValue("--route")||"#2B7FEA").trim()||"#2B7FEA";
+  const pts=tripLinePts(S);
+  U.lineBg=L.polyline(pts,{color:"#ffffff",weight:9,opacity:.9}).addTo(m);
+  U.line=L.polyline(pts,{color:col,weight:5,opacity:1}).addTo(m);
+  U.routeSig=(S.t&&S.t.route?S.t.route.length+":"+(S.t.routeM||0):"plan")+"|"+S.phase;
+  tripPins(S);
+  const p=S.pt||tripTargetPt(S);
+  if(p){U.shown={lat:+p.lat,lon:+p.lon};U.hdg=S.hdg||0;tripCar(S);}
+  if(m.on)m.on("dragstart",()=>{U.userMoved=Date.now();});
+  tripFit(true);
+}
+function tripCar(S){
+  const U=tripUI;if(!U||!U.map||U.car||!U.shown)return;
+  U.car=L.marker([U.shown.lat,U.shown.lon],{icon:L.divIcon({className:"tp-car",html:carHtml((S.t&&S.t.mode)||(S.ev&&S.ev.mode)||"car"),iconSize:null}),interactive:false,zIndexOffset:1000}).addTo(U.map);
+}
+// Repère de l'autre (sa photo) là où on le prend ; après, le lieu du rendez-vous
+function tripPins(S){
+  const U=tripUI;if(!U||!U.map)return;
+  const rm=x=>{try{if(x&&x.remove)x.remove();}catch(_){}};
+  if(S.phase==="together"){rm(U.pin);U.pin=null;
+    const g=S.ev&&S.ev.routeGeo;if(!U.dest&&g&&okPt(g.to))U.dest=L.marker([g.to.lat,g.to.lon],{icon:L.divIcon({className:"tp-dest",html:'<div class="tp-dest-in"><span>'+htmlEsc((S.ev&&S.ev.title)||"Rendez-vous")+'</span></div>',iconSize:null}),interactive:false}).addTo(U.map);
+    return;}
+  const tg=tripTargetPt(S);
+  if(tg&&!U.pin){const who=S.t?S.t.to:(S.ev?S.ev.pickupWho:null);U.pin=L.marker([tg.lat,tg.lon],{icon:L.divIcon({className:"tp-pin",html:pinHtml(who),iconSize:null}),interactive:false}).addTo(U.map);}
+}
+function tripFit(force){
+  const U=tripUI;if(!U||!U.map)return;if(!force&&Date.now()-U.userMoved<15000)return;
+  const S=U.st||tripState(U.id);
+  const g=S.ev&&S.ev.routeGeo,tg=S.phase==="together"?(g&&okPt(g.to)?g.to:null):tripTargetPt(S),a=U.shown;
+  try{
+    if(a&&tg&&distM(a,tg)>40)U.map.fitBounds(L.latLngBounds([[a.lat,a.lon],[+tg.lat,+tg.lon]]),{padding:[64,64],maxZoom:17,animate:!force});
+    else if(a||tg){const c=a||tg;U.map.setView([+c.lat,+c.lon],17,{animate:!force});}
+  }catch(_){}
+}
+// La voiture glisse vers sa nouvelle place et tourne dans le sens de la route, sans à-coups
+function tripAnimate(dt){
+  const U=tripUI;if(!U)return;const S=U.st;if(!S)return;
+  if(!U.map){tripMapInit();if(!U.map)return;}
+  const sig=(S.t&&S.t.route?S.t.route.length+":"+(S.t.routeM||0):"plan")+"|"+S.phase;
+  if(sig!==U.routeSig){U.routeSig=sig;const pts=tripLinePts(S);try{U.line.setLatLngs(pts);U.lineBg.setLatLngs(pts);}catch(_){}tripPins(S);}
+  if(!S.pt){if(U.car&&S.phase==="together"){try{U.car.remove();}catch(_){}U.car=null;}return;}
+  if(!U.shown)U.shown={lat:S.pt.lat,lon:S.pt.lon};
+  if(!U.car)tripCar(S);
+  const k=1-Math.exp(-dt/0.45);
+  U.shown.lat+=(S.pt.lat-U.shown.lat)*k;U.shown.lon+=(S.pt.lon-U.shown.lon)*k;
+  if(S.hdg!=null&&Number.isFinite(+S.hdg)){const d=((+S.hdg-U.hdg+540)%360)-180;U.hdg=(U.hdg+d*Math.min(1,k*1.4)+360)%360;}
+  if(U.car){U.car.setLatLng([U.shown.lat,U.shown.lon]);
+    const e=U.car.getElement&&U.car.getElement();
+    if(e){const r=e.querySelector(".tp-car-r");if(r)r.style.transform="rotate("+Math.round(U.hdg)+"deg)";e.classList.toggle("est",!!S.est);}}
+  if(Date.now()-U.fitAt>2500){U.fitAt=Date.now();tripFit(false);}
+}
+function agoShort(s){s=Math.round(s);return s<60?"il y a "+s+" s":s<3600?"il y a "+Math.round(s/60)+" min":"il y a "+Math.round(s/3600)+" h";}
+const kmTxt=m=>m==null?"":m<950?Math.max(10,Math.round(m/10)*10)+" m":(m/1000).toFixed(m<9500?1:0).replace(".",",")+" km";
+function tripPanel(){
+  const U=tripUI;if(!U||!U.box.isConnected)return;
+  const S=U.st||(U.st=tripState(U.id));
+  const key=[S.mine?"d":"p",S.phase,S.t&&S.t.reply?S.t.reply.at:0].join(":");
+  if(U.key!==key){U.key=key;tripBuild(S);}
+  tripFill(S);
+}
+function tripWho(S){const t=S.t,ev=S.ev;const o=t?(S.mine?t.to:t.by):(ev?(S.mine?ev.pickupWho:driverOf(ev)):null);return o||otherId()||myId;}
+function tripBuild(S){
+  const U=tripUI,P=U.panel,ui=U.ui={},ev=S.ev,on=firstName(tripWho(S));
+  P.textContent="";
+  ui.k=el("div",{class:"tp-k"});ui.eta=el("div",{class:"tp-eta num"});ui.sub=el("div",{class:"tp-sub"});
+  P.append(ui.k,el("div",{class:"tp-row"},ui.eta,ui.sub));
+  if(S.phase==="go"){ui.bar=el("b");P.append(el("div",{class:"tp-bar"},ui.bar));}
+  if(S.t&&(S.phase==="go"||S.phase==="here")){ui.stT=el("span");ui.st=el("div",{class:"tp-st"},el("span",{class:"tp-dot","aria-hidden":"true"}),ui.stT);P.append(ui.st);}
+  const rep=S.t&&S.t.reply;
+  if(rep&&(S.phase==="go"||S.phase==="here")){const me=rep.by===myId;P.append(el("div",{class:"tp-msg"+(me?" me":"")},(me?"Tu as répondu : ":firstName(rep.by)+" : ")+"« "+rep.text+" »"));}
+  const A=el("div",{class:"tp-actions"});P.append(A);
+  const T=()=>trips.get(U.id);
+  const close=el("button",{type:"button",class:"btn quiet",onclick:closeSheet},"Fermer");
+  const nav=leg2=>ev?[el("a",{class:"btn",href:wazeUrl(ev,leg2),target:"_blank",rel:"noopener"},"Waze"),el("a",{class:"btn",href:appleUrl(ev,leg2),target:"_blank",rel:"noopener"},"Plans")]:[];
+  if(S.mine){
+    if(S.phase==="ready"){
+      const b=el("button",{type:"button",class:"btn primary tp-go"},"Je pars : prévenir "+on);b.onclick=()=>startTrip(U.id,b);
+      const can=!!ev&&canStartTrip(ev);if(!can)b.disabled=true;
+      A.append(b);
+      P.append(el("p",{class:"tp-note"},(can?"":"Le bouton s'active 2 h avant le départ. ")+on+" reçoit une notification et voit ta position en direct jusqu'à ce que tu sois en bas. Le partage s'arrête tout seul ensuite."));
+    }else if(S.phase==="go"){
+      A.append(...nav(false),el("button",{type:"button",class:"btn primary",onclick:()=>tripArrived(T())},"Je suis en bas"));
+      P.append(el("p",{class:"tp-note"},"Avec CarPlay, lance le guidage sur l'écran de la voiture et garde Together ouvert sur ton iPhone : ta position part en direct. Si tu passes sur Waze ou Plans sur le téléphone, reviens ensuite sur Together (glisse le bas de l'écran vers la droite) ; en attendant, "+on+" voit une position estimée."),
+        el("button",{type:"button",class:"btn quiet tp-stop",onclick:()=>tripStop(T())},"Arrêter le partage"));
+    }else if(S.phase==="here"){
+      A.append(el("button",{type:"button",class:"btn primary tp-go",onclick:()=>tripTogether(T())},"C'est bon, on y va"));
+      P.append(el("button",{type:"button",class:"btn quiet tp-stop",onclick:()=>tripStop(T())},"Arrêter le partage"));
+    }else if(S.phase==="together")A.append(...nav(true),close);
+    else A.append(close);
+  }else{
+    if(S.phase==="go"||S.phase==="here"){for(const r of ["Je descends","Dans 2 min","Dans 5 min"])A.append(el("button",{type:"button",class:"btn"+(r==="Je descends"?" primary":""),onclick:()=>tripReply(T(),r)},r));}
+    else A.append(close);
+  }
+}
+function tripFill(S){
+  const U=tripUI,ui=U.ui||{},t=S.t,ev=S.ev,now=Date.now(),on=firstName(tripWho(S));
+  const title=(t&&t.title)||(ev&&ev.title)||"le rendez-vous";
+  const inMin=S.eta?Math.round((S.eta-now)/60000):null;
+  let k="",big="",sub="",st="",est=false;
+  if(S.phase==="ready"){
+    k=S.mine?"Récupérer "+on:"Bientôt";big=ev&&hasPickup(ev)?hhmm(pickupAt(ev)):"";
+    sub=S.mine?(ev?"Départ conseillé à "+hhmm(departOf(ev))+" · "+title:""):on+" n'est pas encore en route. Tu recevras une notification au départ.";
+  }else if(S.phase==="go"){
+    k=S.mine?"Tu vas chercher "+on:on+" arrive";big=S.eta?hhmm(new Date(S.eta)):"";
+    sub=[inMin==null?"":inMin<=0?"Arrivée imminente":"Dans "+fmtDur(inMin),S.remain!=null&&S.remain>0?kmTxt(S.remain):""].filter(Boolean).join(" · ");
+    if(!S.pos)st="En attente de la position…";
+    else if(S.live)st=S.mine?(t.seenAt?on+" suit ton trajet en direct":"Ta position est partagée en direct avec "+on):"Position en direct";
+    else{est=true;st=S.mine?"Signal GPS faible : position estimée":"Position estimée · dernière position exacte "+agoShort(S.age);}
+  }else if(S.phase==="here"){
+    k=S.mine?"Sur place":on+" est en bas";big=t.hereAt?hhmm(new Date(t.hereAt)):"";
+    sub=S.mine?on+" a reçu « "+firstName(myId)+" est en bas »":on+" t'attend"+waitWhere(t.target&&t.target.addr)+".";
+  }else if(S.phase==="together"){
+    k=S.mine?"En route vers "+title:"Vous êtes ensemble";big=ev?ev.time:"";
+    sub=S.mine?"Rendez-vous à "+(ev?ev.time:"")+". Le partage avec "+on+" est terminé.":"Bon rendez-vous !";
+  }else{k="Partage arrêté";sub=S.mine?on+" ne voit plus ta position.":on+" a arrêté le partage de sa position.";}
+  if(ui.k)ui.k.textContent=k;if(ui.eta)ui.eta.textContent=big;if(ui.sub)ui.sub.textContent=sub;
+  if(ui.bar)ui.bar.style.width=Math.round((S.done||0)*100)+"%";
+  if(ui.st){ui.st.hidden=!st;ui.st.classList.toggle("est",est);ui.stT.textContent=st;}
+}
+// Grande carte de l'agenda pendant un trajet : l'heure d'arrivée et un bouton pour suivre
+function tripHero(n,t){
+  const S=tripState(t.id),now=Date.now(),on=firstName(tripWho(S)),here=S.phase==="here";
+  const inMin=S.eta?Math.max(0,Math.round((S.eta-now)/60000)):null;
+  n.textContent="";n.hidden=false;n.dataset.ev=t.id;n.removeAttribute("style");n.classList.remove("themed","soon");n.classList.add("trip-live");delete n.dataset.mk;
+  const k=S.mine?(here?"Sur place":"Trajet en cours vers "+on):(here?on+" est en bas":on+" est en route");
+  const big=here?(t.hereAt?hhmm(new Date(t.hereAt)):""):(S.eta?hhmm(new Date(S.eta)):"");
+  const inT=here?(S.mine?"Message envoyé à "+on:on+" t'attend"):(inMin==null?"":inMin<=0?"Arrivée imminente":"Arrivée dans "+fmtDur(inMin));
+  const b=el("button",{type:"button",class:"btn sign-btn"},S.mine?"Voir le trajet":"Suivre en direct");
+  b.onclick=e=>{e.stopPropagation();openTrip(t.id);};
+  n.append(el("div",{class:"k"},el("span",{class:"tl-live"+(S.est?" est":""),"aria-hidden":"true"}),k),
+    el("div",{class:"big num"},big),el("div",{class:"in"},inT),
+    el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.est&&!here?" · position estimée":"")),b);
+}
+/* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
+let pendingLink=/[?&](trip|ev)=/.test(location.search)?location.search:null;
+function runPendingLink(){
+  if(!pendingLink||firstSnap||!tripsReady)return;
+  const q=pendingLink;pendingLink=null;
+  try{if(/[?&](trip|ev)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
+  setTimeout(()=>{if(!handleDeepLink(q))toast("Cet évènement n'existe plus.");},150);
+}
+function handleDeepLink(q){
+  let p;try{p=new URLSearchParams(String(q||"").replace(/^[^?]*\?/,""));}catch(_){return false;}
+  const tid=p.get("trip"),eid=p.get("ev");
+  if(tid&&(trips.has(tid)||events.has(tid))){openTrip(tid);return true;}
+  if(eid&&events.has(eid)){const e=events.get(eid);if(canStartTrip(e)||tripFor(eid))openTrip(eid);else openEventCard(eid);return true;}
+  return false;
+}
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const d=e.data||{};
+  if(d.type==="open"&&d.url){if(firstSnap||!tripsReady)pendingLink=d.url;else handleDeepLink(d.url);}});
+// Together repasse à l'écran : la position repart tout de suite ; il s'en va : on prévient que la position devient estimée
+document.addEventListener("visibilitychange",()=>{
+  if(!share||share.local)return;
+  if(document.visibilityState==="hidden"){
+    const t=trips.get(share.id);if(tripLive(t)&&share.lastFix)db.doc("tripPos/"+share.id).set({...share.lastFix,bg:true}).catch(()=>{});
+  }else{endWatch();share.watch=geoWatch();share.sentAt=0;keepAwake(true);}
+});
 
 /* ---------- Démarrage instantané : dernière copie de l'agenda gardée sur le téléphone ---------- */
 const BOOT_KEY="a2.boot";let bootSaveT=null,booted=false;
@@ -4559,6 +5058,7 @@ function bootFromCache(){
   startInbox();
   db.doc("config/shop").onSnapshot(snap=>{const x=snap.exists?snap.data():{};shopList={items:Array.isArray(x.items)?x.items:[],freq:x.freq&&typeof x.freq==="object"?x.freq:{}};scheduleRender();if(shopRefresh)shopRefresh();},()=>{});
   db.doc("config/home").onSnapshot(snap=>{if(snap.exists){const x=snap.data();settings={home:x.home||"",mode:x.mode||"car"};}},()=>{});
+  db.collection("trips").onSnapshot(onTripsSnap,()=>{tripsReady=true;});
   db.collection("events").orderBy("startTs").onSnapshot(snap=>{
     if(!firstSnap){
       for(const ch of snap.docChanges()){
@@ -4580,7 +5080,7 @@ function bootFromCache(){
     }
     const wasFirst=firstSnap;firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);}
+    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();}
     if(shopRefresh)shopRefresh();
     saveBoot();
     scheduleRender();
