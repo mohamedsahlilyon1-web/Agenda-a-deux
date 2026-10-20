@@ -24,10 +24,13 @@ jobs:
           first=1
           for id in $(echo "$IDX" | jq -r '.[]?'); do
             V=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/c:$id")
+            SB=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/s:$id"); echo "$SB" | jq -e 'type=="object" and (has("errors")|not)' >/dev/null 2>&1 || SB=$(echo "$V" | jq -c '.subs//{}')
+            WD=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/w:$id"); echo "$WD" | jq -e 'type=="object" and has("map")' >/dev/null 2>&1 || WD=$(echo "$V" | jq -c '{at:(.wAt//0),map:(.widgets//{})}')
+            DN=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/d:$id"); echo "$DN" | jq -e 'type=="array"' >/dev/null 2>&1 || DN=$(echo "$V" | jq -c '.done//[]')
             TOK=$(echo "$V" | jq -r .token)
-            S=$(echo "$V" | jq -c '{subs:((.subs//{})|length),subsPer:((.subs//{})|[.[]|length]),sched:((.sched//[])|length),nextAt:((.sched//[])|map(.at)|min),done:((.done//[])|length),wAt:(.wAt//0),widgets:((.widgets//{})|[.[]|{items:((.items//[])|length),wishes,fb}]),oldWidget:(.widget!=null)}')
+            S=$(jq -nc --argjson v "$V" --argjson sb "$SB" --argjson wd "$WD" --argjson dn "$DN" '{subs:($sb|length),subsPer:($sb|[.[]|length]),sched:(($v.sched//[])|length),nextAt:(($v.sched//[])|map(.at)|min),done:($dn|length),wAt:($wd.at//0),widgets:(($wd.map//{})|[.[]|{items:((.items//[])|length),wishes,fb}])}')
             W=""
-            for u in $(echo "$V" | jq -r '(.subs//{})|keys[]'); do
+            for u in $(echo "$SB" | jq -r 'keys[]'); do
               C=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u" | jq -c '{items:((.data.items//[])|length),at}')
               W="$W\"${u:0:4}…\":$C,"
             done

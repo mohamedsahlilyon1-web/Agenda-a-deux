@@ -1,5 +1,5 @@
 // Garde l'app disponible même avec une connexion faible. Les données restent synchronisées par Firebase.
-const CACHE = "agenda-a-deux-v46";
+const CACHE = "agenda-a-deux-v47";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})); self.skipWaiting(); });
 // Bibliothèques externes à version fixe (Firebase, Leaflet) : gardées sur le téléphone, chargées instantanément
@@ -14,7 +14,15 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   if (e.request.method !== "GET") return;
-  if ((u.hostname === "www.gstatic.com" && u.pathname.startsWith("/firebasejs/")) || (u.hostname === "unpkg.com" && /@\d+\.\d+\.\d+/.test(u.pathname))) {
+  // Polices : le fichier de style est rafraîchi en arrière-plan, les polices elles-mêmes ne changent jamais
+  if (u.hostname === "fonts.googleapis.com") {
+    e.respondWith(caches.open(LIBS).then((c) => c.match(e.request).then((hit) => {
+      const net = fetch(e.request).then((r) => { if (r.ok || r.type === "opaque") c.put(e.request, r.clone()); return r; }).catch(() => hit);
+      return hit || net;
+    })));
+    return;
+  }
+  if (u.hostname === "fonts.gstatic.com" || (u.hostname === "www.gstatic.com" && u.pathname.startsWith("/firebasejs/")) || (u.hostname === "unpkg.com" && /@\d+\.\d+\.\d+/.test(u.pathname))) {
     e.respondWith(caches.open(LIBS).then((c) => c.match(e.request).then((hit) => hit || fetch(e.request).then((r) => { if (r.ok || r.type === "opaque") c.put(e.request, r.clone()); return r; }))));
     return;
   }

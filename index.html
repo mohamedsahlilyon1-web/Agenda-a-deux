@@ -34,7 +34,10 @@ img{max-width:100%}[hidden]{display:none!important}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <title>Together</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,500..800,0..100;1,9..144,500..800,0..100&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Polices chargées sans bloquer l'affichage : l'app s'ouvre tout de suite, même avec un réseau lent -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,500..800,0..100;1,9..144,500..800,0..100&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,500..800,0..100;1,9..144,500..800,0..100&display=swap"></noscript>
 <style>
 /* Layout: a transit-line timeline. Each outing is a stop on a vertical line: a yellow "départ" stop, then the arrival stop. Rows slide left to reveal Modifier / Supprimer. */
 :root{
@@ -490,6 +493,19 @@ header{flex-wrap:wrap;row-gap:4px}
 .pk-pill{background:#E11D48;color:#fff;border-radius:999px;padding:2px 9px;font-size:.85rem}.pk-line small{color:var(--muted);font-weight:500}
 .pk-hero{display:flex;align-items:center;gap:8px;margin-top:6px;font-weight:700;opacity:.95}.pk-hero b{background:#E11D48;color:#fff;border-radius:999px;padding:2px 10px}
 .pk-bubble span{display:inline-block;transform:translate(-50%,-150%);background:#E11D48;color:#fff;font:700 12px/1 var(--f,system-ui);padding:5px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+/* ----- Revue : mise en page sur petits écrans ----- */
+/* Le titre d'un évènement prend toute la largeur ; les boutons se rangent à droite de la première ligne */
+.ev-title{display:block}
+.ev-title .ev-t{overflow-wrap:normal;word-break:normal}
+.ev-title::after{content:"";display:block;clear:both}
+.ev-title .ev-right{float:right;margin:-2px -4px 0 8px}
+.month-nav .btn{padding:8px 11px;font-size:.86rem;white-space:nowrap}
+@media (max-width:360px){.month-nav .btn{padding:7px 8px;font-size:.8rem}.md{border-radius:10px}}
+.cal-banner{flex-wrap:wrap}.cal-banner .cal-txt{flex:1 1 170px}
+.leg .t.allday{font-size:.82rem;line-height:1.15;padding-top:15px;color:var(--muted)}
+@media (max-width:340px){.brand h1{display:none}}
+.go-wrap{display:flex;flex-direction:column;gap:8px}.go-next{align-self:flex-start}
+:root:is([data-skin="aurore"],[data-skin="tokyo"],[data-skin="velours"]) .lmap .leaflet-tile{filter:brightness(.75) contrast(1.1) saturate(.7)}
 .cp-hero{display:flex;gap:14px;align-items:center;margin:4px 0 12px}.cp-hero h2{margin:0 0 4px;font-family:var(--fd,inherit);font-size:23px;line-height:1.1}
 .cp-sub{margin:0;color:var(--muted);font-size:14.5px}
 .cp-cal{flex:none;width:58px;height:62px;border-radius:16px;background:var(--surface);border:1px solid var(--hair);display:grid;grid-template-rows:20px 1fr;overflow:hidden;box-shadow:0 12px 24px -16px var(--line);transform:rotate(-6deg);animation:cpPop .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -644,9 +660,9 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .today-d{cursor:pointer;background:none;border:none;padding:0;text-align:left;color:inherit;display:block}
 .today-d .chev-m{display:inline-block;width:.5em;height:.5em;border-right:.12em solid var(--muted);border-bottom:.12em solid var(--muted);transform:rotate(45deg) translate(-.12em,-.12em);margin-left:.25em;vertical-align:.12em}
 .month-nav{display:flex;justify-content:space-between;align-items:center;gap:6px}
-.month{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.month{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mh{font-size:.72rem;color:var(--muted);text-align:center;font-weight:700;padding-bottom:2px}
-.md{aspect-ratio:1/1.05;border:none;border-radius:14px;background:var(--surface);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-weight:700;box-shadow:var(--lift)}
+.md{aspect-ratio:1/1.05;min-width:0;padding:0;border:none;border-radius:14px;background:var(--surface);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-weight:700;box-shadow:var(--lift)}
 .md.pad{background:transparent;box-shadow:none}
 .md:not(.has){color:var(--muted);font-weight:500}
 .md.today{box-shadow:0 0 0 2px var(--line)}
@@ -904,6 +920,8 @@ const hhmm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const startOf=ev=>new Date(ev.date+"T"+(ev.time||"09:00")+":00");
 const departOf=ev=>new Date(startOf(ev).getTime()-((+ev.travelMin||0)+(+ev.marginMin||0))*60000);
+// Évènement « toute la journée » (anniversaire, jour férié, changement d'heure…) : pas d'heure de départ ni de rappel « c'est l'heure »
+function isAllDay(ev){return !!(ev&&(ev.allDay||/toute la journ/i.test(ev.notes||"")||(ev.time==="00:00"&&!ev.location&&!((+ev.travelMin||0)>0))));}
 /* ---------- Départ à deux depuis deux endroits : l'un passe prendre l'autre ---------- */
 function hasPickup(ev){return !!(ev&&ev.pickup&&ev.pickupWho&&(!ev.who||ev.who==="both")&&(+ev.travelMin||0)>0);}
 function pickupAt(ev){return new Date(departOf(ev).getTime()+(+ev.pickupMin||0)*60000);}
@@ -1002,8 +1020,10 @@ async function render(){
   const seq=++renderSeq;
   const now=Date.now();
   const all=[...events.values()].sort((a,b)=>startOf(a)-startOf(b));
-  const upcoming=all.filter(e=>startOf(e).getTime()>now-3*3600000);
-  const past=all.filter(e=>startOf(e).getTime()<=now-3*3600000).reverse();
+  const today0=ymd(new Date());
+  const isUp=e=>startOf(e).getTime()>now-3*3600000||(isAllDay(e)&&e.date>=today0);
+  const upcoming=all.filter(isUp);
+  const past=all.filter(e=>!isUp(e)).reverse();
   $("#btn-past").hidden=past.length===0;
   $("#btn-past").textContent=showPast?"Masquer les évènements passés":"Voir les évènements passés ("+past.length+")";
   const shown=(showPast?upcoming.concat(past):upcoming).filter(passWho);
@@ -1013,6 +1033,7 @@ async function render(){
   const list=$("#list");list.textContent="";openFront=null;
   const who=id=>({name:id===myId?"toi":((ps[id]&&ps[id].name)||"l'autre"),color:(ps[id]&&ps[id].color)||"var(--muted)"});
   renderNext(upcoming.filter(passWho));
+  renderedDay=today0;
   {const wb=$("#who-bar");wb.textContent="";const wf=whoFilterBar();if(wf)wb.append(wf);wb.hidden=!wf;}
   {const pp=pushPromptCard();if(pp)list.append(pp);}
   if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
@@ -1023,7 +1044,7 @@ async function render(){
   const pendSig=pend.map(e=>e.id).sort().join(",");
   let hiddenSig="";try{hiddenSig=localStorage.getItem("a2.calHide")||"";}catch(_){}
   const hideSet=new Set(hiddenSig.split(",").filter(Boolean));
-  if(pend.length&&myId&&pend.some(e=>!hideSet.has(e.id))) list.append(el("div",{class:"cal-banner"},
+  if(pend.length&&myId&&!pushOn()&&pend.some(e=>!hideSet.has(e.id))) list.append(el("div",{class:"cal-banner"},
     el("div",{class:"cal-txt"},el("strong",{},pend.length>1?pend.length+" évènements ne sont pas dans ton calendrier":"1 évènement n'est pas dans ton calendrier"),
       el("span",{},"Sans ça, leurs rappels ne sonneront pas quand l'app est fermée.")),
     el("button",{class:"btn primary",type:"button",onclick:()=>addManyToCalendar(pend)},pend.length>1?"Tout ajouter":"Ajouter"),
@@ -1054,7 +1075,7 @@ let heroShown=false;
 function renderNext(upcoming){
   const n=$("#next"),now=Date.now();
   renderToday();renderWeek();
-  const ev0=upcoming.map(e=>viewFor(e,myId)).find(e=>(hasTripEv(e)?departOf(e):startOf(e)).getTime()>now-15*60000);
+  const ev0=upcoming.filter(e=>!isAllDay(e)).map(e=>viewFor(e,myId)).find(e=>(hasTripEv(e)?departOf(e):startOf(e)).getTime()>now-15*60000);
   const ev=ev0||null;
   const ref=ev?(hasTripEv(ev)?departOf(ev):startOf(ev)):null;
   if(!ev||ref-now>7*86400000){n.hidden=true;delete n.dataset.ev;return;}
@@ -1085,7 +1106,7 @@ function renderNext(upcoming){
     el("div",{class:"in"},when),
     el("div",{class:"what"},ev.title+(trip?", rendez-vous à "+ev.time:"")),
     trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||ev.title))):null,
-    trip?el("div",{class:"trip-meta"},ev.pickedUp?"Sois prête"+" à "+hhmm(ref)+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Arrivée à "+ev.time+".":fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null,
+    trip?el("div",{class:"trip-meta"},ev.pickedUp?"Prépare-toi pour "+hhmm(ref)+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Arrivée à "+ev.time+".":fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null,
     trip&&hasPickup(ev)&&!ev.pickedUp?el("div",{class:"pk-hero"},el("b",{class:"num"},hhmm(pickupAt(ev))),"Récupérer "+firstName(ev.pickupWho)+(ev.pickup?" · "+shortAddr(ev.pickup):"")):null].filter(Boolean));
   if(trip&&IS_IOS&&canWrite){const b=alarmButton(ev,"sign-btn");if(b)n.append(b);}
   if(isShopping(ev))n.append(shopPill(ev,"hero-pill"));
@@ -1124,7 +1145,7 @@ function renderWeek(){
 }
 
 function mapsUrl(ev){const p=new URLSearchParams({api:"1",destination:ev.location||"",travelmode:GMODE[ev.mode]||"driving"});if(ev.origin)p.set("origin",ev.origin);if(hasPickup(ev)&&!ev.pickedUp)p.set("waypoints",ev.pickup);return "https://www.google.com/maps/dir/?"+p;}
-function wazeUrl(ev){return "https://waze.com/ul?q="+encodeURIComponent(ev.location||"")+"&navigate=yes";}
+function wazeUrl(ev,leg2){const pk=hasPickup(ev)&&!ev.pickedUp&&!leg2;return "https://waze.com/ul?q="+encodeURIComponent((pk?ev.pickup:ev.location)||"")+"&navigate=yes";}
 function gcalUrl(ev){
   const s=startOf(ev),e=new Date(s.getTime()+(+ev.durationMin||60)*60000);
   const z=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
@@ -1140,7 +1161,7 @@ function gcalUrl(ev){
 /* ---------- Thèmes selon l'évènement : couleur et dessin choisis d'après le titre ---------- */
 const MOTIFS={
   dent:{name:"Dentiste",c:"#0EA5A0",re:/\bdent|orthodont|detartr|carie|implant/,svg:'<path d="M7.5 3.5c-2.4 0-4 1.9-4 4.6 0 2.2.8 3.6 1.4 5.5.6 1.9.8 4.4 1.4 6.2.4 1.1 1.8 1.2 2.2.1.5-1.6.9-4.4 2.1-4.4h2.8c1.2 0 1.6 2.8 2.1 4.4.4 1.1 1.8 1 2.2-.1.6-1.8.8-4.3 1.4-6.2.6-1.9 1.4-3.3 1.4-5.5 0-2.7-1.6-4.6-4-4.6-1.8 0-2.6 1-4.5 1s-2.7-1-4.5-1z"/><path d="M9 7.5c1 .5 2 .7 3 .7"/>'},
-  soin:{name:"Santé",c:"#2F7BEA",re:/medecin|docteur|\bdr\b|kine|osteo|pharma|hopital|clinique|analyse|prise de sang|vaccin|ophtalmo|dermato|gyneco|radio|irm|echo|sante|generaliste|pediatre|psy/,svg:'<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/>'},
+  soin:{name:"Santé",c:"#2F7BEA",re:/medecin|docteur|\bdr\b|kine|osteo|pharma|hopital|clinique|analyse|prise de sang|vaccin|ophtalmo|dermato|gyneco|\bradio|\birm\b|\becho|sante|generaliste|pediatre|\bpsy|infirmi|sage-femme/,svg:'<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/>'},
   amour:{name:"En amoureux",c:"#E11D48",re:/erotique|romanti|amoureu|saint[- ]valentin|valentin|tete[- ]a[- ]tete|galant|soiree a deux|nuit a deux|moment a deux|en couple|calin|sexy|coquin|lune de miel|anniversaire de (mariage|rencontre)|notre anniversaire|bisou|love/,svg:'<path d="M12 20.5s-7.5-4.4-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.3 0 2.4.6 3 1.6.6-1 1.7-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.8-7.5 10.2-7.5 10.2z"/><path d="M8 10c.3-1 1-1.5 1.8-1.6"/>'},
   fun:{name:"Parc d'attractions",c:"#C026D3",re:/parc d'?attraction|disney|asterix|futuroscope|puy du fou|walibi|europa ?park|port aventura|fete foraine|manege|grand huit|parc a theme/,svg:'<circle cx="12" cy="10" r="7"/><path d="M12 3v14M5 10h14M7 5l10 10M17 5 7 15"/><circle cx="12" cy="10" r="1.6"/><path d="M8 21l4-4 4 4M6.5 21h11"/>'},
   zoo:{name:"Zoo, safari",c:"#65A30D",re:/\bzoo|safari|parc animalier|reserve africaine|ferme pedagogique|vivarium|planete sauvage|beauval|bioparc|girafe|lion/,svg:'<path d="M9 21v-7.5L6.5 7.5 4 7l.5-2.5L8 4l2 2.5 1.5 5h3.5l2.5 2.5V21"/><path d="M12.5 21v-4M16 21v-3"/><circle cx="7.6" cy="6" r=".6" fill="currentColor"/><circle cx="12.6" cy="15" r=".9" fill="currentColor"/><circle cx="10.4" cy="17.6" r=".9" fill="currentColor"/>'},
@@ -1151,18 +1172,18 @@ const MOTIFS={
   visite:{name:"Monument, musée",c:"#B45309",re:/monument|chateau|cathedrale|basilique|tour eiffel|arc de triomphe|visite|patrimoine|musee|\bexpo|galerie|louvre|versailles|abbaye|remparts|arenes/,svg:'<path d="M4 21V9l2-1V5h2v2l2-1V4h4v2l2 1V5h2v3l2 1v12z"/><path d="M10 21v-5a2 2 0 0 1 4 0v5M7 12h1M16 12h1"/>'},
   jeux:{name:"Jeux, loisirs",c:"#6D28D9",re:/bowling|escape|laser ?game|karting|arcade|billard|paintball|trampoline|accrobranche|mini-?golf|\bjeux?\b|quiz|blind test|realite virtuelle|\bvr\b|patinoire|flechettes/,svg:'<path d="M7 8h10a4 4 0 0 1 4 4v3.5a2.5 2.5 0 0 1-4.5 1.5L15 15H9l-1.5 2A2.5 2.5 0 0 1 3 15.5V12a4 4 0 0 1 4-4z"/><path d="M7.5 10.5v3M6 12h3"/><circle cx="15.5" cy="11" r=".9" fill="currentColor"/><circle cx="17.5" cy="13" r=".9" fill="currentColor"/>'},
   table:{name:"Restaurant",c:"#B4304A",re:/resto|restaurant|diner|dejeuner|brunch|pizza|sushi|burger|tapas|bistro|brasserie|cafe\b|apero|petit dej/,svg:'<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16.5 21V3c-2 0-3.5 2.5-3.5 6v4h3.5"/>'},
-  ecran:{name:"Cinéma",c:"#DC2626",re:/cine|film|seance|imax|avant-premiere/,svg:'<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M3 7l3-4M9 7l3-4M15 7l3-4M3 11h18"/>'},
+  ecran:{name:"Cinéma",c:"#DC2626",re:/\bcine|\bfilm|\bseance|imax|avant-premiere/,svg:'<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M3 7l3-4M9 7l3-4M15 7l3-4M3 11h18"/>'},
   scene:{name:"Spectacle, concert",c:"#7C3AED",re:/theatre|spectacle|concert|opera|show|festival|humoriste|stand-?up|comedie musicale|ballet|cirque|magie/,svg:'<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/><path d="M9 9.5l11-2"/>'},
   panier:{name:"Courses",c:"#16A34A",re:/\bcourses?\b(?! (a )?pied)|carrefour|\baction\b|leclerc|lidl|auchan|intermarche|super ?u\b|monoprix|franprix|aldi|supermarche|\bmarche\b|\bdrive\b|grand frais|picard/,svg:'<path d="M3 8h18l-2 11a2 2 0 0 1-2 1.7H7A2 2 0 0 1 5 19z"/><path d="M8 8l3-5M16 8l-3-5M9 12v5M12 12v5M15 12v5"/>'},
   fete:{name:"Fête",c:"#DB2777",re:/anniv|fete|soiree|mariage|bapteme|cremaillere|party|naissance|noel|reveillon|nouvel an/,svg:'<rect x="3.5" y="9" width="17" height="11.5" rx="2"/><path d="M12 9v11.5M3.5 13h17M12 9c-1.5-3-5.5-4-5.5-1.5S10 9 12 9zm0 0c1.5-3 5.5-4 5.5-1.5S14 9 12 9z"/>'},
-  sport:{name:"Sport",c:"#EA580C",re:/sport|salle|gym|fitness|foot|piscine|nage|running|course (a )?pied|footing|yoga|pilates|padel|tennis|muscu|velo|rando|match|basket|boxe|danse/,svg:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>'},
-  voyage:{name:"Voyage",c:"#0891B2",re:/voyage|\bvol\b|avion|aeroport|\btrain\b|\bgare\b|tgv|vacances|hotel|week-?end|valise|airbnb/,svg:'<path d="M10.5 13.5 3 11l1.5-1.5 8 .5 4.5-4.5c1-1 2.5-1.2 3-.5.7.5.5 2-.5 3L15 12.5l.5 8L14 22l-2.5-7.5L8 18v2.5L6.5 22l-1-3.5L2 17.5 3.5 16H6z"/>'},
+  sport:{name:"Sport",c:"#EA580C",re:/sport|salle de sport|\bgym|fitness|\bfoot|piscine|\bnage|\bnatation|running|course (a )?pied|footing|yoga|pilates|padel|tennis|muscu|\bvelo\b|\brando|\bmatch\b|basket|\bboxe|\bdanse/,svg:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>'},
+  voyage:{name:"Voyage",c:"#0891B2",re:/voyage|\bvol\b|avion|aeroport|\btrain\b|\bgare\b|tgv|vacances|hotel(?! de ville)|week-?end|valise|airbnb/,svg:'<path d="M10.5 13.5 3 11l1.5-1.5 8 .5 4.5-4.5c1-1 2.5-1.2 3-.5.7.5.5 2-.5 3L15 12.5l.5 8L14 22l-2.5-7.5L8 18v2.5L6.5 22l-1-3.5L2 17.5 3.5 16H6z"/>'},
   travail:{name:"Travail",c:"#475569",re:/travail|reunion(?! (de |des )?parents)|boulot|bureau|entretien|rendez-vous pro|client|formation|conference|seminaire/,svg:'<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>'},
   shopping:{name:"Shopping",c:"#DB2777",re:/shopping|soldes|\bvetements?\b|\bhabits\b|fringues|\bzara\b|h ?& ?m\b|primark|kiabi|uniqlo|decathlon|\bikea\b|centre commercial|galeries lafayette|\bboutique|\bfnac\b|\bdarty\b|sephora|nocibe|\bmall\b|outlet|chaussures|cadeaux? (pour|de noel)|lego store|apple store|leroy merlin|castorama|maisons du monde/,svg:'<path d="M5 8h14l-1 12.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20.5z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/><path d="M9.5 14.5c.6 1 1.4 1.5 2.5 1.5s1.9-.5 2.5-1.5"/>'},
   style:{name:"Coiffeur, beauté",c:"#9333EA",re:/coiff|barbier|manucure|ongle|esthetic|\bspa\b|massage|institut|maquill|epilation/,svg:'<circle cx="6" cy="6.5" r="3"/><circle cx="6" cy="17.5" r="3"/><path d="M8.5 8 20 18M8.5 16 20 6"/>'},
+  etudes:{name:"Études, école",c:"#1D4ED8",re:/ecole|college|lycee|\bfac\b|universite|\bcours\b|examen|partiel|revision|soutenance|inscription|reunion (de |des )?parents|devoirs|bibliotheque/,svg:'<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11M21.5 9v5"/>'},
   famille:{name:"Famille, amis",c:"#D97706",re:/maman|papa|parents|famille|mamie|papi|grand-?mere|grand-?pere|frere|soeur|cousin|tante|oncle|copain|copine|amis|potes|bebe|creche|nounou/,svg:'<path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M12 17.5s-3-1.8-3-3.6c0-1 .8-1.7 1.6-1.7.6 0 1.1.3 1.4.8.3-.5.8-.8 1.4-.8.8 0 1.6.7 1.6 1.7 0 1.8-3 3.6-3 3.6z"/>'},
   animal:{name:"Animaux, véto",c:"#A16207",re:/veto|veterinaire|chien|chat\b|chiot|chaton|toilettage|animalerie|croquettes|vaccin du chien|pension/,svg:'<circle cx="6" cy="10" r="2"/><circle cx="10" cy="5.5" r="2"/><circle cx="14" cy="5.5" r="2"/><circle cx="18" cy="10" r="2"/><path d="M12 11c-2.8 0-5 3.7-5 6.2 0 1.6 1.2 2.6 2.7 2.6 1 0 1.5-.5 2.3-.5s1.3.5 2.3.5c1.5 0 2.7-1 2.7-2.6 0-2.5-2.2-6.2-5-6.2z"/>'},
-  etudes:{name:"Études, école",c:"#1D4ED8",re:/ecole|college|lycee|fac\b|universite|cours\b|examen|partiel|revision|soutenance|inscription|reunion (de |des )?parents|devoirs|bibliotheque/,svg:'<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11M21.5 9v5"/>'},
   culte:{name:"Culte, prière",c:"#0E7490",re:/mosquee|eglise|messe|priere|synagogue|temple|jumu|ramadan|aid\b|eid\b|paques|bapteme religieux|catechisme/,svg:'<path d="M12 3c-2.5 2-5 3.5-5 7h10c0-3.5-2.5-5-5-7z"/><path d="M5.5 10h13v10.5h-13zM12 3V1.5M10 20.5v-4a2 2 0 0 1 4 0v4"/>'},
   auto:{name:"Voiture",c:"#64748B",re:/garage|controle technique|vidange|pneu|carrosserie|lavage auto|permis/,svg:'<path d="M5 16V11l2-5h10l2 5v5M3.5 16h17v3h-17z"/><circle cx="7.5" cy="13" r="1"/><circle cx="16.5" cy="13" r="1"/>'},
   admin:{name:"Démarches",c:"#0F766E",re:/mairie|prefecture|banque|notaire|impots|caf\b|pole emploi|france travail|assurance|avocat|poste\b|administration/,svg:'<path d="M3 9.5 12 4l9 5.5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20.5h18"/>'},
@@ -1189,7 +1210,7 @@ function openMotif(ev){
   grid.append(el("button",{type:"button",class:"motif-opt plain"+(cur==="none"?" on":""),onclick:()=>pick("none")},el("span",{class:"motif-ic"}),el("span",{},"Sans thème")));
   root.append(sheetShell("Thème de l'évènement",[
     el("div",{class:"sheet-h"},el("h2",{},"Thème de l'évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
-    el("p",{class:"note"},"L'app choisit le thème d'après le titre. Tu peux en imposer un autre : il s'affichera aussi chez ta compagne."),grid]));
+    el("p",{class:"note"},"L'app choisit le thème d'après le titre. Tu peux en imposer un autre : il s'affichera aussi chez "+firstName(otherId()||myId)+"."),grid]));
 }
 
 /* ---------- Photos de profil ---------- */
@@ -1224,7 +1245,7 @@ function firstName(id){const n=((couple&&couple.names&&couple.names[id])||"").tr
 function whoOf(ev){const w=ev&&ev.who;return w&&w!=="both"&&memberIds().includes(w)?w:"both";}
 function whoBadge(ev){
   const w=whoOf(ev),ids=w==="both"?memberIds().slice(0,2):[w];
-  const lab=w==="both"?(ids.length>1?"Vous deux":"Toi"):(w===myId?"Toi seul":firstName(w)+" seule");
+  const lab=w==="both"?(ids.length>1?"Vous deux":"Toi"):(w===myId?"Seulement toi":"Seulement "+firstName(w));
   return el("span",{class:"who","aria-label":lab,title:lab},...ids.map(id=>avatar(id)));
 }
 function whoChips(cur,onPick){
@@ -1653,7 +1674,7 @@ function openMemory(ev){
     const mine=el("div",{class:"rate-col"},el("div",{class:"rate-who"},avatar(myId,"rate-av"),el("strong",{},"Toi")),heartsRow(love,n=>{love=n;drawRate();}),note,
       el("button",{type:"button",class:"btn primary",onclick:async()=>{if(!love){toast("Choisis d'abord une note en cœurs.");return;}try{await rateOuting(ev,love,note.value.trim());toast(other?"Note enregistrée":"Note enregistrée. Elle reste cachée jusqu'à celle de "+firstName(oid)+".");openMemory(ev);}catch(_){toast("Note non enregistrée. Vérifie ta connexion.");}}},me?"Mettre à jour ma note":"Valider ma note"));
     const theirs=el("div",{class:"rate-col theirs"},el("div",{class:"rate-who"},oid?avatar(oid,"rate-av"):null,el("strong",{},oid?firstName(oid):"Ta moitié")));
-    if(!oid)theirs.append(el("p",{class:"note"},"Ta moitié pourra noter dès qu'elle aura rejoint l'agenda."));
+    if(!oid)theirs.append(el("p",{class:"note"},"Ta moitié pourra noter dès son arrivée dans l'agenda."));
     else if(!other)theirs.append(el("p",{class:"note"},firstName(oid)+" n'a pas encore noté cette sortie."));
     else if(!me)theirs.append(el("div",{class:"rate-hidden"},el("span",{html:HEART}),el("p",{},firstName(oid)+" a noté. Donne ta note pour découvrir la sienne.")));
     else theirs.append(heartsRow(+other.love||0,null),other.note?el("p",{class:"rate-note"},other.note):null);
@@ -1913,8 +1934,9 @@ function wishList(){return [...wishes.values()].sort((a,b)=>(!!a.planned-!!b.pla
 function nextWeekend(){const d=new Date();d.setHours(0,0,0,0);const wd=d.getDay();const sat=new Date(d);if(wd===0)sat.setDate(d.getDate()-1);else sat.setDate(d.getDate()+((6-wd+7)%7));const sun=new Date(sat);sun.setDate(sat.getDate()+1);return [ymd(sat),ymd(sun)];}
 function planWish(w,date){
   const x=blankDraft();x.title=w.title;if(date)x.date=date;x.time="14:00";x.category="sortie";if(w.cost)x.cost=w.cost;
+  // l'envie n'est marquée « planifiée » qu'une fois l'évènement vraiment enregistré
+  x.fromWish=w.id;
   closeSheet();openEditor(x,"Idée de "+firstName(w.by)+" : choisis le jour et l'heure.");
-  db.doc("wishes/"+w.id).update({planned:Date.now()}).catch(()=>{});
 }
 function openWishes(){closeSheet();setView("wishes");}
 function renderWishesView(){
@@ -1932,7 +1954,8 @@ function renderWishesView(){
         el("span",{class:"wish-act"},
           wishTodo(w)==="answer"?(()=>{const b=el("button",{type:"button",class:"btn primary"},"Accepter");b.onclick=()=>acceptProposal(w,b);return b;})():null,
           w.status==="accepted"?null:el("button",{type:"button",class:"btn"+(wishTodo(w)==="answer"?"":" primary"),onclick:()=>openPropose(w)},w.status==="proposed"&&w.proposal&&w.proposal.by===myId?"Changer ma proposition":wishTodo(w)==="answer"?"Autre date":"Proposer une date"),
-          el("button",{type:"button",class:"btn quiet","aria-label":"Supprimer cette idée",onclick:()=>db.doc("wishes/"+w.id).delete().catch(()=>{})},"Retirer"))));}
+          el("button",{type:"button",class:"btn quiet","aria-label":"Supprimer cette idée",onclick:async()=>{const {id,...body}=w;
+            try{await db.doc("wishes/"+id).delete();toast("Idée « "+w.title+" » retirée","Annuler",()=>db.doc("wishes/"+id).set(body).catch(()=>toast("Impossible de la remettre.")));}catch(_){toast("Impossible pour l'instant.");}}},"Retirer"))));}
   };
   const drawAll=()=>{alerts.textContent="";for(const [w,todo] of wishTodos())alerts.append(wishCard(w,todo));draw();};
   openWishes.redraw=drawAll;
@@ -2129,7 +2152,7 @@ async function enablePush(btn){
     await ensurePushToken();
     const r=await pushPost("/api/sub",{uid:myId,sub:sub.toJSON(),hello:true});
     if(!r){toast("Activation impossible pour l'instant. Réessaie dans un moment.");return false;}
-    lsSet("a2.push","1");lsSet("a2.pushSig","");syncPush(true);
+    lsSet("a2.push","1");lsSet("a2.pushSig","");lsSet("a2.pushEp",sub.endpoint);lsSet("a2.pushSync",String(Date.now()));syncPush(true);
     toast("Notifications activées");return true;
   }catch(e){console.error(e);toast("Activation impossible : "+(e&&e.message||"réessaie."));return false;}
   finally{if(btn){btn.disabled=false;}}
@@ -2146,7 +2169,7 @@ function pushItems(){
         liveReminders(v).forEach((r,i)=>{const at=remWhen(v,r).getTime();if(at<=now+30000)return;const leave=presetOf(r)==="leave";
           items.push({id:ev.id+":p"+uid.slice(0,6)+":r"+i+":"+at,to:[uid],at,tag:"ev-"+ev.id,
             title:picked?(leave?dn+" passe te prendre maintenant":dn+" passe te prendre à "+hhmm(pickupAt(ev))):(leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+" à "+ev.time),
-            body:picked?(ev.title||"Évènement")+" à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+". Sois prête à "+hhmm(pickupAt(ev))+(ev.pickup?" ("+shortAddr(ev.pickup)+")":"")+".":
+            body:picked?(ev.title||"Évènement")+" à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+". Prépare-toi pour "+hhmm(pickupAt(ev))+(ev.pickup?" ("+shortAddr(ev.pickup)+")":"")+".":
               (leave?"Départ maintenant. Tu récupères "+pn+" à "+hhmm(pickupAt(ev))+", puis "+(ev.location?shortAddr(ev.location):"le rendez-vous")+" à "+ev.time+".":"Départ à "+hhmm(departOf(ev))+", "+pn+" à récupérer à "+hhmm(pickupAt(ev))+".")});});}
       if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
       continue;
@@ -2154,7 +2177,7 @@ function pushItems(){
     liveReminders(ev).forEach((r,i)=>{const at=remWhen(ev,r).getTime();if(at<=now+30000)return;
       const leave=presetOf(r)==="leave";
       items.push({id:ev.id+":r"+i+":"+at,to,at,tag:"ev-"+ev.id,
-        title:leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+" à "+ev.time,
+        title:leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+(isAllDay(ev)?"":" à "+ev.time),
         body:leave?"Départ maintenant pour arriver à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+".":(hasTrip(ev)?"Départ à "+hhmm(departOf(ev))+(ev.location?" pour "+shortAddr(ev.location):"")+".":(ev.location?shortAddr(ev.location):"Rappel"))});});
     if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
   }
@@ -2196,7 +2219,7 @@ function widgetData(){
     const me=viewFor(e,myId);
     return {t:(e.title||"Évènement").slice(0,40),s:startOf(e).getTime(),d:(+me.travelMin||0)>0?departOf(me).getTime():0,l:e.location?String(shortAddr(e.location)).slice(0,40):"",
       c:k?MOTIFS[k].c:"#6D5DF6",k:k?MOTIFS[k].name:"",m:k||"",w:w==="both"?"":firstName(w).slice(0,1).toUpperCase(),
-      a:(e.allDay||/toute la journ/i.test(e.notes||"")||e.time==="00:00")?1:0};});
+      a:isAllDay(e)?1:0};});
   return {names:memberIds().map(firstName),items,ic,th:widgetTheme(),
     wishes:wishTodos().length,fb:feedbackDue().length};
 }
@@ -2234,7 +2257,7 @@ function notifSection(){
   const st=el("p",{class:"note"},"Vérification…");box.append(st);
   pushUrl().then(base=>{
     box.textContent="";
-    if(!base){box.append(el("p",{class:"note"},"Le serveur de notifications n'est pas encore installé. Suis les étapes que je t'ai données dans la conversation : une fois la clé Cloudflare ajoutée, tout s'installe tout seul en quelques minutes."));return;}
+    if(!base){box.append(el("p",{class:"note"},"Le serveur de notifications ne répond pas pour l'instant. Vérifie ta connexion et réessaie dans quelques minutes."));return;}
     if(pushOn())box.append(el("p",{class:"note"},"Notifications activées sur ce téléphone : départs, rappels, propositions de sorties, nouvelles envies, ajouts de ta moitié et « Comment c'était ? »."),
       el("div",{class:"pchips"},el("button",{type:"button",class:"btn",onclick:async()=>{const r=await pushPost("/api/notify",{to:[myId],title:"Test Together",body:"Les notifications marchent sur ce téléphone.",tag:"test"});toast(r&&r.sent?"Notification envoyée : verrouille ton téléphone pour la voir arriver.":"Rien n'est parti. Désactive puis réactive les notifications.");}},"Envoyer un test"),
         el("button",{type:"button",class:"btn quiet",onclick:()=>{lsSet("a2.push","");enablePush();}},"Réactiver")));
@@ -2255,7 +2278,35 @@ function notifSection(){
   });
   return box;
 }
+// Les notifications de ce téléphone sont-elles toujours branchées ? (une mise à jour ou iOS peut les couper)
+let pushBroken=false,pushChecked=false;
+async function checkPush(){
+  if(pushChecked||!pushSupported()||!isStandalone()||!coupleId||!myId)return;
+  if(Notification.permission!=="granted"||lsGet("a2.push")!=="1")return;
+  pushChecked=true;
+  try{
+    const base=await pushUrl();if(!base||!pushToken())return;
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      // on essaie de réabonner sans rien demander ; si l'iPhone exige un toucher, on affiche une carte
+      try{const {pub}=await (await fetch(base+"/api/key",{cache:"no-store"})).json();sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uBytes(pub)});}catch(_){sub=null;}
+    }
+    if(!sub){pushBroken=true;lsSet("a2.push","");scheduleRender();return;}
+    const ep=sub.endpoint,last=+(lsGet("a2.pushSync")||0);
+    // le serveur garde l'adresse de ce téléphone : on la lui redonne une fois par jour, ou dès qu'elle change
+    if(lsGet("a2.pushEp")!==ep||Date.now()-last>864e5){
+      const r=await pushPost("/api/sub",{uid:myId,sub:sub.toJSON()});
+      if(r){lsSet("a2.pushEp",ep);lsSet("a2.pushSync",String(Date.now()));}
+    }
+  }catch(_){}
+}
 function pushPromptCard(){
+  if(pushBroken&&pushSupported()&&isStandalone()&&!pushOn()){
+    const b=el("button",{type:"button",class:"btn primary"},"Réactiver");
+    b.onclick=async()=>{if(await enablePush(b)){pushBroken=false;render();}};
+    return el("div",{class:"cal-banner push-ask"},el("div",{class:"cal-txt"},el("strong",{},"Notifications à réactiver"),el("span",{},"Une mise à jour les a coupées sur ce téléphone. Un toucher suffit.")),b);
+  }
   if(!pushSupported()||pushOn()||!isStandalone())return null;
   let d="";try{d=localStorage.getItem("a2.pushAsk")||"";}catch(_){}
   if(d&&Date.now()-+d<7*86400000)return null;
@@ -2294,7 +2345,7 @@ function stop(ev,who){
 
   const links=el("div",{class:"links more-info"});
   links.append(el("button",{class:"btn"+((ev.calendarAdded||{})[myId]>=ev.updatedAt?"":" primary"),type:"button",onclick:()=>addToCalendar(ev)},(ev.calendarAdded||{})[myId]>=ev.updatedAt?"Déjà dans le calendrier":"Ajouter au calendrier"),el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
-  if(IS_IOS){const ab=alarmButton(ev);if(ab)links.append(ab);}
+  if(IS_IOS&&(whoOf(ev)==="both"||whoOf(ev)===myId)){const ab=alarmButton(viewFor(ev,myId));if(ab)links.append(ab);}
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
 
@@ -2302,10 +2353,10 @@ function stop(ev,who){
   const moreBtn=canWrite?el("button",{class:"more",type:"button","aria-label":"Modifier ou supprimer",html:ICON.more,onclick:()=>setOpen(front,!front.dataset.open)}):null;
 
   front.append(el("div",{class:"leg "+(hasTrip?"last":"solo")},
-    el("div",{class:"t num"},ev.time||""),
+    isAllDay(ev)?el("div",{class:"t allday"},"Toute la journée"):el("div",{class:"t num"},ev.time||""),
     el("div",{class:"rail"},el("span",{class:"node arr"})),
     el("div",{class:"body"},
-      el("div",{class:"ev-title"},el("span",{},ev.title||"Sans titre"),el("span",{class:"ev-right"},otherId()?whoBadge(ev):null,moreBtn,el("span",{class:"chev","aria-hidden":"true",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'}))),
+      el("div",{class:"ev-title"},el("span",{class:"ev-right"},otherId()?whoBadge(ev):null,moreBtn,el("span",{class:"chev","aria-hidden":"true",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'})),el("span",{class:"ev-t"},ev.title||"Sans titre")),
       el("div",{class:"where"},mk?el("span",{class:"motif-chip",html:motifSvg(mk)+"<span>"+MOTIFS[mk].name+"</span>"}):null,[mk?"":(CATS[ev.category]||"Autre"),ev.location].filter(Boolean).join(", ")),
       tags.childNodes.length?tags:null,
       links,
@@ -2522,6 +2573,8 @@ async function estimateTripRaw(d){
     if(!a.ok)return {ok:false,problem:String(a.problem||"").replace("d'arrivée","où récupérer "+nm)};
     if(!b.ok)return {ok:false,problem:String(b.problem||"").replace("de départ","où récupérer "+nm)};
     const wait=Math.max(0,Math.min(60,d.pickupWait==null?5:+d.pickupWait||0));
+    const aMin=(d.mode||"car")==="car"?Math.max(1,a.travelMin-5):a.travelMin;
+    a.travelMin=aMin;
     return {ok:true,travelMin:Math.round(a.travelMin+wait+b.travelMin),pickupMin:Math.round(a.travelMin),distanceKm:Math.round(((+a.distanceKm||0)+(+b.distanceKm||0))*10)/10,
       travelNote:fmtDur(a.travelMin)+" jusqu'à "+nm+(wait?", "+wait+" min sur place":"")+", puis "+fmtDur(b.travelMin)+" jusqu'au rendez-vous",
       route:[],routeVia:"",geo:{from:a.geo.from,to:b.geo.to,path:[...(a.geo.path||[]),a.geo.to,...(b.geo.path||[])],marks:[{name:nm,at:a.geo.to}]},from:a.from,to:b.to,pickupLabel:a.to};
@@ -2787,14 +2840,20 @@ function routeMap(g,ev){
   return box;
 }
 const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent||"");
-function appleUrl(ev){const p=new URLSearchParams({daddr:(hasPickup(ev)&&!ev.pickedUp?ev.pickup+" to:":"")+(ev.location||""),dirflg:{car:"d",transit:"r",walk:"w",bike:"c"}[ev.mode]||"d"});if(ev.origin)p.set("saddr",ev.origin);return "https://maps.apple.com/?"+p;}
+function appleUrl(ev,leg2){const pk=hasPickup(ev)&&!ev.pickedUp;
+  const p=new URLSearchParams({daddr:pk&&!leg2?ev.pickup:(ev.location||""),dirflg:{car:"d",transit:"r",walk:"w",bike:"c"}[ev.mode]||"d"});
+  const from=pk&&leg2?ev.pickup:ev.origin;if(from)p.set("saddr",from);return "https://maps.apple.com/?"+p;}
 function goBar(ev,km){
   const t=(+ev.travelMin||0)>0?fmtDur(ev.travelMin):"";
   const sub=["Arrivée à "+(ev.time||"—"),km>0.3?(km<10?km.toFixed(1).replace(".",","):Math.round(km))+" km":"",ev.routeVia].filter(Boolean).join(", ");
-  return el("div",{class:"go"},
-    el("div",{class:"go-l"},t?el("div",{class:"go-t num"},t):null,el("div",{class:"small"},sub)),
+  const pk=hasPickup(ev)&&!ev.pickedUp;
+  const go=el("div",{class:"go"},
+    el("div",{class:"go-l"},t?el("div",{class:"go-t num"},t):null,el("div",{class:"small"},pk?"D'abord "+firstName(ev.pickupWho)+" ("+hhmm(pickupAt(ev))+"), puis le rendez-vous":sub)),
     el("a",{class:"go-btn",href:IS_IOS?appleUrl(ev):mapsUrl(ev),target:"_blank",rel:"noopener"},
       el("span",{html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13l6-6 6 6M6 19l6-6 6 6"/></svg>'}),"Aller"));
+  if(!pk||!IS_IOS)return go;
+  // avec Plans : un second bouton pour la suite du trajet, une fois l'autre à bord
+  return el("div",{class:"go-wrap"},go,el("a",{class:"btn go-next",href:appleUrl(ev,true),target:"_blank",rel:"noopener"},"Ensuite : vers le rendez-vous"));
 }
 
 /* ---------- Saisie simplifiée : helpers ---------- */
@@ -2854,11 +2913,13 @@ function remText(x,r){
   if(p==="leave") return hasTrip(x)?"C'est l'heure de partir : "+t+" à "+x.time+w:"C'est maintenant : "+t+w;
   if(p==="m15") return (hasTrip(x)?"Départ dans 15 min : ":"Dans 15 min : ")+t+" à "+x.time;
   if(p==="h1") return hasTrip(x)?"Départ dans 1 h, à "+hhmm(departOf(x))+" : "+t:"Dans 1 h : "+t;
+  if(p==="eve"&&isAllDay(x)) return "Demain : "+t+" (toute la journée).";
   if(p==="eve") return "Demain à "+x.time+" : "+t+(hasTrip(x)?". Départ à "+hhmm(departOf(x)):"")+(x.category==="medecin"?". Prépare carte Vitale et ordonnance.":".");
   return (r.label&&r.label!=="Rappel"?r.label+" : ":"Rappel : ")+t+" à "+x.time;
 }
 function suggestReminders(x){
   const out=[];
+  if(isAllDay(x))return [{preset:"eve"}];
   if(["medecin","rdv","travail"].includes(x.category)) out.push({preset:"eve"}); else out.push({preset:"h1"});
   out.push({preset:"leave"});
   return out;
@@ -2875,8 +2936,8 @@ function relReminders(ev){
   });
 }
 function liveReminders(x){
-  const seen=new Set();
-  return (x.reminders||[]).filter(r=>r&&!r.off).map(r=>({...r,min:remMinFor(x,r)}))
+  const seen=new Set(),allDay=isAllDay(x);
+  return (x.reminders||[]).filter(r=>r&&!r.off&&!(allDay&&["leave","m15","h1"].includes(presetOf(r)))).map(r=>({...r,min:remMinFor(x,r)}))
     .filter(r=>r.min>=0&&!seen.has(r.min)&&seen.add(r.min)).sort((a,b)=>b.min-a.min);
 }
 function nextDate(daysAhead){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+daysAhead);return d;}
@@ -2910,6 +2971,7 @@ function buildBody(x,d,overrides){
     ...((+y.cost||0)>0?{cost:+y.cost}:{}),
     ...(Array.isArray(y.items)||Array.isArray(d.items)?{items:(y.items||d.items).slice(0,200)}:{}),
     ...(y.shopDone||d.shopDone?{shopDone:true}:{}),
+    ...(y.allDay?{allDay:true}:{}),
     ...(y.pickup&&(y.who||d.who||"both")==="both"&&y.pickupWho?{pickup:String(y.pickup).slice(0,200),pickupWho:y.pickupWho,driver:y.driver||myId,pickupMin:Math.max(0,Math.round(+y.pickupMin||0)),pickupWait:Math.max(0,Math.min(60,y.pickupWait==null?5:+y.pickupWait||0))}:{})};
 }
 async function saveEventDraft(x,d,repeat){
@@ -2982,6 +3044,7 @@ function openConfirm(d,info){
     d.location?el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Où"),el("span",{class:"cf-v"},shortAddr(d.location),placeFor(d.location)?null:el("span",{class:"small"}," "))):el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Où"),el("span",{class:"cf-v muted"},"Pas de lieu")),
     hasTrip?el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Départ"),el("span",{class:"cf-v"},el("span",{class:"pill"},hhmm(departOf(d))),"  depuis "+(d.origin?shortAddr(d.origin):"la maison")+", "+fmtDur(d.travelMin)+" "+MODE_IN[d.mode])):null,
     hasTrip&&hasPickup(d)?el("div",{class:"cf-row"},el("span",{class:"cf-k"},d.pickupWho===myId?"On te prend":"Récupérer"),el("span",{class:"cf-v"},el("span",{class:"pill"},hhmm(pickupAt(d))),"  "+(d.pickupWho===myId?firstName(driverOf(d))+" passe te prendre":firstName(d.pickupWho))+" · "+shortAddr(d.pickup))):null,
+    otherId()&&whoOf(d)!=="both"?el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Pour"),el("span",{class:"cf-v"},whoOf(d)===myId?"Toi":firstName(whoOf(d)))):null,
     el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Rappels"),el("span",{class:"cf-v"},remSummary(d))),
   ];
   const save=el("button",{class:"btn primary cf-save",type:"button"},"Enregistrer");
@@ -3060,7 +3123,8 @@ function openEditor(d,info){
 
   const read=()=>({...d,title:title.value.trim(),category:cat.value,date:date.value,time:time.value,durationMin:+dur.value||60,
     location:loc.value.trim(),origin:origin.value.trim(),mode:mode.value,travelMin:Math.max(0,+travel.value||0),marginMin:Math.max(0,+margin.value||0),
-    travelNote:tripNote.textContent,notes:notes.value.trim(),reminders,route,routeVia,routeGeo,who,cost:Math.max(0,Math.round((+cost.value||0)*100)/100),
+    travelNote:tripNote.textContent,notes:(time.value!==d.time&&/^toute la journ/i.test(notes.value.trim()))?"":notes.value.trim(),reminders,route,routeVia,routeGeo,who,cost:Math.max(0,Math.round((+cost.value||0)*100)/100),
+    allDay:!!(isAllDay(d)&&time.value===d.time),
     pickup:pickOn&&who==="both"&&otherId()?pkInp.value.trim():"",pickupWho:pkWho,driver:memberIds().find(m=>m!==pkWho)||myId,pickupMin:pickOn?pickupMin:0,pickupWait});
 
   function updateCalc(){
@@ -3104,19 +3168,25 @@ function openEditor(d,info){
         el("button",{class:"x",type:"button","aria-label":"Retirer ce rappel",onclick:()=>{remAuto=false;reminders.splice(i,1);renderRems();}},"×")));
     });
     remsPanel.append(el("button",{class:"btn quiet",type:"button",onclick:()=>{remAuto=false;reminders.push({min:Math.max(30,depOff(read())+30)});renderRems();}},"+ Autre rappel"),
-      el("p",{class:"note"},"Les rappels sonnent sur chaque iPhone via son calendrier : une fois l'évènement enregistré, touche « Ajouter au calendrier »."));
+      el("p",{class:"note"},"Les rappels arrivent en notification sur vos iPhone, même app fermée (à activer une fois dans les réglages). Tu peux aussi ajouter l'évènement au Calendrier de l'iPhone depuis sa fiche."));
   }
   [date,time,travel,margin].forEach(x=>x.addEventListener("input",updateCalc));
 
-  recalc.onclick=async()=>{
+  // Le trajet est recalculé dès qu'une adresse ou le transport change, et au plus tard avant d'enregistrer
+  const tripKey=x=>JSON.stringify([norm(x.location),norm(x.origin),x.pickup?norm(x.pickup):"",x.mode||"car"]);
+  let lastOkKey=((+d.travelMin||0)>0||d.routeGeo)?tripKey(d):"",recalcP=null;
+  recalc.onclick=()=>(recalcP=doRecalc());
+  async function doRecalc(){
     const x=read();
     if(!x.location){toast("Indique d'abord un lieu.");return;}
-    
     recalc.disabled=true;recalc.textContent="";recalc.append(el("span",{class:"spinner"}),"Calcul du trajet…");
     try{const r=await estimateTrip(x);
       fixBox.textContent="";
-      if(r&&r.ok===false){tripNote.textContent=String(r.problem||"Corrige l'adresse de départ ou d'arrivée.");route=[];routeGeo=null;}
-      else if(r&&Number.isFinite(+r.travelMin)){travel.value=Math.round(+r.travelMin);pickupMin=+r.pickupMin||0;tripNote.textContent=r.travelNote||"";route=cleanSteps(r.route);routeVia=String(r.routeVia||"").slice(0,80);routeGeo=cleanGeo(r.geo);
+      if(r&&r.ok===false){const pb=String(r.problem||"Corrige l'adresse de départ ou d'arrivée.");tripNote.textContent=pb;route=[];routeGeo=null;
+        // pas d'ancienne durée pour une nouvelle adresse : mieux vaut aucun départ qu'un départ faux
+        if(tripKey(x)!==lastOkKey){travel.value=0;pickupMin=0;}
+        fixBox.append(el("div",{class:"fix"},el("strong",{},"Trajet non calculé"),el("div",{class:"small"},pb)));}
+      else if(r&&Number.isFinite(+r.travelMin)){lastOkKey=tripKey(x);travel.value=Math.round(+r.travelMin);pickupMin=+r.pickupMin||0;tripNote.textContent=r.travelNote||"";route=cleanSteps(r.route);routeVia=String(r.routeVia||"").slice(0,80);routeGeo=cleanGeo(r.geo);
         const fx=fixesFrom(r,x);
         for(const [key,val] of Object.entries(fx)){const target=key==="origin"?origin:loc;
           fixBox.append(el("div",{class:"fix"},el("div",{},el("strong",{},key==="origin"?"Départ complété":"Arrivée complétée"),el("div",{class:"small"},"Tu voulais dire : "+val+" ?")),
@@ -3125,9 +3195,11 @@ function openEditor(d,info){
       updateCalc();}
     catch(e){const m=sampleErr(e);if(m)toast(m);}
     recalc.disabled=false;recalc.textContent="Recalculer le trajet";
-  };
+  }
   function autoTrip(){if(loc.value.trim()&&!recalc.disabled) recalc.onclick();}
   mode.addEventListener("change",autoTrip);
+  // adresse tapée sans choisir de suggestion : on recalcule en quittant le champ
+  for(const i of [loc,origin])i.addEventListener("change",()=>{if(loc.value.trim()&&tripKey(read())!==lastOkKey)autoTrip();});
 
   const confirmBox=el("div",{class:"confirm",hidden:true},el("span",{},"Supprimer cet évènement pour vous deux ?"),
     el("button",{class:"btn danger",type:"button",onclick:()=>{closeSheet();removeEvent(d);}},"Supprimer"),
@@ -3135,11 +3207,18 @@ function openEditor(d,info){
 
   const save=el("button",{class:"btn primary",type:"button"},isNew?"Enregistrer pour nous deux":"Enregistrer les modifications");
   save.onclick=async()=>{
-    const x=read();
-    if(!x.title){toast("Donne un titre à l'évènement.");title.focus();return;}
+    if(!read().title){toast("Donne un titre à l'évènement.");title.focus();return;}
     save.disabled=true;
+    // trajet pas à jour (adresse changée, calcul en cours) : on le termine avant d'enregistrer
+    if(recalcP)await recalcP.catch(()=>{});
+    if(read().location&&tripKey(read())!==lastOkKey){const lab=save.textContent;save.textContent="Calcul du trajet…";await doRecalc().catch(()=>{});save.textContent=lab;}
+    if(!read().location&&(+travel.value||0)>0){travel.value=0;pickupMin=0;routeGeo=null;route=[];}
+    const x=read();
     if(x.pickup)rememberPickup(x.pickupWho,x.pickup);
-    if(await saveEventDraft(x,d,isNew?repeat:"none")) closeSheet(); else save.disabled=false;
+    if(await saveEventDraft(x,d,isNew?repeat:"none")){
+      if(d.fromWish)db.doc("wishes/"+d.fromWish).update({planned:Date.now()}).catch(()=>{});
+      closeSheet();
+    }else save.disabled=false;
   };
   // Lieu deviné à partir du titre
   const guessLoc=()=>{if(loc.value.trim())return;const p=placeByTitle(title.value);if(p){loc.value=p.address;loc.dispatchEvent(new Event("change"));autoTrip();}};
@@ -3305,7 +3384,7 @@ function openSettings(){
     coupleId?el("div",{class:"pgroup-h"},"Mon code de secours"):null,coupleId?recoverySection():null,
     coupleId?el("div",{class:"pgroup-h"},"Installer sur l'iPhone de ta moitié"):null,coupleId?shortcutsSection():null,
     el("div",{class:"field"},el("label",{for:"s-mode"},"Transport habituel"),mode),
-    el("p",{class:"note"},"Pour que les rappels sonnent même app fermée : ouvre un évènement et touche « Calendrier iPhone », chacun sur son téléphone.")]));
+    el("p",{class:"note"},"Les rappels arrivent en notification, même app fermée : active-les une fois dans « Notifications », sur chaque téléphone.")]));
   drawList();
 }
 let brandsRefresh=null;
@@ -3546,8 +3625,9 @@ function parseText(text, opts = {}) {
     const re = /\b(au|aux|a l'|a la|a)\s+(?!\d)([a-z0-9'][a-z0-9' &-]{2,60})/g;
     let r;
     while ((r = re.exec(low))) {
-      if (blocked(r.index) || blocked(r.index + r[0].length - 1)) continue;
+      if (blocked(r.index)) continue;
       const startAddr = r.index + r[1].length + 1;
+      if (blocked(startAddr)) continue;
       let end = r.index + r[0].length;
       for (const [a] of spans) if (a > startAddr && a < end) end = a;
       const txt = orig.slice(startAddr, end).replace(/[\s,.;-]+$/, '').replace(/\s+(?:le|à|a|pour|avec|vers|au)$/i, '').trim();
@@ -3593,11 +3673,16 @@ function vevent(ev){
   if(hasTrip(ev)) desc+="Départ conseillé : "+hhmm(departOf(ev))+" ("+MODE_IN[ev.mode]+", trajet d'environ "+fmtDur(ev.travelMin)+")\nItinéraire : "+appleUrl(ev)+"\n";
   if(ev.notes) desc+=ev.notes+"\n";
   desc+="Together";
-  const L=["BEGIN:VEVENT","UID:"+(ev.id||Date.now())+"@agenda-a-deux","SEQUENCE:"+Math.floor((ev.updatedAt||Date.now())/1000),"DTSTAMP:"+z(new Date()),"DTSTART:"+z(s),"DTEND:"+z(e),
+  // Journée entière : dates sans heure, et rappels comptés depuis minuit
+  const allDay=isAllDay(ev),d0=new Date(ev.date+"T00:00:00"),d1=new Date(d0);d1.setDate(d1.getDate()+1);
+  const D=d=>ymd(d).replace(/-/g,"");
+  const L=["BEGIN:VEVENT","UID:"+(ev.id||Date.now())+"@agenda-a-deux","SEQUENCE:"+Math.floor((ev.updatedAt||Date.now())/1000),"DTSTAMP:"+z(new Date()),
+    allDay?"DTSTART;VALUE=DATE:"+D(d0):"DTSTART:"+z(s),allDay?"DTEND;VALUE=DATE:"+D(d1):"DTEND:"+z(e),
     "SUMMARY:"+esc(ev.title),"LOCATION:"+esc(ev.location),"DESCRIPTION:"+esc(desc)];
   const now=Date.now();
-  for(const r of liveReminders(ev)){ if(remWhen(ev,r).getTime()<=now) continue;
-    L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+esc(remText(ev,r)),"TRIGGER:"+(r.min>0?"-PT"+r.min+"M":"PT0M"),"END:VALARM"); }
+  for(const r of liveReminders(ev)){ const at=remWhen(ev,r);if(at.getTime()<=now) continue;
+    const min=allDay?Math.round((d0-at)/60000):r.min;
+    L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+esc(remText(ev,r)),"TRIGGER:"+(min>0?"-PT"+min+"M":"PT0M"),"END:VALARM"); }
   L.push("END:VEVENT");
   return L;
 }
@@ -3656,7 +3741,8 @@ function parseImport(text){
     let title=parts.slice(0,pi).join(" ").trim();
     const after=parts.slice(pi+1).filter(x=>x&&!impDate(x)).join(", ").trim();
     if(!title){title=parts[pi].slice(0,found.idx).trim();}
-    out.push({title:title||"Évènement",date:found.date,time:found.time||"09:00",allDay:!found.time,location:after});
+    const allDay=!found.time||found.time==="00:00";
+    out.push({title:title||"Évènement",date:found.date,time:allDay?"00:00":found.time,allDay,location:after});
   }
   return out;
 }
@@ -3703,11 +3789,11 @@ async function startInbox(){
     maybeCalPopup();
   },()=>{});
 }
-function importDuplicate(it){return [...events.values()].some(e=>norm(e.title)===norm(it.title)&&e.date===it.date&&e.time===it.time);}
+function importDuplicate(it){return [...events.values()].some(e=>norm(e.title)===norm(it.title)&&e.date===it.date&&(e.time===it.time||(it.allDay&&isAllDay(e))));}
 // Ajoute un évènement du calendrier dans Together (trajet, rappels et thème calculés comme d'habitude)
 async function importCalItem(it,who){
   const d=blankDraft();
-  Object.assign(d,{title:it.title.slice(0,80),date:it.date,time:it.time,category:guessCat(it.title),notes:it.allDay?"Toute la journée":""});
+  Object.assign(d,{title:it.title.slice(0,80),date:it.date,time:it.time,category:guessCat(it.title),notes:it.allDay?"Toute la journée":"",allDay:!!it.allDay});
   if(who)d.who=who;
   d.marginMin=DEF_MARGIN[d.category]??10;d.durationMin=DEF_DUR[d.category]||60;
   const pl=placeFor(it.location)||placeByTitle(it.title);
@@ -3722,7 +3808,7 @@ const calKey=it=>norm(it.title)+"|"+it.date+"|"+(it.allDay?"":it.time);
 function calSeenSet(){try{const s=localStorage.getItem("a2.calSeen");return s==null?null:new Set(JSON.parse(s));}catch(_){return new Set();}}
 function calSeenAdd(keys){const set=calSeenSet()||new Set();for(const k of keys)set.add(k);try{localStorage.setItem("a2.calSeen",JSON.stringify([...set].slice(-500)));}catch(_){}}
 let calLater=new Set(),calPopT=null,calPopPending=false;
-function calFresh(){const seen=calSeenSet()||new Set();return inboxItems().filter(it=>!importDuplicate(it)&&!seen.has(calKey(it))&&!calLater.has(calKey(it)));}
+function calFresh(){const seen=calSeenSet()||new Set();return inboxItems().filter(it=>!importDuplicate(it)&&!seen.has(calKey(it))&&!seen.has(norm(it.title)+"|"+it.date+"|00:00")&&!calLater.has(calKey(it)));}
 function maybeCalPopup(){
   clearTimeout(calPopT);
   calPopT=setTimeout(()=>{
@@ -3821,7 +3907,7 @@ function openImport(){
   const copyBtn=el("button",{class:"btn primary imp-big",type:"button",onclick:async()=>{
     try{await navigator.clipboard.writeText(inboxUrl());toast("Adresse copiée");}catch(_){prompt("Copie cette adresse :",inboxUrl());}}},"Copier mon adresse de synchronisation");
   const setup=el("div",{class:"imp-start"},
-    el("p",{class:"note"},"Réglage à faire une seule fois : le raccourci « Export Agenda » enverra tes évènements ici tout seul, sans que tu quittes l'app. Copie ton adresse et colle-la dans le raccourci (je te guide)."),copyBtn);
+    el("p",{class:"note"},"Réglage à faire une seule fois : le raccourci « Export Agenda » enverra tes évènements ici tout seul, sans que tu quittes l'app. Copie ton adresse et colle-la dans le raccourci."),copyBtn);
   const manual=el("details",{class:"imp-manual"},el("summary",{},"Coller à la main"),
     el("p",{class:"note"},"Colle ici le texte copié par le raccourci :"),ta);
   inboxRefresh=()=>{if(!ta.value.trim())show();};
@@ -3847,7 +3933,7 @@ function guessCat(t){try{return parseText(t).category||"autre";}catch(_){return 
 /* ---------- Vraie alarme dans l'Horloge (via l'app Raccourcis) ---------- */
 const SC_NAME="Alarme Agenda";
 function alarmTime(ev){return hasTrip(ev)?departOf(ev):new Date(startOf(ev).getTime()-15*60000);}
-function alarmPossible(ev){const t=alarmTime(ev).getTime(),now=Date.now();return t>now+60000&&t-now<24*3600000;}
+function alarmPossible(ev){if(isAllDay(ev))return false;const t=alarmTime(ev).getTime(),now=Date.now();return t>now+60000&&t-now<24*3600000;}
 function alarmsDone(){try{return JSON.parse(localStorage.getItem("a2.alarms")||"{}");}catch(_){return {};}}
 function alarmDone(ev){const a=alarmsDone()[ev.id];return a&&a===hhmm(alarmTime(ev))+"|"+ev.date;}
 function runAlarmShortcut(hm){location.href="shortcuts://run-shortcut?name="+encodeURIComponent(SC_NAME)+"&input=text&text="+encodeURIComponent(hm);}
@@ -3883,7 +3969,8 @@ function alarmSetupSection(){
 let lastRemCheck=Date.now();
 setInterval(()=>{
   const now=Date.now();
-  for(const e of events.values()) for(const r of liveReminders(e)){const t=remWhen(e,r).getTime();if(t>lastRemCheck&&t<=now)toast(remText(e,r));}
+  for(const e0 of events.values()){const w=whoOf(e0);if(w!=="both"&&w!==myId)continue;const e=viewFor(e0,myId);
+    for(const r of liveReminders(e)){const t=remWhen(e,r).getTime();if(t>lastRemCheck&&t<=now)toast(remText(e,r));}}
   lastRemCheck=now;
 },20000);
 
@@ -3965,7 +4052,7 @@ function showPair(prefill){
     el("h2",{},"Bienvenue"),
     el("p",{},"Un agenda partagé à deux : trajets, heure de départ et rappels."),
     el("div",{class:"field"},el("label",{for:"pair-name"},"Ton prénom"),name),
-    el("div",{class:"pair-card"},el("strong",{},"Premier téléphone"),el("span",{class:"note"},"Crée votre agenda. Tu recevras un code à donner à ta compagne."),create),
+    el("div",{class:"pair-card"},el("strong",{},"Premier téléphone"),el("span",{class:"note"},"Crée votre agenda. Tu recevras un code à donner à ta moitié."),create),
     el("div",{class:"pair-card"},el("strong",{},"J'ai reçu un code"),code,join),
     (()=>{const ri=el("input",{id:"rec-code",type:"text",placeholder:"XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",class:"pair-in",autocapitalize:"characters",autocomplete:"off"});
       const rb=el("button",{class:"btn",type:"button"},"Reprendre ma place");rb.onclick=()=>recoverWith(ri.value,rb);
@@ -3979,7 +4066,7 @@ async function shareInvite(c){
 }
 function showCreated(c){
   pageScreen([el("h2",{},"Votre agenda est prêt"),
-    el("p",{},"Sur l'iPhone de ta compagne : ouvre l'app, entre son prénom, puis ce code dans « J'ai reçu un code »."),
+    el("p",{},"Sur l'iPhone de ta moitié : ouvre l'app, entre son prénom, puis ce code dans « J'ai reçu un code »."),
     el("div",{class:"big-code"},c),
     el("button",{class:"btn",type:"button",onclick:()=>shareInvite(c)},"Envoyer l'invitation"),
     el("button",{class:"btn primary",type:"button",onclick:()=>location.reload()},"Ouvrir l'agenda")]);
@@ -3991,7 +4078,7 @@ function coupleSection(){
   const ok=el("button",{type:"button",class:"btn"},"OK");
   ok.onclick=async()=>{try{await fs.doc("couples/"+coupleId).update({["names."+myId]:nm.value.trim()});toast("Prénom enregistré");}catch(e){toast("Enregistrement impossible.");}};
   box.append(el("div",{class:"brand-add"},nm,ok),photoSetting());
-  if(!others.length) box.append(el("p",{class:"note"},"Ta compagne n'a pas encore rejoint l'agenda. Code à lui donner :"),el("div",{class:"big-code"},(couple&&couple.code)||""),
+  if(!others.length) box.append(el("p",{class:"note"},"Ta moitié n'a pas encore rejoint l'agenda. Le code à lui donner :"),el("div",{class:"big-code"},(couple&&couple.code)||""),
     el("button",{type:"button",class:"btn",onclick:()=>shareInvite(couple.code)},"Envoyer l'invitation"));
   else box.append(el("div",{class:"notice"},el("strong",{},"Agenda fermé"),el("div",{},"Vous êtes deux : "+[firstName(myId)].concat(others.map(firstName)).join(" et ")+". Personne d'autre ne peut le rejoindre, même avec l'ancien code.")));
   box.append(el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)",onclick:()=>{
@@ -4000,12 +4087,12 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="46";
+const APP_V="47";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
+  // On vide seulement les fichiers gardés : le service worker reste inscrit, sinon l'iPhone coupe les notifications
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}catch(_){}
-  try{const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));}catch(_){}
   location.replace(location.pathname+"?v="+Date.now());
 }
 function registerSW(){
@@ -4158,6 +4245,18 @@ function pickupFromText(text){
   if(!addr)addr=(lastPickups()[who]||[])[0]||"";
   return {who,addr,rest:text.replace(m[0]," ").replace(/\s+/g," ").trim()};
 }
+const DAYTIME=new Set(["zoo","parc","plage","visite","fun","aqua","neige"]);
+function whoFromText(text){
+  const o=otherId();if(!o)return null;
+  const nt=norm(text),esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  for(const [uid,raw] of [[o,firstName(o)],[myId,firstName(myId)]]){
+    const n=norm(raw);if(n.length<2||n==="moi"||n==="ma moitie")continue;
+    if(new RegExp("^"+esc(n)+"\\s+(?!et\\b|avec\\b|&)").test(nt))return {uid,strip:esc(raw)};
+    if(new RegExp("\\bpour\\s+"+esc(n)+"\\b").test(nt))return {uid,strip:null};
+  }
+  if(/^(moi|pour moi)\b/.test(nt))return {uid:myId,strip:null};
+  return null;
+}
 async function prepareText(text,b,label){
   // « ajoute du lait et des œufs » : ça va dans la liste de courses, pas dans l'agenda
   try{const p0=parseText(text,{places:[]});const s0=shopIntent(text,p0);
@@ -4172,6 +4271,11 @@ async function prepareText(text,b,label){
       if(!pk.addr)info.push("Indique où "+(pk.who===myId?firstName(otherId())+" te récupère":"récupérer "+firstName(pk.who))+" (touche Modifier).");}
     Object.assign(d,{title:p.title,category:CATS[p.category]?p.category:"autre",date:p.date,time:p.time});
     d.marginMin=DEF_MARGIN[d.category]??10;d.durationMin=DEF_DUR[d.category]||60;
+    // « Hajjour dentiste mardi 9h » ou « dentiste pour Hajjour » : l'évènement est pour elle seule
+    if(!pk){const w=whoFromText(text);if(w){d.who=w.uid;if(w.strip)d.title=(d.title.replace(new RegExp("^"+w.strip+"\\s+","i"),"")||d.title).replace(/^./,c=>c.toUpperCase());}}
+    // sortie de jour sans heure précisée (zoo, parc, plage, musée…) : l'après-midi plutôt que 20h
+    if(p.assumed&&p.assumed.time&&DAYTIME.has(motifOf({title:d.title,category:d.category}))){d.time="14:00";
+      if(p.assumed.date&&startOf(d).getTime()<Date.now()){const t=new Date();t.setDate(t.getDate()+1);d.date=ymd(t);}}
     if(p.origin) d.origin=p.origin;
     let loc=p.location||"";
     // Enseigne cochée (« courses chez Action ») : magasin le plus proche de la maison
@@ -4203,7 +4307,13 @@ async function prepareText(text,b,label){
 }
 $("#input").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))$("#btn-analyze").click();});
 
-setInterval(()=>{if(events.size)renderNext([...events.values()].sort((a,b)=>startOf(a)-startOf(b)).filter(e=>startOf(e).getTime()>Date.now()-3*3600000));},30000);
+// Toutes les 30 s : le grand panneau suit l'heure ; au changement de jour, tout l'agenda est redessiné
+let renderedDay=ymd(new Date());
+setInterval(()=>{
+  if(ymd(new Date())!==renderedDay){renderedDay=ymd(new Date());scheduleRender();return;}
+  if(events.size)renderNext([...events.values()].sort((a,b)=>startOf(a)-startOf(b)).filter(e=>startOf(e).getTime()>Date.now()-3*3600000).filter(passWho));
+},30000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ymd(new Date())!==renderedDay){renderedDay=ymd(new Date());scheduleRender();}});
 
 /* ---------- Démarrage instantané : dernière copie de l'agenda gardée sur le téléphone ---------- */
 const BOOT_KEY="a2.boot";let bootSaveT=null,booted=false;
@@ -4303,7 +4413,7 @@ function bootFromCache(){
     }
     const wasFirst=firstSnap;firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    if(wasFirst)maybeCalPopup();
+    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);}
     if(shopRefresh)shopRefresh();
     saveBoot();
     scheduleRender();

@@ -1,5 +1,5 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
-// Déploiement : 2026-10-16T21:46Z
+// Déploiement : 2026-10-20 (clés séparées pour les abonnements, widgets et envois)
 // Envoie les notifications Web Push aux iPhone et garde les rappels programmés.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
 const SUBJECT = "https://mohamedsahlilyon1-web.github.io/Agenda-a-deux/";
@@ -55,10 +55,10 @@ async function sendPush(env, sub, msg) {
     Authorization: await vapidHeader(env, sub.endpoint) } });
   return r.status;
 }
-async function sendTo(env, c, uids, msg) {
+async function sendTo(env, subs, uids, msg) {
   let changed = false, sent = 0;
   for (const uid of uids) {
-    const list = (c.subs && c.subs[uid]) || [];
+    const list = subs[uid] || [];
     const keep = [];
     for (const s of list) {
       let st = 0; try { st = await sendPush(env, s, msg); } catch (e) { st = 0; }
@@ -66,7 +66,7 @@ async function sendTo(env, c, uids, msg) {
       if (st >= 200 && st < 300) sent++;
       keep.push(s);
     }
-    if (c.subs && c.subs[uid] && keep.length !== list.length) c.subs[uid] = keep;
+    if (keep.length !== list.length) subs[uid] = keep;
   }
   return { changed, sent };
 }
@@ -78,6 +78,24 @@ const clean = (s, n) => String(s || "").slice(0, n || 200);
 async function getCouple(env, id) { return (await env.KV.get("c:" + id, "json")) || null; }
 async function putCouple(env, id, c) { await env.KV.put("c:" + id, JSON.stringify(c)); }
 async function addIndex(env, id) { const idx = (await env.KV.get("index", "json")) || []; if (!idx.includes(id)) { idx.push(id); await env.KV.put("index", JSON.stringify(idx)); } }
+// Chaque type de donnée a sa propre clé : un envoi de rappels ne peut plus effacer un abonnement tout juste ajouté
+// (KV ne garantit pas qu'une lecture voit l'écriture faite une seconde plus tôt ailleurs).
+async function getSubs(env, id, c) { return (await env.KV.get("s:" + id, "json")) || (c && c.subs) || {}; }
+async function putSubs(env, id, subs) { await env.KV.put("s:" + id, JSON.stringify(subs)); }
+async function getWidgets(env, id, c) { return (await env.KV.get("w:" + id, "json")) || { at: (c && c.wAt) || 0, map: (c && c.widgets) || {} }; }
+async function putWidgets(env, id, w) { await env.KV.put("w:" + id, JSON.stringify(w)); }
+async function getDone(env, id, c) { return (await env.KV.get("d:" + id, "json")) || (c && c.done) || []; }
+async function putDone(env, id, d) { await env.KV.put("d:" + id, JSON.stringify(d.slice(-300))); }
+// Ancien format (tout dans la fiche du couple) : on recopie chaque partie dans sa clé, une seule fois
+async function migrate(env, id, c) {
+  if (!c || !(c.subs || c.widgets || c.done || c.widget)) return c;
+  if (c.subs && !(await env.KV.get("s:" + id))) await putSubs(env, id, c.subs);
+  if (c.widgets && !(await env.KV.get("w:" + id))) await putWidgets(env, id, { at: c.wAt || 0, map: c.widgets });
+  if (c.done && !(await env.KV.get("d:" + id))) await putDone(env, id, c.done);
+  delete c.subs; delete c.widgets; delete c.done; delete c.wAt; delete c.widget;
+  await putCouple(env, id, c);
+  return c;
+}
 
 export default {
   async fetch(req, env) {
@@ -88,8 +106,8 @@ export default {
       const id = clean(url.searchParams.get("c"), 60), t = clean(url.searchParams.get("t"), 80);
       const c = id && await getCouple(env, id);
       if (!c || !t || c.token !== t) return json(req, { error: "unknown" }, 404);
-      const u = clean(url.searchParams.get("u"), 80);
-      return json(req, { at: c.wAt || 0, data: (c.widgets && (c.widgets[u] || Object.values(c.widgets)[0])) || null });
+      const u = clean(url.searchParams.get("u"), 80), W = await getWidgets(env, id, c);
+      return json(req, { at: W.at || 0, data: (W.map[u] || Object.values(W.map)[0]) || null });
     }
     if (req.method !== "POST") return json(req, { ok: true, service: "Together" });
     if (!ORIGIN_OK(req.headers.get("Origin"))) return json(req, { error: "origin" }, 403);
@@ -97,41 +115,44 @@ export default {
     const id = clean(b.couple, 60), token = clean(b.token, 80);
     if (!/^[A-Za-z0-9_-]{6,60}$/.test(id) || token.length < 24) return json(req, { error: "auth" }, 401);
     let c = await getCouple(env, id);
-    if (!c) { c = { token, subs: {}, sched: [] }; await addIndex(env, id); }
+    if (!c) { c = { token, sched: [] }; await putCouple(env, id, c); await addIndex(env, id); }
     else if (c.token !== token) return json(req, { error: "auth" }, 401);
+    else c = await migrate(env, id, c);
     if (path === "/api/sub") {
       const uid = clean(b.uid, 80), s = b.sub;
       if (!uid || !s || !/^https:\/\//.test(s.endpoint || "") || !s.keys || !s.keys.p256dh || !s.keys.auth) return json(req, { error: "sub" }, 400);
-      const list = (c.subs[uid] || []).filter((x) => x.endpoint !== s.endpoint);
+      const subs = await getSubs(env, id, c);
+      const list = (subs[uid] || []).filter((x) => x.endpoint !== s.endpoint);
       list.push({ endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh, auth: s.keys.auth } });
-      c.subs[uid] = list.slice(-3); await putCouple(env, id, c);
-      if (b.hello) await sendTo(env, c, [uid], { title: "Notifications activées", body: "Together te préviendra ici, même quand l'app est fermée.", tag: "hello" });
+      subs[uid] = list.slice(-3); await putSubs(env, id, subs);
+      if (b.hello) { const r = await sendTo(env, subs, [uid], { title: "Notifications activées", body: "Together te préviendra ici, même quand l'app est fermée.", tag: "hello" }); if (r.changed) await putSubs(env, id, subs); }
       return json(req, { ok: true });
     }
-    if (path === "/api/unsub") { const uid = clean(b.uid, 80); if (c.subs[uid]) c.subs[uid] = c.subs[uid].filter((x) => x.endpoint !== b.endpoint); await putCouple(env, id, c); return json(req, { ok: true }); }
+    if (path === "/api/unsub") { const uid = clean(b.uid, 80), subs = await getSubs(env, id, c); if (subs[uid]) { subs[uid] = subs[uid].filter((x) => x.endpoint !== b.endpoint); await putSubs(env, id, subs); } return json(req, { ok: true }); }
     if (path === "/api/notify") {
       const to = (Array.isArray(b.to) ? b.to : [b.to]).map((x) => clean(x, 80)).filter(Boolean).slice(0, 2);
-      const r = await sendTo(env, c, to, { title: clean(b.title, 120), body: clean(b.body, 300), tag: clean(b.tag, 60), url: clean(b.url, 200) });
-      if (r.changed) await putCouple(env, id, c);
+      const subs = await getSubs(env, id, c);
+      const r = await sendTo(env, subs, to, { title: clean(b.title, 120), body: clean(b.body, 300), tag: clean(b.tag, 60), url: clean(b.url, 200) });
+      if (r.changed) await putSubs(env, id, subs);
       return json(req, { ok: true, sent: r.sent });
     }
     if (path === "/api/schedule") {
-      const now = Date.now(), done = new Set(c.done || []);
+      const now = Date.now(), done = new Set(await getDone(env, id, c));
       c.sched = (Array.isArray(b.items) ? b.items : []).slice(0, 200).map((x) => ({ id: clean(x.id, 120), to: (Array.isArray(x.to) ? x.to : [x.to]).map((u) => clean(u, 80)).slice(0, 2), at: +x.at || 0, title: clean(x.title, 120), body: clean(x.body, 300), tag: clean(x.tag, 60) }))
         .filter((x) => x.id && x.at > now - 60000 && x.at < now + 40 * 86400000 && !done.has(x.id));
-      c.widgets = c.widgets || {};
-      const me = clean(b.uid, 80);
-      if (b.widget && me) { c.widgets[me] = b.widget; c.wAt = now; }
-      // Le téléphone qui synchronise met aussi à jour le widget de l'autre (sans toucher à ses couleurs)
+      await putCouple(env, id, c);
+      // widgets : celui de ce téléphone, et celui de l'autre (sans toucher à ses couleurs)
+      const W = await getWidgets(env, id, c), me = clean(b.uid, 80);
+      let wChanged = false;
+      if (b.widget && typeof b.widget === "object" && me) { W.map[me] = b.widget; wChanged = true; }
       if (b.widgets && typeof b.widgets === "object") {
         for (const [k, w] of Object.entries(b.widgets).slice(0, 2)) {
           const uid = clean(k, 80); if (!uid || !w || typeof w !== "object" || uid === me) continue;
-          const old = c.widgets[uid] || {};
-          c.widgets[uid] = { ...w, th: old.th || w.th };
-          c.wAt = now;
+          const old = W.map[uid] || {};
+          W.map[uid] = { ...w, th: old.th || w.th }; wChanged = true;
         }
       }
-      await putCouple(env, id, c);
+      if (wChanged) { W.at = now; await putWidgets(env, id, W); }
       return json(req, { ok: true, count: c.sched.length });
     }
     return json(req, { error: "path" }, 404);
@@ -141,12 +162,15 @@ export default {
     const idx = (await env.KV.get("index", "json")) || [], now = Date.now();
     for (const id of idx) {
       const c = await getCouple(env, id); if (!c || !c.sched || !c.sched.length) continue;
-      const due = c.sched.filter((x) => x.at <= now + 20000);
+      // Le cron n'écrit jamais la fiche du couple : il note seulement ce qui est parti (clé à part)
+      const doneList = await getDone(env, id, c), done = new Set(doneList);
+      const due = c.sched.filter((x) => x.at <= now + 20000 && !done.has(x.id));
       if (!due.length) continue;
-      const done = c.done || [];
-      for (const x of due) { if (now - x.at < 15 * 60000) await sendTo(env, c, x.to, { title: x.title, body: x.body, tag: x.tag }); done.push(x.id); }
-      c.sched = c.sched.filter((x) => x.at > now + 20000); c.done = done.slice(-300);
-      await putCouple(env, id, c);
+      const subs = await getSubs(env, id, c);
+      let changed = false;
+      for (const x of due) { if (now - x.at < 15 * 60000) { const r = await sendTo(env, subs, x.to, { title: x.title, body: x.body, tag: x.tag }); changed = changed || r.changed; } doneList.push(x.id); done.add(x.id); }
+      await putDone(env, id, doneList);
+      if (changed) await putSubs(env, id, subs);
     }
   },
 };
