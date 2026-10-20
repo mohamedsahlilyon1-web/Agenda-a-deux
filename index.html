@@ -2200,16 +2200,20 @@ function widgetData(){
   return {names:memberIds().map(firstName),items,ic,th:widgetTheme(),
     wishes:wishTodos().length,fb:feedbackDue().length};
 }
+// Widget de chacun : calculé par n'importe quel téléphone, pour que l'ajout de l'un apparaisse aussi chez l'autre
+function widgetsAll(){const out={},me=myId;
+  for(const uid of memberIds()){if(uid===me)continue;try{myId=uid;out[uid]=widgetData();delete out[uid].th;}catch(_){}finally{myId=me;}}
+  return out;}
 let pushSyncT=null;
 function syncPush(now){
   if(pushSyncT&&!now)return; // déjà prévu : on ne repousse pas sans fin
   clearTimeout(pushSyncT);
   pushSyncT=setTimeout(async()=>{pushSyncT=null;
     if(!pushToken()||!coupleId||!myId||firstSnap)return;
-    let items,widget;try{items=pushItems();widget=widgetData();}catch(_){return;}
-    const sig=JSON.stringify([items,widget]);
+    let items,widget,widgets;try{items=pushItems();widget=widgetData();widgets=widgetsAll();}catch(_){return;}
+    const sig=JSON.stringify([items,widget,widgets]);
     if(lsGet("a2.pushSig")===sig)return;
-    const r=await pushPost("/api/schedule",{uid:myId,items,widget});
+    const r=await pushPost("/api/schedule",{uid:myId,items,widget,widgets});
     if(r)lsSet("a2.pushSig",sig);
   },now?50:5000);
 }
@@ -3996,7 +4000,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="45";
+const APP_V="46";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}

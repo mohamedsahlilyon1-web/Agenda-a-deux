@@ -119,7 +119,18 @@ export default {
       const now = Date.now(), done = new Set(c.done || []);
       c.sched = (Array.isArray(b.items) ? b.items : []).slice(0, 200).map((x) => ({ id: clean(x.id, 120), to: (Array.isArray(x.to) ? x.to : [x.to]).map((u) => clean(u, 80)).slice(0, 2), at: +x.at || 0, title: clean(x.title, 120), body: clean(x.body, 300), tag: clean(x.tag, 60) }))
         .filter((x) => x.id && x.at > now - 60000 && x.at < now + 40 * 86400000 && !done.has(x.id));
-      if (b.widget && b.uid) { c.widgets = c.widgets || {}; c.widgets[clean(b.uid, 80)] = b.widget; c.wAt = now; }
+      c.widgets = c.widgets || {};
+      const me = clean(b.uid, 80);
+      if (b.widget && me) { c.widgets[me] = b.widget; c.wAt = now; }
+      // Le téléphone qui synchronise met aussi à jour le widget de l'autre (sans toucher à ses couleurs)
+      if (b.widgets && typeof b.widgets === "object") {
+        for (const [k, w] of Object.entries(b.widgets).slice(0, 2)) {
+          const uid = clean(k, 80); if (!uid || !w || typeof w !== "object" || uid === me) continue;
+          const old = c.widgets[uid] || {};
+          c.widgets[uid] = { ...w, th: old.th || w.th };
+          c.wAt = now;
+        }
+      }
       await putCouple(env, id, c);
       return json(req, { ok: true, count: c.sched.length });
     }
