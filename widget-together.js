@@ -252,7 +252,7 @@ ${rest.length||next?`<h2>Ensuite</h2>`:""}${rows}
 if(!config.runsInWidget&&config.runsInApp){
   const wv=new WebView();await wv.loadHTML(previewHtml());await wv.present(true);
   // Après « Close » : retour direct à l'écran d'accueil, pas à la liste des scripts
-  if(fromTap){try{App.close();}catch(e){}}
+  try{App.close();}catch(e){}
   Script.complete();return;
 }
 
