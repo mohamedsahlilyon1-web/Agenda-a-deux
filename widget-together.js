@@ -1,6 +1,4 @@
 // Together : code du widget Scriptable (chargé automatiquement par le petit script installé)
-// Toucher le widget : Scriptable se referme aussitôt (iOS l'ouvre forcément, on ne montre rien et on revient à l'écran d'accueil)
-if(!config.runsInWidget&&typeof args!=="undefined"&&args.queryParameters&&args.queryParameters.from==="widget"){try{App.close();}catch(e){}Script.complete();return;}
 // Tout le visuel est dessiné à la main (DrawContext) : halos, grain, anneau du compte à rebours, icônes des thèmes.
 const fm=FileManager.local(),cache=fm.joinPath(fm.documentsDirectory(),"together-widget.json");
 let data=null;
