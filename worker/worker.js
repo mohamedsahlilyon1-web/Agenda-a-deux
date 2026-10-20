@@ -1,6 +1,7 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
-// Déploiement : 2026-10-20 (clés séparées pour les abonnements, widgets et envois)
-// Envoie les notifications Web Push aux iPhone et garde les rappels programmés.
+// Déploiement : 2026-10-20 (calendrier Together pour l'app Calendrier, CarPlay et Siri)
+// Envoie les notifications Web Push aux iPhone, garde les rappels programmés
+// et publie pour chacun un calendrier .ics auquel l'iPhone s'abonne.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
 const SUBJECT = "https://mohamedsahlilyon1-web.github.io/Agenda-a-deux/";
 const enc = new TextEncoder();
@@ -86,6 +87,15 @@ async function getWidgets(env, id, c) { return (await env.KV.get("w:" + id, "jso
 async function putWidgets(env, id, w) { await env.KV.put("w:" + id, JSON.stringify(w)); }
 async function getDone(env, id, c) { return (await env.KV.get("d:" + id, "json")) || (c && c.done) || []; }
 async function putDone(env, id, d) { await env.KV.put("d:" + id, JSON.stringify(d.slice(-300))); }
+// Calendrier Together : une clé de lecture seule tirée du jeton (le lien du calendrier ne permet rien d'autre)
+const CAL_EMPTY = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Together//Agenda a deux//FR", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+  "X-WR-CALNAME:Together", "REFRESH-INTERVAL;VALUE=DURATION:PT15M", "X-PUBLISHED-TTL:PT15M", "END:VCALENDAR", ""].join("\r\n");
+async function calKey(token) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode("together-cal:" + token)));
+  let s = ""; for (const x of h) s += x.toString(16).padStart(2, "0"); return s.slice(0, 32);
+}
+async function getCals(env, id) { const k = await env.KV.get("k:" + id, "json"); return k && k.map ? k : { at: 0, map: {} }; }
+const UID_RE = /^[A-Za-z0-9_-]{1,80}$/;
 // Ancien format (tout dans la fiche du couple) : on recopie chaque partie dans sa clé, une seule fois
 async function migrate(env, id, c) {
   if (!c || !(c.subs || c.widgets || c.done || c.widget)) return c;
@@ -98,10 +108,31 @@ async function migrate(env, id, c) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     if (req.method === "OPTIONS") return new Response(null, { headers: cors(req) });
     const url = new URL(req.url), path = url.pathname;
     if (path === "/api/key") return json(req, { pub: (await vapidKeys(env)).pub });
+    // Calendrier Together de chacun : /cal/<couple>/<clé de lecture>/<personne>.ics
+    const cm = /^\/cal\/([A-Za-z0-9_-]{6,60})\/([0-9a-f]{32})\/([A-Za-z0-9_-]{1,80})\.ics$/.exec(path);
+    if (cm && (req.method === "GET" || req.method === "HEAD")) {
+      if (url.protocol === "http:") { url.protocol = "https:"; return Response.redirect(url.toString(), 301); }
+      const [, id, key, uid] = cm;
+      const c = await getCouple(env, id);
+      if (!c || !c.token || key !== await calKey(c.token)) return new Response("Calendrier introuvable", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+      const K = await getCals(env, id), body = K.map[uid];
+      if (body && req.method === "GET") {
+        // l'app peut confirmer que l'iPhone lit bien son calendrier (noté au plus toutes les 3 h)
+        const seen = (await env.KV.get("ks:" + id, "json")) || {}, now = Date.now();
+        if (!seen[uid] || now - seen[uid] > 3 * 3600000) {
+          seen[uid] = now;
+          const p = env.KV.put("ks:" + id, JSON.stringify(seen));
+          if (ctx && ctx.waitUntil) ctx.waitUntil(p); else await p;
+        }
+      }
+      return new Response(req.method === "HEAD" ? null : (body || CAL_EMPTY), { headers: {
+        "Content-Type": "text/calendar; charset=utf-8", "Cache-Control": "no-cache, max-age=0",
+        "Content-Disposition": 'inline; filename="together.ics"', "Access-Control-Allow-Origin": "*" } });
+    }
     if (path === "/api/w" && req.method === "GET") {
       const id = clean(url.searchParams.get("c"), 60), t = clean(url.searchParams.get("t"), 80);
       const c = id && await getCouple(env, id);
@@ -153,7 +184,25 @@ export default {
         }
       }
       if (wChanged) { W.at = now; await putWidgets(env, id, W); }
+      // calendriers .ics de chacun (envoyés seulement quand ils changent)
+      if (b.cals && typeof b.cals === "object") {
+        const K = await getCals(env, id); let kChanged = false;
+        for (const [k, t] of Object.entries(b.cals).slice(0, 2)) {
+          if (!UID_RE.test(k) || typeof t !== "string" || !t.startsWith("BEGIN:VCALENDAR") || t.length > 700000) continue;
+          if (K.map[k] !== t) { K.map[k] = t; kChanged = true; }
+        }
+        if (kChanged) {
+          // au plus 4 personnes : on retire d'abord celles que ce téléphone n'a pas envoyées (ancien téléphone…)
+          const sent = new Set(Object.keys(b.cals)), old = Object.keys(K.map).filter((k) => !sent.has(k));
+          while (Object.keys(K.map).length > 4 && old.length) delete K.map[old.shift()];
+          K.at = now; await env.KV.put("k:" + id, JSON.stringify(K));
+        }
+      }
       return json(req, { ok: true, count: c.sched.length });
+    }
+    if (path === "/api/calstat") {
+      const seen = (await env.KV.get("ks:" + id, "json")) || {}, K = await getCals(env, id);
+      return json(req, { ok: true, seen, at: K.at || 0, members: Object.keys(K.map) });
     }
     return json(req, { error: "path" }, 404);
   },

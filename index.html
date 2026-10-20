@@ -505,6 +505,11 @@ header{flex-wrap:wrap;row-gap:4px}
 .leg .t.allday{font-size:.82rem;line-height:1.15;padding-top:15px;color:var(--muted)}
 @media (max-width:340px){.brand h1{display:none}}
 .go-wrap{display:flex;flex-direction:column;gap:8px}.go-next{align-self:flex-start}
+.car-st{display:flex;flex-direction:column;gap:6px}
+.car-line{display:flex;gap:9px;align-items:flex-start;margin:0}
+.car-dot{flex:none;width:9px;height:9px;border-radius:50%;margin-top:6px;background:var(--sun);box-shadow:0 0 0 3px color-mix(in srgb,var(--sun) 28%,transparent)}
+.car-line.ok{color:var(--ink)}.car-line.ok .car-dot{background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+.car-help summary{color:var(--muted);font-weight:700;padding:4px 0;cursor:pointer}
 :root:is([data-skin="aurore"],[data-skin="tokyo"],[data-skin="velours"]) .lmap .leaflet-tile{filter:brightness(.75) contrast(1.1) saturate(.7)}
 .cp-hero{display:flex;gap:14px;align-items:center;margin:4px 0 12px}.cp-hero h2{margin:0 0 4px;font-family:var(--fd,inherit);font-size:23px;line-height:1.1}
 .cp-sub{margin:0;color:var(--muted);font-size:14.5px}
@@ -1035,7 +1040,7 @@ async function render(){
   renderNext(upcoming.filter(passWho));
   renderedDay=today0;
   {const wb=$("#who-bar");wb.textContent="";const wf=whoFilterBar();if(wf)wb.append(wf);wb.hidden=!wf;}
-  {const pp=pushPromptCard();if(pp)list.append(pp);}
+  {const pp=pushPromptCard();if(pp)list.append(pp);else{const ca=carPromptCard();if(ca)list.append(ca);}}
   if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
   syncPush();
   autoMergeShop();shopBadge();
@@ -2231,14 +2236,23 @@ let pushSyncT=null;
 function syncPush(now){
   if(pushSyncT&&!now)return; // déjà prévu : on ne repousse pas sans fin
   clearTimeout(pushSyncT);
-  pushSyncT=setTimeout(async()=>{pushSyncT=null;
-    if(!pushToken()||!coupleId||!myId||firstSnap)return;
-    let items,widget,widgets;try{items=pushItems();widget=widgetData();widgets=widgetsAll();}catch(_){return;}
-    const sig=JSON.stringify([items,widget,widgets]);
-    if(lsGet("a2.pushSig")===sig)return;
-    const r=await pushPost("/api/schedule",{uid:myId,items,widget,widgets});
-    if(r)lsSet("a2.pushSig",sig);
-  },now?50:5000);
+  pushSyncT=setTimeout(()=>{pushSyncT=null;syncPushNow();},now?50:5000);
+}
+// Empreinte courte d'un texte (pour savoir si quelque chose a changé sans tout garder en mémoire)
+function hashStr(s){let h1=0xdeadbeef,h2=0x41c6ce57;
+  for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (h2>>>0).toString(36)+(h1>>>0).toString(36)+":"+s.length;}
+async function syncPushNow(){
+  if(!pushToken()||!coupleId||!myId||firstSnap)return false;
+  let items,widget,widgets,cals;try{items=pushItems();widget=widgetData();widgets=widgetsAll();cals=calFeeds();}catch(_){return false;}
+  const sig=hashStr(JSON.stringify([items,widget,widgets])),csig=hashStr(JSON.stringify(cals));
+  // les calendriers ne partent que s'ils ont changé (ils sont plus gros que le reste)
+  const calNew=lsGet("a2.calSig")!==csig;
+  if(lsGet("a2.pushSig")===sig&&!calNew)return true;
+  const r=await pushPost("/api/schedule",{uid:myId,items,widget,widgets,...(calNew?{cals}:{})});
+  if(r){lsSet("a2.pushSig",sig);lsSet("a2.calSig",csig);}
+  return !!r;
 }
 function widgetScript(base){
   return `// Together : widget (à coller dans l'app Scriptable). Il se met à jour tout seul.
@@ -2276,6 +2290,145 @@ function notifSection(){
       el("li",{},"Sur l'écran d'accueil : appui long, +, Scriptable, Ajouter. Touche le widget et choisis le script.")),
       go,el("button",{type:"button",class:"btn quiet",onclick:async()=>{try{await navigator.clipboard.writeText(widgetScript(base));toast("Script copié");}catch(_){prompt("Copie ce script :",widgetScript(base));}}},"Copier le script du widget"));
   });
+  return box;
+}
+/* ---------- Calendrier Together : dans l'app Calendrier, donc sur l'écran CarPlay et pour Siri ----------
+   CarPlay n'accepte que des apps natives validées par Apple. Pour une app web, la voie possible est l'app Calendrier
+   de l'iPhone, qui s'affiche dans la voiture : le serveur publie pour chacun un calendrier auquel l'iPhone s'abonne. */
+const CAL_UID="@together-agenda";
+// pas d'alerte « Il est temps de partir » du Calendrier : Together l'envoie déjà en notification
+const NO_TTL="X-APPLE-TRAVEL-ADVISORY-BEHAVIOR:DISABLED";
+const icsText=t=>String(t==null?"":t).replace(/\\/g,"\\\\").replace(/\r?\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
+const icsUtc=d=>new Date(d).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+const icsDay=d=>ymd(d).replace(/-/g,"");
+// Lignes de 75 octets au plus (norme iCalendar), sans couper un caractère accentué
+function icsFold(line){let n=0,out="";
+  for(const ch of line){const c=ch.codePointAt(0),b=c<0x80?1:c<0x800?2:c<0x10000?3:4;if(n+b>75){out+="\r\n ";n=1;}out+=ch;n+=b;}
+  return out;}
+const icsQ=s=>String(s||"").replace(/["\\\r\n]/g," ").replace(/\s+/g," ").trim().slice(0,140);
+// Lieu précis (coordonnées du trajet calculé) : Plans va pile au bon endroit depuis CarPlay
+function icsGeo(addr,pt){
+  if(!pt||!Number.isFinite(+pt.lat)||!Number.isFinite(+pt.lon))return null;
+  return "X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=\""+icsQ(addr)+"\";X-APPLE-RADIUS=70;X-TITLE=\""+icsQ(shortAddr(addr))+"\":geo:"+(+pt.lat)+","+(+pt.lon);
+}
+// Ce que voit chacun : ses évènements et ceux à deux, sauf ceux déjà copiés dans son propre calendrier
+function calList(uid){
+  const now=Date.now(),from=now-21*864e5,to=now+200*864e5;
+  return [...events.values()].filter(e=>{const w=whoOf(e);if(w!=="both"&&w!==uid)return false;
+      const t=startOf(e).getTime();if(!(t>=from&&t<=to))return false;
+      return !((e.calendarAdded||{})[uid]>=(e.updatedAt||0));})
+    .sort((a,b)=>startOf(a)-startOf(b)||String(a.id).localeCompare(String(b.id))).slice(0,300);
+}
+function calVevents(ev,uid){
+  const v=viewFor(ev,uid),allDay=isAllDay(ev),s=startOf(ev),end=new Date(s.getTime()+(+ev.durationMin||60)*60000);
+  const stamp=icsUtc(ev.updatedAt||ev.createdAt||Date.UTC(2026,0,1));
+  const d0=new Date(ev.date+"T00:00:00"),d1=new Date(d0);d1.setDate(d1.getDate()+1);
+  const geo=ev.routeGeo&&ev.routeGeo.to?ev.routeGeo:null,trip=!allDay&&hasTrip(v);
+  const pk=!allDay&&hasPickup(ev),picked=pk&&ev.pickupWho===uid,drives=pk&&!picked;
+  const wait=Math.max(0,Math.min(60,ev.pickupWait==null?5:+ev.pickupWait||0));
+  const dn=pk?firstName(driverOf(ev)):"",pn=pk?firstName(ev.pickupWho):"",title=ev.title||"Évènement";
+  const other=memberIds().find(m=>m!==uid);
+  const out=[];
+  // l'étape « Récupérer … » (ou « … passe te prendre ») juste avant, à l'adresse où l'on se retrouve
+  if(pk){const at=pickupAt(ev);
+    const P=["BEGIN:VEVENT","UID:"+ev.id+"-pk"+CAL_UID,"DTSTAMP:"+stamp,"LAST-MODIFIED:"+stamp,"DTSTART:"+icsUtc(at),"DTEND:"+icsUtc(at.getTime()+Math.max(5,wait)*60000),
+      "SUMMARY:"+icsText((picked?dn+" passe te prendre":"Récupérer "+pn)+" · "+title)];
+    if(ev.pickup){P.push("LOCATION:"+icsText(ev.pickup),NO_TTL);const m=geo&&(geo.marks||[])[0],g=m&&icsGeo(ev.pickup,m.at);if(g)P.push(g);}
+    if(drives&&(+ev.pickupMin||0)>0)P.push("X-APPLE-TRAVEL-DURATION;VALUE=DURATION:PT"+Math.round(+ev.pickupMin)+"M");
+    P.push("DESCRIPTION:"+icsText((picked?"Prépare-toi : "+dn+" arrive à "+hhmm(at)+".":"Départ à "+hhmm(departOf(ev))+(ev.origin?" de "+shortAddr(ev.origin):"")+".")+
+      "\nEnsuite : "+title+" à "+ev.time+(ev.location?", "+ev.location:"")+"."+(drives&&ev.pickup?"\nItinéraire : "+appleUrl(ev):"")+"\nTogether"),"END:VEVENT");
+    out.push(P);}
+  const D=[];
+  if(picked)D.push(dn+" passe te prendre à "+hhmm(pickupAt(ev))+(ev.pickup?", "+ev.pickup:"")+".");
+  else if(drives)D.push("Départ à "+hhmm(departOf(ev))+(ev.origin?" de "+shortAddr(ev.origin):"")+", "+pn+" à récupérer à "+hhmm(pickupAt(ev))+(ev.pickup?", "+ev.pickup:"")+".");
+  else if(trip)D.push("Départ conseillé à "+hhmm(departOf(v))+" ("+(MODE_IN[v.mode]||MODE_IN.car)+", environ "+fmtDur(v.travelMin)+(v.origin?", depuis "+shortAddr(v.origin):"")+").");
+  if(whoOf(ev)==="both"&&other)D.push("Avec "+firstName(other)+".");
+  if(ev.notes&&!/^\s*toute la journ[ée]e\.?\s*$/i.test(ev.notes))D.push(String(ev.notes).slice(0,600));
+  if(trip&&ev.location)D.push("Itinéraire : "+(drives?appleUrl(ev,true):appleUrl(v)));
+  D.push("Together");
+  const L=["BEGIN:VEVENT","UID:"+ev.id+CAL_UID,"DTSTAMP:"+stamp,"LAST-MODIFIED:"+stamp,
+    allDay?"DTSTART;VALUE=DATE:"+icsDay(d0):"DTSTART:"+icsUtc(s),allDay?"DTEND;VALUE=DATE:"+icsDay(d1):"DTEND:"+icsUtc(end),
+    "SUMMARY:"+icsText(title)];
+  if(ev.location){L.push("LOCATION:"+icsText(ev.location),NO_TTL);const g=geo&&icsGeo(ev.location,geo.to);if(g)L.push(g);}
+  if(trip){const pre=Math.round((s-(drives?pickupAt(ev).getTime()+wait*60000:departOf(v).getTime()))/60000);if(pre>0)L.push("X-APPLE-TRAVEL-DURATION;VALUE=DURATION:PT"+pre+"M");}
+  L.push("DESCRIPTION:"+icsText(D.join("\n")),"TRANSP:"+(allDay?"TRANSPARENT":"OPAQUE"),"END:VEVENT");
+  out.push(L);
+  return out;
+}
+// Pas d'alarme ici : les rappels arrivent déjà en notification (sinon ils sonneraient deux fois)
+function calFeed(uid){
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Together//Agenda a deux//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH",
+    "X-WR-CALNAME:Together","X-WR-CALDESC:"+icsText("Les moments de "+firstName(uid)+" dans Together"),"X-APPLE-CALENDAR-COLOR:#6D5DF6",
+    "REFRESH-INTERVAL;VALUE=DURATION:PT15M","X-PUBLISHED-TTL:PT15M"];
+  for(const ev of calList(uid))for(const ve of calVevents(ev,uid))L.push(...ve);
+  L.push("END:VCALENDAR");
+  return L.map(icsFold).join("\r\n")+"\r\n";
+}
+function calFeeds(){const o={};for(const uid of memberIds()){try{o[uid]=calFeed(uid);}catch(_){}}return o;}
+function calSubOn(){return lsGet("a2.calSub")==="1";}
+function inMyCal(ev){const w=whoOf(ev);return calSubOn()&&(w==="both"||w===myId)&&!((ev.calendarAdded||{})[myId]>=(ev.updatedAt||0));}
+async function calFeedUrl(base,uid){
+  const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("together-cal:"+pushToken())));
+  const key=[...h].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,32);
+  return base+"/cal/"+encodeURIComponent(coupleId)+"/"+key+"/"+encodeURIComponent(uid)+".ics";
+}
+function openExt(u){location.href=u;}
+async function subscribeCal(btn){
+  const label=btn?btn.textContent:"";
+  if(btn){btn.disabled=true;btn.textContent="Préparation…";}
+  try{
+    const base=await pushUrl();
+    if(!base){toast("Le serveur de Together ne répond pas. Réessaie dans un moment.");return false;}
+    await ensurePushToken();
+    // le calendrier est déposé sur le serveur avant que l'iPhone vienne le lire
+    lsSet("a2.calSig","");
+    await Promise.race([syncPushNow(),new Promise(r=>setTimeout(r,6000))]);
+    const url=await calFeedUrl(base,myId);
+    lsSet("a2.calSub","1");
+    openExt(url.replace(/^https:/,"webcal:"));
+    toast("Confirme l'abonnement dans la fenêtre de l'iPhone : le calendrier Together s'ajoute");
+    scheduleRender();
+    return true;
+  }catch(e){toast("Impossible pour l'instant. Réessaie dans un moment.");return false;}
+  finally{if(btn){btn.disabled=false;btn.textContent=label;}}
+}
+function carSection(){
+  const box=el("div",{class:"disc-box car-box"});
+  const oth=otherId(),on=oth?firstName(oth):"ta moitié";
+  const st=el("div",{class:"car-st"});
+  const go=el("button",{type:"button",class:"btn primary"},calSubOn()?"Ajouter à nouveau":"Ajouter le calendrier Together");
+  // après l'abonnement, l'état se met à jour tout seul quand l'iPhone vient lire le calendrier
+  go.onclick=()=>subscribeCal(go).then(ok=>{if(!ok)return;draw();for(const s of [4,10,25,60,120])setTimeout(()=>{if(box.isConnected&&!lastSeen)draw();},s*1000);});
+  const copy=el("button",{type:"button",class:"btn quiet"},"Copier le lien");
+  let feedUrl="";
+  // le lien est prêt à l'avance : l'iPhone n'accepte de copier que tout de suite après le toucher
+  const put=u=>{navigator.clipboard.writeText(u).then(()=>toast("Lien copié : colle-le dans l'app Calendrier"),()=>prompt("Copie ce lien :",u));};
+  copy.onclick=async()=>{if(feedUrl){put(feedUrl);syncPush(true);return;}
+    const base=await pushUrl();if(!base){toast("Le serveur de Together ne répond pas.");return;}
+    await ensurePushToken();lsSet("a2.calSig","");syncPush(true);feedUrl=await calFeedUrl(base,myId);put(feedUrl);};
+  function line(ok,txt){return el("p",{class:"note car-line"+(ok?" ok":"")},el("span",{class:"car-dot","aria-hidden":"true"}),txt);}
+  let lastSeen=0;
+  // le serveur note au plus toutes les 3 h que l'iPhone a lu le calendrier
+  const fresh=t=>t&&Date.now()-t<3*864e5,days=t=>Math.max(3,Math.round((Date.now()-t)/864e5));
+  async function draw(){
+    if(pushToken()&&!feedUrl){const base=await pushUrl();if(base)feedUrl=await calFeedUrl(base,myId);}
+    const r=pushToken()?await pushPost("/api/calstat",{}):null;
+    const seen=(r&&r.seen)||{};lastSeen=seen[myId]||0;
+    if(seen[myId])lsSet("a2.calSub","1");
+    st.textContent="";
+    st.append(fresh(seen[myId])?line(true,"Ton iPhone reçoit le calendrier Together."):
+      seen[myId]?line(false,"Ton iPhone n'a pas relu le calendrier depuis "+days(seen[myId])+" jours. Touche « Ajouter à nouveau »."):
+      line(false,calSubOn()?"En attente : ton iPhone n'a pas encore lu le calendrier. Si tu as touché « S'abonner », patiente un peu.":"Pas encore ajouté sur ce téléphone."));
+    if(oth)st.append(fresh(seen[oth])?line(true,on+" l'a aussi sur son iPhone."):line(false,on+" ne l'a pas encore : sur son iPhone, Réglages communs puis « Dans la voiture »."));
+    go.textContent=calSubOn()?"Ajouter à nouveau":"Ajouter le calendrier Together";
+  }
+  box.append(
+    el("p",{class:"note"},"Tes moments et vos moments à deux s'ajoutent au Calendrier de l'iPhone. Avec CarPlay, ils s'affichent sur l'écran de la voiture : touche un moment pour lancer l'itinéraire dans Plans. Quand tu dois passer prendre "+on+", l'étape « Récupérer "+on+" » apparaît juste avant, avec son adresse."),
+    st,el("div",{class:"pchips"},go,copy),
+    el("p",{class:"note"},"Siri s'en sert aussi : « Dis Siri, quel est mon prochain rendez-vous ? ». L'iPhone relit ce calendrier tout seul, régulièrement : un changement fait dans Together peut mettre un moment à apparaître. Pas d'alarme en double : les rappels restent des notifications Together."),
+    el("details",{class:"car-help"},el("summary",{},"Rien ne s'ouvre ?"),
+      el("p",{class:"note"},"Touche « Copier le lien ». Ouvre l'app Calendrier, touche Calendriers, puis « Ajouter un calendrier » et choisis l'abonnement. Colle le lien et valide.")));
+  draw();
   return box;
 }
 // Les notifications de ce téléphone sont-elles toujours branchées ? (une mise à jour ou iOS peut les couper)
@@ -2317,6 +2470,15 @@ function pushPromptCard(){
     el("button",{class:"cal-x",type:"button","aria-label":"Plus tard",onclick:()=>{try{localStorage.setItem("a2.pushAsk",String(Date.now()));}catch(_){}render();}},"×"));
 }
 
+// Une seule fois : proposer le calendrier Together (CarPlay) ; ensuite il reste dans les réglages
+function carPromptCard(){
+  if(!IS_IOS||!coupleId||!myId||!pushBase||calSubOn()||lsGet("a2.carAsk"))return null;
+  const b=el("button",{type:"button",class:"btn primary"},"Ajouter");
+  b.onclick=async()=>{if(await subscribeCal(b))render();};
+  return el("div",{class:"cal-banner car-ask"},el("div",{class:"cal-txt"},el("strong",{},"Together dans ta voiture"),
+      el("span",{},"Ajoute le calendrier Together : vos moments s'affichent sur l'écran CarPlay, itinéraire en un toucher.")),b,
+    el("button",{class:"cal-x",type:"button","aria-label":"Plus tard",onclick:()=>{lsSet("a2.carAsk",String(Date.now()));render();toast("Tu le retrouves dans Réglages communs, « Dans la voiture ».");}},"×"));
+}
 function pickupLine(ev){
   const me=ev.pickupWho===myId,dn=firstName(driverOf(ev)),pn=firstName(ev.pickupWho);
   return el("div",{class:"pk-line"},el("span",{class:"pk-pill num"},hhmm(pickupAt(ev))),
@@ -2344,7 +2506,11 @@ function stop(ev,who){
   for(const o of Object.keys(added).filter(id=>id!==myId)) tags.append(el("span",{class:"tag"+(added[o]>=ev.updatedAt?" ok":" stale")},(added[o]>=ev.updatedAt?"Dans l'agenda de ":"À mettre à jour chez ")+who(o).name));
 
   const links=el("div",{class:"links more-info"});
-  links.append(el("button",{class:"btn"+((ev.calendarAdded||{})[myId]>=ev.updatedAt?"":" primary"),type:"button",onclick:()=>addToCalendar(ev)},(ev.calendarAdded||{})[myId]>=ev.updatedAt?"Déjà dans le calendrier":"Ajouter au calendrier"),el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
+  // abonné au calendrier Together : l'évènement y est déjà et suit les changements. Une copie ne sert plus
+  // que pour ses alarmes, donc seulement à qui n'a pas les notifications (et elle sort alors du calendrier Together).
+  if(inMyCal(ev)) tags.append(el("span",{class:"tag ok"},"Dans ton calendrier Together"));
+  if(!(inMyCal(ev)&&pushOn())) links.append(el("button",{class:"btn"+((ev.calendarAdded||{})[myId]>=ev.updatedAt?"":" primary"),type:"button",onclick:()=>addToCalendar(ev)},(ev.calendarAdded||{})[myId]>=ev.updatedAt?"Déjà dans le calendrier":"Ajouter au calendrier"));
+  links.append(el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
   if(IS_IOS&&(whoOf(ev)==="both"||whoOf(ev)===myId)){const ab=alarmButton(viewFor(ev,myId));if(ab)links.append(ab);}
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
@@ -3380,6 +3546,7 @@ function openSettings(){
     el("div",{class:"pgroup-h"},"Importer mon calendrier"),el("div",{class:"disc-box"},el("p",{class:"note"},"Récupère les évènements déjà enregistrés dans le Calendrier de ton iPhone."),el("button",{type:"button",class:"btn",onclick:openImport},"Importer depuis mon calendrier")),
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     coupleId?el("div",{class:"pgroup-h"},"Notifications"):null,coupleId?notifSection():null,
+    coupleId?el("div",{class:"pgroup-h",id:"car-h"},"Dans la voiture (CarPlay)"):null,coupleId?carSection():null,
     el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
     coupleId?el("div",{class:"pgroup-h"},"Mon code de secours"):null,coupleId?recoverySection():null,
     coupleId?el("div",{class:"pgroup-h"},"Installer sur l'iPhone de ta moitié"):null,coupleId?shortcutsSection():null,
@@ -3687,7 +3854,7 @@ function vevent(ev){
   return L;
 }
 function icsFor(ev){return icsOf([viewFor(ev,myId)]);}
-function icsOf(list){return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Agenda a Deux//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH",...list.flatMap(vevent),"END:VCALENDAR"].join("\r\n");}
+function icsOf(list){return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Agenda a Deux//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH",...list.flatMap(vevent),"END:VCALENDAR"].map(icsFold).join("\r\n");}
 function openIcs(ics,name){
   // 1) iPhone : fichier servi par l'app elle-même (service worker), que Safari ouvre dans Calendrier
   if(IS_IOS&&navigator.serviceWorker&&navigator.serviceWorker.controller){
@@ -4087,7 +4254,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="47";
+const APP_V="48";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}

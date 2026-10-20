@@ -28,7 +28,15 @@ jobs:
             WD=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/w:$id"); echo "$WD" | jq -e 'type=="object" and has("map")' >/dev/null 2>&1 || WD=$(echo "$V" | jq -c '{at:(.wAt//0),map:(.widgets//{})}')
             DN=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/d:$id"); echo "$DN" | jq -e 'type=="array"' >/dev/null 2>&1 || DN=$(echo "$V" | jq -c '.done//[]')
             TOK=$(echo "$V" | jq -r .token)
-            S=$(jq -nc --argjson v "$V" --argjson sb "$SB" --argjson wd "$WD" --argjson dn "$DN" '{subs:($sb|length),subsPer:($sb|[.[]|length]),sched:(($v.sched//[])|length),nextAt:(($v.sched//[])|map(.at)|min),done:($dn|length),wAt:($wd.at//0),widgets:(($wd.map//{})|[.[]|{items:((.items//[])|length),wishes,fb}])}')
+            KC=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/k:$id"); echo "$KC" | jq -e 'type=="object" and has("map")' >/dev/null 2>&1 || KC='{"at":0,"map":{}}'
+            KS=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/ks:$id"); echo "$KS" | jq -e 'type=="object" and (has("errors")|not)' >/dev/null 2>&1 || KS='{}'
+            CK=$(printf 'together-cal:%s' "$TOK" | sha256sum | cut -c1-32)
+            CH=""
+            for u in $(echo "$KC" | jq -r '.map|keys[]'); do
+              CH="$CH$(curl -s -o /dev/null -I -w "%{http_code}" "$URL/cal/$id/$CK/$u.ics"),"
+            done
+            CAL=$(jq -nc --argjson kc "$KC" --argjson ks "$KS" --arg ch "${CH%,}" '{at:($kc.at//0),feeds:($kc.map|[.[]|{bytes:length,events:([scan("BEGIN:VEVENT")]|length)}]),http:($ch|split(",")),readAgoMin:($ks|[.[]|((now*1000-.)/60000|floor)])}')
+            S=$(jq -nc --argjson v "$V" --argjson sb "$SB" --argjson wd "$WD" --argjson dn "$DN" --argjson cal "$CAL" '{subs:($sb|length),subsPer:($sb|[.[]|length]),sched:(($v.sched//[])|length),nextAt:(($v.sched//[])|map(.at)|min),done:($dn|length),wAt:($wd.at//0),widgets:(($wd.map//{})|[.[]|{items:((.items//[])|length),wishes,fb}]),cal:$cal}')
             W=""
             for u in $(echo "$SB" | jq -r 'keys[]'); do
               C=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u" | jq -c '{items:((.data.items//[])|length),at}')
