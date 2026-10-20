@@ -257,6 +257,10 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .tag.past{opacity:.45;text-decoration:line-through}
 .sign .sign-btn{grid-column:1 / -1;justify-self:start;margin-top:8px;background:var(--sun-ink);color:var(--sun);border-color:transparent}
 .sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.q-paste{align-self:flex-start;padding:6px 10px;font-size:.9rem}
+.del-series{display:flex;flex-direction:column;gap:10px}
+.del-series .btn{justify-content:center;padding:13px 16px}
+.add-box .lab{margin-top:4px}
 @media (max-width:430px){h1{font-size:1.25rem;white-space:nowrap}.brand{gap:8px}header .round{width:38px;height:38px}header .round svg{width:18px;height:18px}}
 #btn-import,#btn-shop{position:relative}
 .imp-dot{position:absolute;top:-5px;right:-5px;z-index:2;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#E5193C;color:#fff;font-family:system-ui,-apple-system,sans-serif;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--bg);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
@@ -303,6 +307,18 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .cf-v{font-weight:600;min-width:0;overflow-wrap:anywhere}
 .cf-v.muted{color:var(--muted);font-weight:400}
 .cf-save{flex:1;justify-content:center;padding:13px 18px;font-size:1rem}
+.cf-warn{border-radius:14px;padding:10px 14px;font-size:.9rem;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--warn) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 45%,transparent)}
+.cf-warn[hidden]{display:none}
+.cf-warn::before{content:"⚠︎ ";color:var(--warn)}
+.cf-who{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0}
+.cf-who .pchip{padding:7px 12px}
+.cf-mini{padding:2px 8px;font-size:.8rem;font-weight:600;margin-left:2px;vertical-align:baseline}
+.cf-q{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.86rem;font-weight:700;color:var(--muted)}
+.cf-q-dots{display:flex;gap:5px}
+.cf-q-dots i{width:8px;height:8px;border-radius:50%;background:var(--hair)}
+.cf-q-dots i.on{background:var(--line)}
+.cf-q-dots i.done{background:color-mix(in srgb,var(--line) 45%,var(--hair))}
+.cf-q-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .q-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:stretch}
 .mic-btn{border:none;border-radius:16px;background:var(--line);color:var(--line-ink);width:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:800;font-size:.82rem}
 .mic-btn svg{width:26px;height:26px}
@@ -2011,6 +2027,49 @@ function shortcutsSection(){
   return box;
 }
 
+/* ---------- Ajouter avec Siri ou le menu Partager ---------- */
+// Lien propre à chaque personne : le raccourci de l'iPhone y envoie la phrase, Together la reçoit en notification
+async function addLinkUrl(){
+  const base=await pushUrl(),tok=pushToken();if(!base||!tok||!coupleId||!myId)return "";
+  const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("together-add:"+tok+":"+myId)));
+  return base+"/add/"+coupleId+"/"+myId+"/"+[...h].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,24);
+}
+function addSection(){
+  const box=el("div",{class:"disc-box add-box"});
+  const ok=u=>/^https:\/\/(www\.)?icloud\.com\/shortcuts\//.test(u||"");
+  let url="";
+  const copy=el("button",{type:"button",class:"btn primary",disabled:true},"Copier mon lien d'ajout");
+  // copié tout de suite au toucher (l'iPhone refuse une copie faite après une attente)
+  copy.onclick=()=>{if(!url)return;navigator.clipboard.writeText(url).then(()=>toast("Lien copié : colle-le dans le raccourci"),()=>prompt("Copie ce lien :",url));};
+  const status=el("p",{class:"note"},"Préparation du lien…");
+  (async()=>{
+    if(!pushToken()){status.textContent="Active d'abord les notifications (plus haut) : le raccourci passe par le même serveur.";return;}
+    url=await addLinkUrl().catch(()=>"");
+    if(url){copy.disabled=false;status.textContent="Ton lien est personnel : il ne sert qu'à proposer un ajout sur ton téléphone. Garde-le pour toi.";}
+    else status.textContent="Serveur injoignable pour le moment. Réessaie dans un instant.";
+  })();
+  const field=el("input",{type:"url",value:scLinks.add||"",placeholder:"https://www.icloud.com/shortcuts/…","aria-label":"Lien iCloud du raccourci Ajoute à Together"});
+  const saveL=el("button",{type:"button",class:"btn"},"Enregistrer");
+  saveL.onclick=async()=>{const v=field.value.trim();if(v&&!ok(v)){toast("Colle le lien iCloud du raccourci (il commence par https://www.icloud.com/shortcuts/).");return;}
+    try{await db.doc("config/shortcuts").set({add:v},{merge:true});toast("Lien enregistré pour vous deux");}catch(_){toast("Enregistrement impossible.");}};
+  box.append(...[
+    el("p",{class:"note"},"Dis « Dis Siri, ajoute à Together » puis « dentiste mardi 9h », ou partage un message ou un lieu de Plans vers Together. Rien ne s'enregistre tout seul : une notification arrive, et la fiche s'ouvre prête à vérifier."),
+    status,el("div",{class:"pchips"},copy,ok(scLinks.add)?el("a",{class:"btn",href:scLinks.add,target:"_blank",rel:"noopener"},"Installer le raccourci"):null),
+    ok(scLinks.add)?el("p",{class:"note"},"Après l'installation : dans le raccourci, touche longuement l'adresse de « Obtenir le contenu de l'URL », puis Coller pour mettre ton propre lien."):null,
+    el("div",{class:"lab"},ok(scLinks.add)?"Ou crée-le toi-même, une fois :":"Créer le raccourci, une fois (2 minutes) :"),
+    el("ol",{class:"sc-steps"},
+      el("li",{},"Touche « Copier mon lien d'ajout » ci-dessus."),
+      el("li",{},"Ouvre l'app Raccourcis et touche +. Touche le nom en haut, Renommer, et écris : Ajoute à Together."),
+      el("li",{},"Touche « Rechercher des actions », choisis « Obtenir le contenu de l'URL ». Touche URL et colle ton lien."),
+      el("li",{},"Touche la flèche de l'action : Méthode POST, Corps de la requête Formulaire. Touche « Ajouter un champ », Texte : écris t comme clé, et pour la valeur choisis « Entrée du raccourci »."),
+      el("li",{},"Ajoute l'action « Afficher le résultat » : Siri te lira la réponse."),
+      el("li",{},"Touche ⓘ en bas et active « Afficher dans la feuille de partage ». En haut du raccourci, à « Si aucune entrée », choisis « Demander », puis Texte.")),
+    el("p",{class:"note"},"Pour partager un message : sélectionne le texte dans Messages, Partager, puis « Ajoute à Together ». Pour un lieu : dans Plans, Partager, « Ajoute à Together »."),
+    el("p",{class:"note"},"Pour que ta moitié l'installe en un toucher : dans Raccourcis, touche longuement « Ajoute à Together », Partager, « Copier le lien iCloud », puis colle-le ici. Chacun y met ensuite son propre lien."),
+    el("div",{class:"brand-add"},field,saveL)].filter(Boolean));
+  return box;
+}
+
 /* ---------- Nos envies ---------- */
 let wishes=new Map();
 function wishList(){return [...wishes.values()].sort((a,b)=>(!!a.planned-!!b.planned)||(Object.keys(b.hearts||{}).length-Object.keys(a.hearts||{}).length)||((b.createdAt||0)-(a.createdAt||0)));}
@@ -2737,14 +2796,28 @@ async function applyFix(ev,key,val){
 function cleanRoute(a){return (Array.isArray(a)?a:[]).map(s=>String(s).slice(0,90)).filter(Boolean).slice(0,6);}
 function shortAddr(a){const p=placeFor(a);return p?p.name:a;}
 
-async function removeEvent(ev){
-  if(!db) return;
-  const {id,...body}=ev;
+// Une répétition (« yoga tous les mardis ») : on propose de supprimer aussi les suivants
+function seriesAfter(ev){if(!ev||!ev.seriesId)return [];const t=startOf(ev).getTime();return [...events.values()].filter(e=>e.seriesId===ev.seriesId&&e.id!==ev.id&&startOf(e).getTime()>=t).sort((a,b)=>startOf(a)-startOf(b));}
+function askSeriesDelete(ev,more){
+  const root=$("#sheet-root");root.textContent="";
+  const go=sc=>{closeSheet();removeEvent(ev,sc);};
+  root.append(sheetShell("Supprimer une répétition",[
+    el("div",{class:"sheet-h"},el("h2",{},"Supprimer « "+(ev.title||"Évènement")+" »"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("p",{class:"note"},"Cet évènement se répète : encore "+more.length+" fois après "+dayWord(startOf(ev))+"."),
+    el("div",{class:"del-series"},
+      el("button",{type:"button",class:"btn",onclick:()=>go("one")},"Seulement "+dayWord(startOf(ev))),
+      el("button",{type:"button",class:"btn danger",onclick:()=>go("next")},"Celui-ci et les "+more.length+" suivant"+(more.length>1?"s":"")))]));
+}
+async function removeEvent(ev,scope){
+  if(!db||!ev) return;
+  const more=scope?[]:seriesAfter(ev);
+  if(more.length){askSeriesDelete(ev,more);return;}
+  const list=scope==="next"?[ev,...seriesAfter(ev)]:[ev],n=list.length,t=ev.title||"évènement";
   try{
-    await db.doc("events/"+id).delete();
-    pushOther("Supprimé : "+(ev.title||"évènement"),firstName(myId)+" a supprimé « "+(ev.title||"évènement")+" ».","ev");
-    toast("« "+(ev.title||"Évènement")+" » supprimé pour vous deux","Annuler",async()=>{
-      try{await db.doc("events/"+id).set({...body,updatedBy:myId,updatedAt:Date.now()});toast("Évènement rétabli");}catch(e){toast("Impossible de le rétablir.");}
+    for(const e of list) await db.doc("events/"+e.id).delete();
+    pushOther("Supprimé : "+t+(n>1?" ("+n+" fois)":""),firstName(myId)+" a supprimé « "+t+" »"+(n>1?", "+n+" fois à partir de "+dayWord(startOf(ev)):"")+".","ev");
+    toast(n>1?n+" « "+t+" » supprimés pour vous deux":"« "+(ev.title||"Évènement")+" » supprimé pour vous deux","Annuler",async()=>{
+      try{for(const e of list){const {id,...body}=e;await db.doc("events/"+id).set({...body,updatedBy:myId,updatedAt:Date.now()});}toast(n>1?n+" évènements rétablis":"Évènement rétabli");}catch(e){toast("Impossible de le rétablir.");}
     });
   }catch(e){toast("Suppression impossible. Réessaie.");}
 }
@@ -3226,7 +3299,47 @@ function draftFromTemplate(t){
   d.reminders=Array.isArray(t.reminders)&&t.reminders.length?t.reminders.map(r=>({...r})):null;
   return d;
 }
-const REPEATS={none:["Une fois",0,0],week:["Chaque semaine",7,8],week2:["Toutes les 2 semaines",14,6],month:["Chaque mois",0,6],year:["Chaque année",0,10]};
+const REPEATS={none:["Une fois",0,0],day:["Chaque jour",1,21],week:["Chaque semaine",7,8],week2:["Toutes les 2 semaines",14,6],month:["Chaque mois",0,6],year:["Chaque année",0,10]};
+const WD_FR=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+function joinFr(a){return a.length<2?(a[0]||""):a.slice(0,-1).join(", ")+" et "+a[a.length-1];}
+function repDaysOf(x){return Array.isArray(x&&x.repeatDays)&&x.repeatDays.length>1?x.repeatDays:null;}
+// « Chaque mardi et jeudi (8 semaines) », « Chaque mois, le 5 (6 fois) »…
+function repeatText(x,rep){
+  const R=REPEATS[rep||"none"];if(!R||!R[2])return "Une fois";
+  const s=startOf(x),wd=WD_FR[s.getDay()],n=s.getDate();
+  if(rep==="day")return "Chaque jour ("+R[2]+" fois)";
+  if(rep==="week"){const ds=repDaysOf(x);return ds?"Chaque "+joinFr(ds.map(i=>WD_FR[i]))+" ("+R[2]+" semaines)":"Chaque "+wd+" ("+R[2]+" fois)";}
+  if(rep==="week2")return "Un "+wd+" sur deux ("+R[2]+" fois)";
+  if(rep==="month")return "Chaque mois, le "+(n===1?"1er":n)+" ("+R[2]+" fois)";
+  if(rep==="year")return "Chaque année, le "+(n===1?"1er "+s.toLocaleDateString("fr-FR",{month:"long"}):s.toLocaleDateString("fr-FR",{day:"numeric",month:"long"}))+" ("+R[2]+" fois)";
+  return R[0];
+}
+function dayWord(d){const p=dayParts(d)[0];return /^(Aujourd'hui|Demain|Hier)$/.test(p)?p.toLowerCase():d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"});}
+// « Mardi 20 octobre, de 14:00 à 16:00 », « Samedi 24 octobre, toute la journée »
+function whenText(d){
+  const s=startOf(d),day=s.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}).replace(/^./,c=>c.toUpperCase());
+  if(isAllDay(d))return day+", toute la journée";
+  if(d.durExplicit&&(+d.durationMin||0)>0){const e=new Date(s.getTime()+d.durationMin*60000);return day+", de "+d.time+" à "+hhmm(e)+(ymd(e)!==ymd(s)?" (le lendemain)":"");}
+  return day+" à "+d.time;
+}
+/* ---------- Déjà pris sur ce créneau ? ---------- */
+function peopleOf(x){const w=whoOf(x);return w==="both"?memberIds():[w];}
+function busySpan(x){const s=startOf(x).getTime();return [(+x.travelMin||0)>0?departOf(x).getTime():s,s+Math.max(5,+x.durationMin||60)*60000];}
+function overlapsOf(x){
+  if(!x||!x.date||!x.time||isAllDay(x))return [];
+  const [a,b]=busySpan(x),mine=new Set(peopleOf(x)),out=[];
+  for(const e of events.values()){
+    if(!e||e.id===x.id||(x.seriesId&&e.seriesId===x.seriesId)||!e.date||isAllDay(e))continue;
+    const [c,f]=busySpan(e);if(!(a<f&&c<b))continue;
+    const ppl=peopleOf(e).filter(m=>mine.has(m));if(ppl.length)out.push({e,ppl});
+  }
+  return out.sort((p,q)=>startOf(p.e)-startOf(q.e));
+}
+function overlapText(x){
+  const o=overlapsOf(x);if(!o.length)return "";
+  const {e,ppl}=o[0],who=ppl.length>1&&memberIds().length>1?"vous avez déjà":ppl[0]===myId?"tu as déjà":firstName(ppl[0])+" a déjà";
+  return "Attention : "+who+" « "+(e.title||"un évènement")+" » "+dayWord(startOf(e))+" à "+e.time+" sur ce créneau."+(o.length>1?" Et "+(o.length-1)+" autre"+(o.length>2?"s":"")+".":"");
+}
 function buildBody(x,d,overrides){
   const now=Date.now();
   const y={...x,...(overrides||{})};
@@ -3244,7 +3357,8 @@ function buildBody(x,d,overrides){
     ...(y.allDay?{allDay:true}:{}),
     ...(y.pickup&&(y.who||d.who||"both")==="both"&&y.pickupWho?{pickup:String(y.pickup).slice(0,200),pickupWho:y.pickupWho,driver:y.driver||myId,pickupMin:Math.max(0,Math.round(+y.pickupMin||0)),pickupWait:Math.max(0,Math.min(60,y.pickupWait==null?5:+y.pickupWait||0))}:{})};
 }
-async function saveEventDraft(x,d,repeat){
+async function saveEventDraft(x,d,repeat,opts){
+  const quiet=!!(opts&&opts.quiet);
   if(!x.title){toast("Donne un titre à l'évènement.");return false;}
   if(!x.date||!x.time){toast("Indique la date et l'heure.");return false;}
   if(!db){toast("Synchronisation indisponible. Vérifie ta connexion.");return false;}
@@ -3253,21 +3367,25 @@ async function saveEventDraft(x,d,repeat){
     const rp=REPEATS[repeat]||REPEATS.none;
     if(isNew&&rp[2]>0){
       const seriesId="s"+Date.now().toString(36);
-      const base=startOf(x);
-      for(let i=0;i<rp[2];i++){
+      const base=startOf(x),dates=[],days=repeat==="week"?repDaysOf(x):null;
+      // « tous les mardis et jeudis » : chaque jour choisi, pendant 8 semaines
+      if(days){for(let i=0;i<rp[2]*7;i++){const dt=new Date(base);dt.setDate(dt.getDate()+i);if(i===0||days.includes(dt.getDay()))dates.push(dt);}}
+      else for(let i=0;i<rp[2];i++){
         const dt=new Date(base);
         if(repeat==="year"){dt.setDate(1);dt.setFullYear(base.getFullYear()+i);dt.setDate(Math.min(base.getDate(),new Date(dt.getFullYear(),base.getMonth()+1,0).getDate()));}
         else if(repeat==="month"){const day=base.getDate();dt.setDate(1);dt.setMonth(base.getMonth()+i);dt.setDate(Math.min(day,new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));}
         else dt.setDate(dt.getDate()+rp[1]*i);
-        const extra=repeat==="year"&&!(x.reminders||[]).some(r=>+r.day===7)?{reminders:[...(x.reminders||[]),{day:7,at:"18:00",label:"Dans une semaine : "+(x.title||"date importante")}]}:{};
-        await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId,...extra}));
+        dates.push(dt);
       }
-      toast(rp[2]+" évènements créés ("+rp[0].toLowerCase()+")");
-      pushOther("Nouveau : "+x.title,firstName(myId)+" a ajouté « "+x.title+" » ("+rp[0].toLowerCase()+").","ev");
+      const extra=repeat==="year"&&!(x.reminders||[]).some(r=>+r.day===7)?{reminders:[...(x.reminders||[]),{day:7,at:"18:00",label:"Dans une semaine : "+(x.title||"date importante")}]}:{};
+      for(const dt of dates) await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId,...extra}));
+      const how=repeatText(x,repeat).replace(/\s*\([^)]*\)$/,"").toLowerCase();
+      if(!quiet){toast(dates.length+" évènements créés ("+how+")");
+        pushOther("Nouveau : "+x.title,firstName(myId)+" a ajouté « "+x.title+" » ("+how+").","ev");}
     }else{
       await db.doc("events/"+(d.id||db.collection("events").doc().id)).set(buildBody(x,d));
-      pushOther((isNew?"Nouveau : ":"Modifié : ")+x.title,firstName(myId)+(isNew?" a ajouté":" a modifié")+" « "+x.title+" », "+dayParts(startOf(x))[0].toLowerCase()+" à "+x.time+".","ev");
-      toast(isNew?"Enregistré, visible sur vos deux téléphones":"Modifications enregistrées pour vous deux");
+      if(!quiet){pushOther((isNew?"Nouveau : ":"Modifié : ")+x.title,firstName(myId)+(isNew?" a ajouté":" a modifié")+" « "+x.title+" », "+dayParts(startOf(x))[0].toLowerCase()+" à "+x.time+".","ev");
+        toast(isNew?"Enregistré, visible sur vos deux téléphones":"Modifications enregistrées pour vous deux");}
     }
     $("#input").value="";
     return true;
@@ -3304,27 +3422,79 @@ function remSummary(x){
 }
 
 /* ---------- Confirmation en un toucher ---------- */
+// Plusieurs évènements dans une phrase : une fiche après l'autre (« Fiche 1 sur 2 »), ou tout d'un coup
+let draftQueue=null;
+function afterDraftSaved(){
+  const q=draftQueue;
+  if(!q){closeSheet();return;}
+  q.saved++;q.i++;
+  if(q.i<q.list.length){openConfirm(q.list[q.i].d,q.list[q.i].info);return;}
+  draftQueue=null;closeSheet();
+  if(q.saved>1)toast(q.saved+" évènements enregistrés, visibles sur vos deux téléphones");
+}
+function skipDraft(){
+  const q=draftQueue;if(!q){closeSheet();return;}
+  q.i++;
+  if(q.i<q.list.length){openConfirm(q.list[q.i].d,q.list[q.i].info);return;}
+  draftQueue=null;closeSheet();
+  if(q.saved)toast(q.saved>1?q.saved+" évènements enregistrés":"Évènement enregistré");
+}
+async function saveAllDrafts(btn){
+  const q=draftQueue;if(!q)return;
+  if(btn)btn.disabled=true;
+  const done=[];
+  for(let i=q.i;i<q.list.length;i++){
+    const d=q.list[i].d;
+    if(await saveEventDraft(d,d,d.repeat||"none",{quiet:true}))done.push(d);
+    else{q.i=i;q.saved+=done.length;openConfirm(d,q.list[i].info);return;}
+  }
+  draftQueue=null;closeSheet();
+  const n=q.saved+done.length;
+  toast(n>1?n+" évènements enregistrés, visibles sur vos deux téléphones":"Enregistré, visible sur vos deux téléphones");
+  if(done.length)pushOther(done.length>1?"Nouveaux : "+done.length+" évènements":"Nouveau : "+done[0].title,
+    firstName(myId)+" a ajouté "+done.map(x=>"« "+x.title+" » ("+dayWord(startOf(x))+(isAllDay(x)?"":" à "+x.time)+")").join(", ")+".","ev");
+}
 function openConfirm(d,info){
   const root=$("#sheet-root");root.textContent="";
-  const s=startOf(d);
-  const dayTxt=s.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
-  const hasTrip=(+d.travelMin||0)>0;
+  const hasTrip=(+d.travelMin||0)>0,q=draftQueue&&draftQueue.list.length>1?draftQueue:null;
+  const row=(k,...v)=>el("div",{class:"cf-row"},el("span",{class:"cf-k"},k),el("span",{class:"cf-v"},...v));
+  // créneau déjà pris (chez soi, chez l'autre, ou pour les deux)
+  const warn=el("div",{class:"cf-warn",role:"status"});
+  const drawWarn=()=>{const t=overlapText(d);warn.textContent=t;warn.hidden=!t;};
+  // Pour qui : deviné d'après la phrase, un toucher pour changer
+  let whoLine=null;
+  if(otherId()&&!hasPickup(d)){
+    const box=el("span",{class:"pchips cf-who",role:"group","aria-label":"Pour qui"}),o=otherId();
+    const draw=()=>{box.textContent="";for(const [k,l] of [[myId,"Toi"],["both","Vous deux"],[o,firstName(o)]])
+      box.append(el("button",{type:"button",class:"pchip"+(whoOf(d)===k?" on":""),"aria-pressed":whoOf(d)===k?"true":"false",onclick:()=>{d.who=k;draw();drawWarn();}},l));};
+    draw();whoLine=row("Pour",box);
+  }
   const lines=[
-    el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Quand"),el("span",{class:"cf-v"},dayTxt.charAt(0).toUpperCase()+dayTxt.slice(1)+" à "+d.time)),
-    d.location?el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Où"),el("span",{class:"cf-v"},shortAddr(d.location),placeFor(d.location)?null:el("span",{class:"small"}," "))):el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Où"),el("span",{class:"cf-v muted"},"Pas de lieu")),
-    hasTrip?el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Départ"),el("span",{class:"cf-v"},el("span",{class:"pill"},hhmm(departOf(d))),"  depuis "+(d.origin?shortAddr(d.origin):"la maison")+", "+fmtDur(d.travelMin)+" "+MODE_IN[d.mode])):null,
-    hasTrip&&hasPickup(d)?el("div",{class:"cf-row"},el("span",{class:"cf-k"},d.pickupWho===myId?"On te prend":"Récupérer"),el("span",{class:"cf-v"},el("span",{class:"pill"},hhmm(pickupAt(d))),"  "+(d.pickupWho===myId?firstName(driverOf(d))+" passe te prendre":firstName(d.pickupWho))+" · "+shortAddr(d.pickup))):null,
-    otherId()&&whoOf(d)!=="both"?el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Pour"),el("span",{class:"cf-v"},whoOf(d)===myId?"Toi":firstName(whoOf(d)))):null,
-    el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Rappels"),el("span",{class:"cf-v"},remSummary(d))),
+    row("Quand",whenText(d)),
+    d.repeat&&d.repeat!=="none"&&REPEATS[d.repeat]?row("Répéter",repeatText(d,d.repeat)," ",el("button",{type:"button",class:"btn quiet cf-mini",onclick:e=>{d.repeat="none";delete d.repeatDays;e.currentTarget.closest(".cf-row").remove();}},"Une seule fois")):null,
+    d.location?row("Où",shortAddr(d.location)):el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Où"),el("span",{class:"cf-v muted"},"Pas de lieu")),
+    hasTrip?row("Départ",el("span",{class:"pill"},hhmm(departOf(d))),"  depuis "+(d.origin?shortAddr(d.origin):"la maison")+", "+fmtDur(d.travelMin)+" "+MODE_IN[d.mode]):null,
+    hasTrip&&hasPickup(d)?row(d.pickupWho===myId?"On te prend":"Récupérer",el("span",{class:"pill"},hhmm(pickupAt(d))),"  "+(d.pickupWho===myId?firstName(driverOf(d))+" passe te prendre":firstName(d.pickupWho))+" · "+shortAddr(d.pickup)):null,
+    whoLine||(otherId()&&whoOf(d)!=="both"?row("Pour",whoOf(d)===myId?"Toi":firstName(whoOf(d))):null),
+    row("Rappels",remSummary(d)),
   ];
+  drawWarn();
   const save=el("button",{class:"btn primary cf-save",type:"button"},"Enregistrer");
-  save.onclick=async()=>{save.disabled=true;if(await saveEventDraft(d,d))closeSheet();else save.disabled=false;};
+  save.onclick=async()=>{save.disabled=true;if(await saveEventDraft(d,d,d.repeat||"none"))afterDraftSaved();else save.disabled=false;};
+  const qBar=q?el("div",{class:"cf-q"},el("span",{},"Fiche "+(q.i+1)+" sur "+q.list.length),
+    el("span",{class:"cf-q-dots","aria-hidden":"true"},...q.list.map((_,i)=>el("i",{class:i<q.i?"done":i===q.i?"on":""})))):null;
+  const left=q?q.list.length-q.i:0;
+  const qFoot=q?el("div",{class:"cf-q-foot"},el("button",{type:"button",class:"btn quiet",onclick:skipDraft},"Passer celle-ci"),
+    left>1?el("button",{type:"button",class:"btn cf-all",onclick:e=>saveAllDrafts(e.currentTarget)},"Tout enregistrer ("+left+")"):null):null;
   root.append(sheetShell("Vérifier l'évènement",[
     el("div",{class:"sheet-h"},el("h2",{},d.title||"Évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    qBar,
     info?el("div",{class:"notice"},info):null,
+    warn,
     el("div",{class:"cf"},...lines),
     d.routeGeo&&d.location&&hasTrip?routeMap(d.routeGeo,d):null,
-    el("div",{class:"sheet-foot"},el("button",{class:"btn",type:"button",onclick:()=>openEditor(d,info)},"Modifier"),save)
+    el("div",{class:"sheet-foot"},el("button",{class:"btn",type:"button",onclick:()=>openEditor(d,info)},"Modifier"),save),
+    qFoot
   ]));
 }
 
@@ -3350,7 +3520,7 @@ function blankDraft(){
   const d=new Date(Date.now()+86400000);
   return {title:"",category:"rdv",date:ymd(d),time:"10:00",durationMin:60,location:"",origin:homeAddr(),mode:settings.mode||"car",travelMin:0,marginMin:10,travelNote:"",reminders:[],notes:""};
 }
-function closeSheet(){if(typeof recOn!=="undefined"&&recOn){try{REC.abort();}catch(_){}recOn=false;}$("#sheet-root").textContent="";inboxRefresh=null;
+function closeSheet(){if(typeof recOn!=="undefined"&&recOn){try{REC.abort();}catch(_){}recOn=false;}$("#sheet-root").textContent="";inboxRefresh=null;draftQueue=null;
   if(typeof tripClosed==="function")tripClosed();
   if(typeof shopRefresh!=="undefined"&&shopRefresh){shopRefresh=null;keepAwake(!!(share&&!share.local));}
   if(typeof calPopPending!=="undefined"&&calPopPending){calPopPending=false;maybeCalPopup();}}
@@ -3383,7 +3553,7 @@ function openEditor(d,info){
   const remsPanel=el("div",{class:"rem-simple"});
   let remAuto=isNew&&!(Array.isArray(d.reminders)&&d.reminders.length);
   let reminders=remAuto?suggestReminders(d):(d.reminders||[]).map(r=>({...r}));
-  let repeat="none",who=whoOf(d);
+  let repeat=isNew&&REPEATS[d.repeat]?d.repeat:"none",who=whoOf(d);
   // L'un passe prendre l'autre : départs de deux endroits différents
   let pickOn=!!(d.pickup&&who==="both"),pkWho=d.pickupWho||otherId(),pickupMin=+d.pickupMin||0;
   const pickupWait=d.pickupWait==null?5:+d.pickupWait;
@@ -3392,6 +3562,7 @@ function openEditor(d,info){
   let route=cleanRoute(d.route), routeVia=d.routeVia||"", routeGeo=d.routeGeo||null;
   const mapBox=el("div"),fixBox=el("div",{class:"fixes"});
 
+  const warnBox=el("div",{class:"cf-warn",role:"status",hidden:true});
   const read=()=>({...d,title:title.value.trim(),category:cat.value,date:date.value,time:time.value,durationMin:+dur.value||60,
     location:loc.value.trim(),origin:origin.value.trim(),mode:mode.value,travelMin:Math.max(0,+travel.value||0),marginMin:Math.max(0,+margin.value||0),
     travelNote:tripNote.textContent,notes:(time.value!==d.time&&/^toute la journ/i.test(notes.value.trim()))?"":notes.value.trim(),reminders,route,routeVia,routeGeo,who,cost:Math.max(0,Math.round((+cost.value||0)*100)/100),
@@ -3401,6 +3572,7 @@ function openEditor(d,info){
   function updateCalc(){
     if(remAuto) reminders=suggestReminders(read());
     const x=read();
+    const wt=overlapText(x);warnBox.textContent=wt;warnBox.hidden=!wt;
     if(!x.date||!x.time){depOut.textContent="";depOut.className="dep";depMeta.textContent="Indique la date et l'heure";renderRems();return;}
     if(x.travelMin>0){depOut.textContent="Partir à "+hhmm(departOf(x));depOut.className="dep num has";
       depMeta.textContent=hasPickup(x)&&x.pickupMin?(pkWho===myId?firstName(x.driver)+" part à "+hhmm(departOf(x))+", te récupère à "+hhmm(pickupAt(x))+", arrivée à "+x.time:"récupérer "+firstName(pkWho)+" à "+hhmm(pickupAt(x))+", arrivée à "+x.time):"pour arriver à "+x.time;
@@ -3441,7 +3613,9 @@ function openEditor(d,info){
     remsPanel.append(el("button",{class:"btn quiet",type:"button",onclick:()=>{remAuto=false;reminders.push({min:Math.max(30,depOff(read())+30)});renderRems();}},"+ Autre rappel"),
       el("p",{class:"note"},"Les rappels arrivent en notification sur vos iPhone, même app fermée (à activer une fois dans les réglages). Tu peux aussi ajouter l'évènement au Calendrier de l'iPhone depuis sa fiche."));
   }
-  [date,time,travel,margin].forEach(x=>x.addEventListener("input",updateCalc));
+  [date,time,travel,margin,dur].forEach(x=>x.addEventListener("input",updateCalc));
+  // « tous les mardis et jeudis » : si la date passe à un autre jour, on revient à une répétition simple
+  date.addEventListener("input",()=>{const ds=repDaysOf(d);if(ds&&date.value&&!ds.includes(new Date(date.value+"T12:00:00").getDay())){delete d.repeatDays;drawRepeat();}});
 
   // Le trajet est recalculé dès qu'une adresse ou le transport change, et au plus tard avant d'enregistrer
   const tripKey=x=>JSON.stringify([norm(x.location),norm(x.origin),x.pickup?norm(x.pickup):"",x.mode||"car"]);
@@ -3488,7 +3662,7 @@ function openEditor(d,info){
     if(x.pickup)rememberPickup(x.pickupWho,x.pickup);
     if(await saveEventDraft(x,d,isNew?repeat:"none")){
       if(d.fromWish)db.doc("wishes/"+d.fromWish).update({planned:Date.now()}).catch(()=>{});
-      closeSheet();
+      afterDraftSaved();
     }else save.disabled=false;
   };
   // Lieu deviné à partir du titre
@@ -3496,7 +3670,9 @@ function openEditor(d,info){
   title.addEventListener("input",()=>{clearTimeout(title._t);title._t=setTimeout(guessLoc,500);});
   // Répéter
   const repeatChips=el("div",{class:"pchips"});
-  const drawRepeat=()=>{repeatChips.textContent="";for(const[k,v]of Object.entries(REPEATS))repeatChips.append(el("button",{type:"button",class:"pchip"+(repeat===k?" on":""),onclick:()=>{repeat=k;drawRepeat();}},v[0]+(v[2]?" ("+v[2]+" fois)":"")));};
+  const drawRepeat=()=>{repeatChips.textContent="";const ds=repDaysOf(d);
+    for(const[k,v]of Object.entries(REPEATS))repeatChips.append(el("button",{type:"button",class:"pchip"+(repeat===k?" on":""),onclick:()=>{repeat=k;if(k!=="week")delete d.repeatDays;drawRepeat();}},
+      k==="week"&&ds?"Chaque "+joinFr(ds.map(i=>WD_FR[i]))+" ("+v[2]+" semaines)":v[0]+(v[2]?" ("+v[2]+" fois)":"")));};
   drawRepeat();
   // Enregistrer comme modèle
   const tplBtn=el("button",{type:"button",class:"btn"},"Enregistrer comme modèle");
@@ -3550,10 +3726,11 @@ function openEditor(d,info){
     el("div",{class:"sheet-h"},el("h2",{},isNew?"Nouvel évènement":"Modifier l'évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
     info?el("div",{class:"notice"},info):null,
     title,
-    otherId()?el("div",{class:"field"},el("span",{class:"lab"},"Qui vient"),whoChips(who,v=>{const had=pickOn&&who==="both";who=v;drawPk();if(had&&v!=="both"&&loc.value.trim())autoTrip();})):null,
+    otherId()?el("div",{class:"field"},el("span",{class:"lab"},"Qui vient"),whoChips(who,v=>{const had=pickOn&&who==="both";who=v;drawPk();updateCalc();if(had&&v!=="both"&&loc.value.trim())autoTrip();})):null,
     el("div",{class:"field"},el("span",{class:"lab"},"Quel jour"),wc.days),
     el("div",{class:"field"},el("span",{class:"lab"},"À quelle heure"),wc.hours),
     el("div",{class:"grid2 when-exact"},f("e-date","Autre date",date),f("e-time","Heure précise",time)),
+    warnBox,
     el("div",{class:"field"},el("label",{for:"e-loc"},"Où"),autocomplete(loc,autoTrip),placeChips(loc,false,autoTrip),brandChips(loc,autoTrip)),
     el("div",{class:"field"},el("label",{for:"e-origin"},"Départ de"),autocomplete(origin,autoTrip),placeChips(origin,true,autoTrip)),
     pkBox,
@@ -3572,7 +3749,7 @@ function openEditor(d,info){
       tripNote,el("div",{},recalc),
       f("e-cost","Budget prévu (€)",cost),
       f("e-notes","Notes",notes),
-      canWrite?el("div",{},tplBtn):null],false),
+      canWrite?el("div",{},tplBtn):null],isNew&&repeat!=="none"),
     confirmBox,
     el("div",{class:"sheet-foot sticky"},!isNew?el("button",{class:"btn quiet",style:"color:var(--danger)",type:"button",onclick:()=>confirmBox.hidden=false},"Supprimer"):el("span"),save)
   ]));
@@ -3652,6 +3829,7 @@ function openSettings(){
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     coupleId?el("div",{class:"pgroup-h"},"Notifications"):null,coupleId?notifSection():null,
     coupleId?el("div",{class:"pgroup-h",id:"car-h"},"Dans la voiture (CarPlay)"):null,coupleId?carSection():null,
+    coupleId?el("div",{class:"pgroup-h",id:"add-h"},"Ajouter avec Siri ou Partager"):null,coupleId?addSection():null,
     el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
     coupleId?el("div",{class:"pgroup-h"},"Mon code de secours"):null,coupleId?recoverySection():null,
     coupleId?el("div",{class:"pgroup-h"},"Installer sur l'iPhone de ta moitié"):null,coupleId?shortcutsSection():null,
@@ -3737,7 +3915,7 @@ const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.g
 
 const WEEKDAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const MONTHS = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
-const STREET = '(?:rue|avenue|av\\.?|boulevard|bd|place|pl\\.|chemin|allee|impasse|quai|route|rte|cours|square|residence|rond-point|lotissement|faubourg|passage|esplanade|promenade)';
+const STREET = '(?:rue|avenue|av\\.?|boulevard|bd|place|pl\\.|chemin|allee|impasse|quai|route|rte|cours(?!\\s*$|\\s+(?:de|d\'|du|des|particuliers?|collectifs?|qui|en|a|au|avec|pour|ce|cet|cette|le|la|les|demain|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|\\d)\\b)|square|residence|rond-point|lotissement|faubourg|passage|esplanade|promenade)';
 
 const CAT_WORDS = {
   medecin: ['medecin', 'docteur', 'dr ', 'dentiste', 'kine', 'osteo', 'ophtalmo', 'dermato', 'gyneco', 'pediatre', 'hopital', 'clinique', 'pharmacie', 'radio', 'irm', 'scanner', 'analyse', 'prise de sang', 'labo', 'vaccin', 'orthodontiste', 'psy', 'veterinaire', 'veto', 'sage-femme', 'echographie'],
@@ -3766,15 +3944,51 @@ function parseText(text, opts = {}) {
   const now = opts.now ? new Date(opts.now) : new Date();
   const places = opts.places || [];
   const orig = String(text || '').replace(/\s+/g, ' ').trim();
-  const low = strip(orig);
+  const low = strip(orig).replace(/[’‘]/g, "'");
   const spans = []; // [start, end) to remove from the title
   const take = (m, idx) => { spans.push([idx, idx + m.length]); };
   const blockedSpan = (i) => spans.some(([a, b]) => i >= a && i < b);
 
+  // ---------- durée : « pendant 2 h », « pendant 1h30 », « pendant 45 min », « pendant une heure et demie » ----------
+  let durationMin = null, allDay = false;
+  {
+    const r = /\b(?:pendant|durant|duree\s*(?:de|:)?|qui\s+dure|dure)\s+(?:(\d{1,2})\s*h(?:eures?)?\s*(?:et\s+)?([0-5]\d)?(?:\s*min(?:utes?)?)?|(\d{1,3})\s*(?:min(?:utes?)?|mn)|(une|1)\s+heure(?:\s+et\s+demie)?|(?:une\s+)?demi[- ]heure|(deux|trois|quatre|cinq)\s+heures)\b/.exec(low);
+    if (r) {
+      let du = null;
+      if (r[1]) du = (+r[1]) * 60 + (r[2] ? +r[2] : 0);
+      else if (r[3]) du = +r[3];
+      else if (r[4]) du = /demie/.test(r[0]) ? 90 : 60;
+      else if (r[5]) du = { deux: 120, trois: 180, quatre: 240, cinq: 300 }[r[5]];
+      else if (/demi/.test(r[0])) du = 30;
+      if (du > 0 && du <= 24 * 60) { durationMin = du; take(r[0], r.index); }
+    }
+    const ad = /\b(?:toute\s+la\s+journee|(?:la\s+)?journee\s+entiere)\b/.exec(low);
+    if (ad) { allDay = true; take(ad[0], ad.index); }
+  }
   // ---------- heure ----------
-  let time = null, timeIdx = -1;
-  let m = /(?:\b(?:a|vers|pour|des)\s+)?\b([01]?\d|2[0-3])\s*(?:h|:)\s*([0-5]\d)?(?![\d/])/.exec(low);
-  if (m) { time = pad(+m[1]) + ':' + pad(m[2] ? +m[2] : 0); timeIdx = m.index; take(m[0], m.index); }
+  let time = null, timeIdx = -1, m = null;
+  const mins = (h, mi) => (+h) * 60 + (mi ? +mi : 0);
+  // plage : « de 14h à 16h », « 9h30-10h15 », « entre 14h et 16h »
+  {
+    const T = '([01]?\\d|2[0-3])\\s*(?:h|:)\\s*([0-5]\\d)?';
+    for (const re of [new RegExp('\\bentre\\s+' + T + '\\s+et\\s+' + T + '(?![\\d/])'), new RegExp('\\b(?:de\\s+)?' + T + '\\s*(?:a|-|–|jusqu\'?a)\\s*' + T + '(?![\\d/])')]) {
+      const r = re.exec(low);
+      if (r && !blockedSpan(r.index)) {
+        let du = mins(r[3], r[4]) - mins(r[1], r[2]); if (du <= 0) du += 24 * 60;
+        if (du <= 16 * 60) { time = pad(+r[1]) + ':' + pad(r[2] ? +r[2] : 0); timeIdx = r.index; take(r[0], r.index); if (durationMin == null) durationMin = du; break; }
+      }
+    }
+  }
+  if (!time) {
+    const re = /(?:\b(?:a|vers|pour|des)\s+)?\b([01]?\d|2[0-3])\s*(?:h|:)\s*([0-5]\d)?(?![\d/])/g;
+    let r;
+    while ((r = re.exec(low))) { if (blockedSpan(r.index + r[0].length - 1)) continue; time = pad(+r[1]) + ':' + pad(r[2] ? +r[2] : 0); timeIdx = r.index; take(r[0], r.index); break; }
+  }
+  // « … 16h jusqu'à 18h »
+  if (time && durationMin == null) {
+    const r = /\bjusqu'?\s*(?:a|au)\s+([01]?\d|2[0-3])\s*(?:h|:)\s*([0-5]\d)?(?![\d/])/.exec(low);
+    if (r && !blockedSpan(r.index)) { const [h0, m0] = time.split(':'); let du = mins(r[1], r[2]) - mins(h0, m0); if (du <= 0) du += 24 * 60; if (du <= 16 * 60) { durationMin = du; take(r[0], r.index); } }
+  }
   if (!time && (m = /\b(?:a\s+)?midi\b/.exec(low)) && !/apres-?\s?midi/.test(low.slice(Math.max(0, m.index - 6), m.index + 5))) { time = '12:00'; timeIdx = m.index; take(m[0], m.index); }
   if (!time && (m = /\b(?:a\s+)?minuit\b/.exec(low))) { time = '23:59'; timeIdx = m.index; take(m[0], m.index); }
 
@@ -3787,6 +4001,32 @@ function parseText(text, opts = {}) {
     const r = re.exec(low);
     if (r) { const d = fn(r); if (d && !isNaN(d)) { date = d; dateIdx = r.index; take(r[0], r.index); } }
   };
+  let repeat = null, repTime = null, repDays = null, repDay = 0;
+  {
+    const WD = WEEKDAYS.join('|'), dim = (y, mo) => new Date(y, mo + 1, 0).getDate();
+    const wdList = (t) => [...new Set([...t.matchAll(new RegExp('(' + WD + ')', 'g'))].map((x) => WEEKDAYS.indexOf(x[1])))];
+    let r;
+    if ((r = new RegExp('\\b(?:tous\\s+les|chaque)\\s+((?:' + WD + ')s?(?:\\s*(?:,|et)\\s*(?:les?\\s+)?(?:' + WD + ')s?)*)\\b').exec(low))) {
+      repeat = 'week'; repDays = wdList(r[1]); take(r[0], r.index); dateIdx = r.index;
+    }
+    else if ((r = /\b(?:du\s+lundi\s+au\s+vendredi|en\s+semaine|tous\s+les\s+jours\s+de\s+la\s+semaine|les\s+jours\s+de\s+semaine)\b/.exec(low))) { repeat = 'week'; repDays = [1, 2, 3, 4, 5]; take(r[0], r.index); dateIdx = r.index; }
+    else if ((r = new RegExp('\\b(?:un|1)\\s+(' + WD + ')\\s+sur\\s+(?:deux|2)\\b').exec(low))) { repeat = 'week2'; repDays = [WEEKDAYS.indexOf(r[1])]; take(r[0], r.index); dateIdx = r.index; }
+    else if ((r = /\b(?:toutes\s+les\s+(?:deux|2)\s+semaines|une\s+semaine\s+sur\s+deux|tous\s+les\s+(?:quinze|15)\s+jours)\b/.exec(low))) { repeat = 'week2'; take(r[0], r.index); }
+    else if ((r = /\b(?:toutes\s+les\s+semaines|chaque\s+semaine|une\s+fois\s+par\s+semaine)\b/.exec(low))) { repeat = 'week'; take(r[0], r.index); }
+    else if ((r = /\b(?:le\s+)?(1er|\d{1,2})\s+(?:de\s+)?(?:chaque|tous\s+les)\s+mois\b/.exec(low)) || (r = /\b(?:tous\s+les|chaque)\s+(1er|\d{1,2})\s+du\s+mois\b/.exec(low))) {
+      const n = r[1] === '1er' ? 1 : +r[1];
+      if (n >= 1 && n <= 31) {
+        repeat = 'month'; repDay = n;
+        let d = new Date(now.getFullYear(), now.getMonth(), Math.min(n, dim(now.getFullYear(), now.getMonth())));
+        if (d < today) { const y = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear(), mo = (now.getMonth() + 1) % 12; d = new Date(y, mo, Math.min(n, dim(y, mo))); }
+        date = d; dateIdx = r.index; take(r[0], r.index);
+      }
+    }
+    else if ((r = /\b(?:tous\s+les\s+mois|chaque\s+mois|une\s+fois\s+par\s+mois)\b/.exec(low))) { repeat = 'month'; take(r[0], r.index); }
+    else if ((r = /\b(?:tous\s+les\s+ans|chaque\s+annee|une\s+fois\s+par\s+an)\b/.exec(low))) { repeat = 'year'; take(r[0], r.index); }
+    else if ((r = /\b(?:tous\s+les\s+(jours|matins|soirs)|chaque\s+(jour|matin|soir))\b/.exec(low))) { repeat = 'day'; const w = r[1] || r[2]; if (/matin/.test(w)) repTime = '08:00'; else if (/soir/.test(w)) repTime = '20:00'; take(r[0], r.index); }
+  }
+  if (repDays && repDays.length) date = repDays.map((wd) => nextWeekday(now, wd, true)).sort((a, b) => a - b)[0];
   tryDate(/\bapres[- ]demain\b/, () => plus(2));
   tryDate(/\bdemain\b/, () => plus(1));
   tryDate(/\bdans\s+(\d{1,2})\s+jours?\b/, (r) => plus(+r[1]));
@@ -3824,6 +4064,7 @@ function parseText(text, opts = {}) {
     if (d < today) d = new Date(now.getFullYear(), now.getMonth() + 1, n);
     return d;
   });
+  if (!time && repTime) time = repTime;
   // "ce soir", "ce matin" donnent aussi une heure par défaut
   if (!time) {
     const pm = /\b(?:le\s+|en\s+|dans\s+l[ae]\s+|ce\s+|cet\s+)?(matin|soir|apres-?\s?midi)\b/.exec(low);
@@ -3835,8 +4076,22 @@ function parseText(text, opts = {}) {
 
   // ---------- catégorie ----------
   const category = guessCategory(low);
-  const assumed = { date: !date, time: !time };
+  if (!time && repeat === 'year') allDay = true;
+  const assumed = { date: !date && repeat !== 'day', time: !time && !allDay };
+  if (!time && allDay) { time = '00:00'; assumed.time = false; }
   if (!time) time = DEFAULT_TIME[category] || '10:00';
+  // une répétition qui tomberait aujourd'hui à une heure déjà passée commence la fois suivante
+  if (repeat && date && !allDay) {
+    const [h, mi] = time.split(':').map(Number);
+    const passed = (d) => { const c = new Date(d); c.setHours(h, mi, 0, 0); return c <= now; };
+    if (repDays && repDays.length) {
+      date = repDays.map((wd) => { const d = nextWeekday(now, wd, true); if (passed(d)) d.setDate(d.getDate() + 7); return d; }).sort((a, b) => a - b)[0];
+    } else if (ymd(date) === ymd(today) && passed(date)) {
+      if (repeat === 'week' || repeat === 'week2') date.setDate(date.getDate() + 7);
+      else if (repeat === 'month') { const n = repDay || date.getDate(), y = date.getMonth() === 11 ? date.getFullYear() + 1 : date.getFullYear(), mo = (date.getMonth() + 1) % 12; date = new Date(y, mo, Math.min(n, new Date(y, mo + 1, 0).getDate())); }
+      else if (repeat === 'year') date.setFullYear(date.getFullYear() + 1);
+    }
+  }
   if (!date) {
     const [h, mi] = time.split(':').map(Number);
     const cand = new Date(today); cand.setHours(h, mi);
@@ -3881,6 +4136,8 @@ function parseText(text, opts = {}) {
     for (const [a] of spans) if (a > startAddr && a < end) end = a;
     const pm = /\s(?:pour|avec)\s/.exec(low.slice(startAddr));
     if (pm && startAddr + pm.index < end) end = startAddr + pm.index;
+    const dot = /(?:[A-Za-zÀ-ÿ]{4,}|\d)(\.)\s+[A-ZÀ-Ý]/.exec(orig.slice(startAddr));
+    if (dot && startAddr + dot.index + dot[0].indexOf('.') < end) end = startAddr + dot.index + dot[0].indexOf('.');
     let addr = orig.slice(startAddr, end).replace(/[\s,.;-]+$/, '').replace(/\s+(?:à|a|le|au)$/i, '');
     addr = addr.replace(/\s+(?:à|a)\s+(?=[A-ZÀ-Ý])/, ', ');
     if (addr.length >= 4) { location = addr; spans.push([startCut, end]); }
@@ -3908,24 +4165,32 @@ function parseText(text, opts = {}) {
   }
 
   // ---------- titre ----------
-  let title = '';
+  let title = '', autoTitle = false;
   {
     const keep = [];
     for (let i = 0; i < orig.length; i++) if (!spans.some(([a, b]) => i >= a && i < b)) keep.push(orig[i]);
     title = keep.join('')
-      .replace(/\b(?:le|la|les|à|a|au|aux|de|du|des|pour|vers|chez|ce|cet|cette|et|,)\s*$/i, '')
+      .replace(/(?:^|\s)(?:le|la|les|à|a|au|aux|de|du|des|pour|vers|chez|ce|cet|cette|et)\s*$/i, '').replace(/[\s,]+$/, '')
       .replace(/\s*[,;]\s*/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
       .replace(/^(?:le|la|à|a|au|de|du|pour|vers|et)\s+/i, '')
       .replace(/\s+(?:le|la|à|a|au|aux|de|du|pour|vers|chez|ce|et)$/i, '')
       .trim();
+    // texte d'un message (SMS, courriel) : la première phrase, sans « Bonjour » ni « est confirmé »
+    title = title.replace(/^(?:bonjour|bonsoir|salut|coucou|hello|hey|rappel|info)\b[\s,!:;.-]*/i, '');
+    { const cut = /(?:[A-Za-zÀ-ÿ]{4,}|\d|\s)([.!?]+)(?=\s|$)/.exec(title);
+      if (cut) { const head = title.slice(0, cut.index + cut[0].length - cut[1].length).trim(); if ((head.match(/[A-Za-zÀ-ÿ]/g) || []).length >= 3) title = head; } }
+    title = title.replace(/^(?:bonjour|bonsoir|salut|coucou|hello|hey|rappel|info)\b[\s,!:;-]*/i, '').replace(/^(?:votre|vos|ton|ta|tes|notre)\s+(?=\S)/i, '')
+      .replace(/\s+(?:est|sont|a été|ont été|sera|seront)\s+(?:bien\s+)?(?:confirmée?s?|réservée?s?|prévue?s?|programmée?s?|fixée?s?)(?:\s.*)?$/i, '')
+      .replace(/^(?:le|la|à|a|au|de|du|pour|vers|et)\s+/i, '').replace(/[\s,;:.!-]+$/, '').trim();
+    if (!title) autoTitle = true;
     if (!title) title = locationName || ({ medecin: 'Rendez-vous médical', courses: 'Courses', sortie: 'Sortie', travail: 'Travail', rdv: 'Rendez-vous', autre: 'Évènement' })[category];
     title = title.charAt(0).toUpperCase() + title.slice(1);
     if (title.length > 60) title = title.slice(0, 60).trim();
   }
 
-  return { title, category, date: ymd(date), time, location: location || '', locationName, origin: origin || '', originName, assumed };
+  return { title, autoTitle, category, date: ymd(date), time, location: location || '', locationName, origin: origin || '', originName, assumed, repeat, repeatDays: repDays && repDays.length > 1 ? repDays.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)) : null, durationMin, allDay };
 }
 
 return parseText;
@@ -4360,7 +4625,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="53";
+const APP_V="54";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -4469,14 +4734,19 @@ function startVoice(ta,btn,help,onDone,retry){
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&typeof syncPush==="function")syncPush(true);if(document.visibilityState==="visible"&&typeof maybeCalPopup==="function")maybeCalPopup();});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible"&&recOn){try{REC.abort();}catch(_){}recOn=false;micIdle(recBtn);}});
 
-function openQuickAdd(voice){
+function openQuickAdd(voice,prefill){
   const root=$("#sheet-root");root.textContent="";
   const ta=el("textarea",{id:"q-input",rows:"3",class:"q-input",placeholder:"Qu'est-ce que vous avez prévu ? Ex. : dentiste vendredi 14h30"});
+  if(prefill)ta.value=String(prefill).slice(0,1500);
   const micBtn=el("button",{type:"button",class:"mic-btn",html:MIC_SVG+"<span>Parler</span>","aria-label":"Dicter l'évènement"});
   const micHelp=el("div",{class:"mic-help",hidden:true});
   micBtn.onclick=()=>startVoice(ta,micBtn,micHelp,()=>go.click());
-  const go=el("button",{class:"btn primary",type:"button"},"Préparer l'évènement");
+  const go=el("button",{class:"btn primary",type:"button",id:"q-go"},"Préparer l'évènement");
   go.onclick=()=>{const t=ta.value.trim();if(!t){ta.focus();toast("Écris d'abord ce que vous avez prévu.");return;}prepareText(t,go,"Préparer l'évènement");};
+  // un SMS ou un lieu copié : un toucher pour le coller et préparer la fiche
+  const paste=navigator.clipboard&&navigator.clipboard.readText?el("button",{type:"button",class:"btn quiet q-paste",onclick:async()=>{
+    try{const t=String(await navigator.clipboard.readText()||"").trim();if(!t){toast("Rien à coller : copie d'abord le message.");return;}ta.value=sharedText(t).slice(0,1500);go.click();}
+    catch(_){toast("Collage refusé. Touche longuement la zone de texte, puis Coller.");}}},"Coller un message"):null;
   ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();go.click();}});
   // Modèles : un toucher, puis choisir le jour et l'heure
   const chips=el("div",{class:"pchips tpl-chips"});
@@ -4498,7 +4768,7 @@ function openQuickAdd(voice){
     el("div",{class:"sheet-h"},el("h2",{},"Ajouter un évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
     el("div",{class:"field"},el("span",{class:"lab"},"En un toucher"),chips),
     el("div",{class:"or"},el("span",{},"ou écris-le")),
-    el("div",{class:"q-row"},ta,micBtn),micHelp,sugg,
+    el("div",{class:"q-row"},ta,micBtn),micHelp,sugg,paste,
     el("div",{class:"note"},"Touche Parler et dis simplement quoi, quand et où. Par exemple : « dentiste vendredi 14h30 »."),
     el("div",{class:"sheet-foot"},el("button",{class:"btn quiet",type:"button",onclick:()=>{const d=blankDraft();const t=ta.value.trim();if(t)d.title=t.slice(0,80);openEditor(d);}},"Remplir moi-même"),go)
   ]));
@@ -4531,54 +4801,169 @@ function whoFromText(text){
   if(/^(moi|pour moi)\b/.test(nt))return {uid:myId,strip:null};
   return null;
 }
+// « dentiste mardi 9h et coiffeur jeudi 18h » : deux fiches. On ne coupe que si chaque morceau a son propre titre
+// et sa date ou son heure : « réunion entre 14h et 16h » ou « resto avec Léa et Paul samedi 20h » restent une fiche.
+// « kiné lundi 18h et mercredi 18h » : la 2e reprend le titre ; « banque 10h et coiffeur 14h demain » : le même jour.
+function splitEvents(text){
+  const raw=String(text||"").replace(/\r/g,"").trim();
+  const SEP=/\s*(?:\n+|;|,(?:\s*(?:et|puis|ensuite)(?=\s))?|\s(?:et\s+puis|et|puis|ensuite)(?=\s))\s*/gi;
+  // jamais au milieu de « tous les mardis et jeudis » ni de « entre 14h et 16h »
+  const WDR="(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s?",keep=[];
+  for(const re of [new RegExp("\\b(?:tous\\s+les|chaque|les)\\s+"+WDR+"(?:\\s*(?:,|et)\\s*(?:les?\\s+)?"+WDR+")+","gi"),/\bentre\s+\S+\s+et\s+\S+/gi])
+    for(const x of raw.matchAll(re))keep.push([x.index,x.index+x[0].length]);
+  const tok=[];let last=0,m;
+  while((m=SEP.exec(raw))){if(!m[0].length){SEP.lastIndex++;continue;}if(keep.some(([a,b])=>m.index>=a&&m.index<b))continue;tok.push({t:raw.slice(last,m.index),sep:m[0]});last=SEP.lastIndex;}
+  tok.push({t:raw.slice(last),sep:""});
+  if(tok.length<2)return null;
+  const places=placesSorted().map(x=>({name:x.name,kind:x.kind,address:x.address}));
+  const inf=t=>{const p=parseText(t,{places});return {p,date:!p.assumed.date,time:!p.assumed.time,rep:!!p.repeat,title:!p.autoTitle&&/[a-zà-ÿ]{2}/i.test(p.title)};};
+  const groups=[];let cur=null;
+  for(const k of tok){
+    if(!k.t.trim()){if(cur)cur.sep+=k.sep;continue;}
+    if(!cur){cur={text:k.t,sep:k.sep,title:null};continue;}
+    const I=inf(k.t),C=inf(cur.text);
+    const curOk=(C.date||C.time||C.rep)&&(C.title||!!cur.title),newOk=I.title?(I.date||I.time||I.rep):(I.date&&I.time);
+    if(curOk&&newOk){groups.push(cur);cur={text:k.t,sep:k.sep,title:I.title?null:(cur.title||C.p.title),time:I.time?I.p.time:null};}
+    else{cur.text+=cur.sep+k.t;cur.sep=k.sep;}
+  }
+  groups.push(cur);
+  if(groups.length<2)return null;
+  // date : celle du morceau, sinon celle du précédent, sinon celle du suivant
+  const infos=groups.map(g=>inf((g.title?g.title+" ":"")+g.text));
+  const own=infos.map(I=>I.date?I.p.date:null);
+  const pick=i=>{for(let j=i-1;j>=0;j--)if(own[j])return own[j];for(let j=i+1;j<own.length;j++)if(own[j])return own[j];return null;};
+  return groups.slice(0,6).map((g,i)=>{
+    let t=(g.title?g.title+" ":"")+g.text.trim();
+    const dt=own[i]?null:pick(i);
+    if(dt){const [y,mo,dd]=dt.split("-");t+=" le "+dd+"/"+mo+"/"+y;}
+    // « sport lundi et mercredi 18h » : la suite du même évènement donne aussi l'heure au premier
+    const nx=groups[i+1];
+    if(!infos[i].time&&nx&&nx.title&&nx.time)t+=" à "+nx.time.replace(/:00$/,"h").replace(":","h");
+    return t;
+  });
+}
+const SOLO_RE=/\b(dentiste|orthodont\w*|detartrage|coiff\w*|barbier|manucure|ongles?|esthetic\w*|epilation|kine|osteo\w*|ophtalmo\w*|dermato\w*|medecin|docteur|generaliste|dr|prise de sang|analyses?|radio|irm|scanner|vaccin|psy\w*|infirmi\w*|salle de sport|sport|gym|fitness|muscu\w*|yoga|pilates|footing|running|jogging|boxe|crossfit|reunion|travail|boulot|bureau|entretien|formation|seminaire|conference|client)\b/;
+const DUO_RE=/\b(avec|ensemble|a deux|nous|on|notre|nos|vous|gyneco\w*|echo\w*|pediatre|sage-femme|maternite|bebe|enfants?|creche|nounou|famille|parents|amis|potes|veto|veterinaire)\b/;
+function soloGuess(d,text){return (SOLO_RE.test(norm(d.title))||(d.category==="medecin"&&/^rendez-vous medical$/.test(norm(d.title))))&&!DUO_RE.test(norm(text));}
+async function draftFromText(text){
+  const info=[],links=String(text||"").match(/https?:\/\/[^\s<>"]+/g)||[];
+  if(links.length)text=String(text).replace(/https?:\/\/[^\s<>"]+/g," ").replace(/[ \t]+/g," ").trim();
+  const pk=pickupFromText(text);if(pk)text=pk.rest;
+  const p=parseText(text,{places:placesSorted().map(x=>({name:x.name,kind:x.kind,address:x.address}))});
+  const d=blankDraft();
+  if(pk){d.who="both";d.pickupWho=pk.who;d.driver=memberIds().find(m=>m!==pk.who)||myId;d.pickup=pk.addr;d.pickupWait=5;
+    if(!pk.addr)info.push("Indique où "+(pk.who===myId?firstName(otherId())+" te récupère":"récupérer "+firstName(pk.who))+" (touche Modifier).");}
+  Object.assign(d,{title:p.title,category:CATS[p.category]?p.category:"autre",date:p.date,time:p.time});
+  d.marginMin=DEF_MARGIN[d.category]??10;d.durationMin=DEF_DUR[d.category]||60;
+  if(p.durationMin>0){d.durationMin=p.durationMin;d.durExplicit=true;}
+  if(p.repeat&&REPEATS[p.repeat]){d.repeat=p.repeat;if(p.repeatDays)d.repeatDays=p.repeatDays;}
+  if(p.allDay){d.allDay=true;d.time="00:00";}
+  // « Hajjour dentiste mardi 9h » ou « dentiste pour Hajjour » : l'évènement est pour l'autre seulement.
+  // Sans prénom : dentiste, coiffeur, sport, travail… sont pour soi ; « avec », « nous », bébé… pour les deux
+  if(!pk){const w=whoFromText(text);if(w){d.who=w.uid;if(w.strip)d.title=(d.title.replace(new RegExp("^"+w.strip+"\\s+","i"),"")||d.title).replace(/^./,c=>c.toUpperCase());}
+    else if(otherId()&&soloGuess(d,text))d.who=myId;}
+  // sortie de jour sans heure précisée (zoo, parc, plage, musée…) : l'après-midi plutôt que 20h
+  if(p.assumed&&p.assumed.time&&DAYTIME.has(motifOf({title:d.title,category:d.category}))){d.time="14:00";
+    if(p.assumed.date&&startOf(d).getTime()<Date.now()){const t=new Date();t.setDate(t.getDate()+1);d.date=ymd(t);}}
+  if(p.origin) d.origin=p.origin;
+  let loc=p.location||"";
+  // Enseigne cochée (« courses chez Action ») : magasin le plus proche de la maison
+  const nt=norm(text);
+  const br=brands.find(x=>{const n=norm(x);return n&&(norm(loc).startsWith(n)||new RegExp("(^|[^a-z0-9])"+n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z0-9]|$)").test(nt));});
+  if(br&&!/\d/.test(loc)&&!placeFor(loc)){
+    const st=await brandStores(br).catch(()=>[]);
+    if(st.length){loc=st[0].address;if(!/courses/i.test(d.title)&&norm(d.title)===norm(br))d.title=st[0].name;}
+  }
+  if(!loc){const pl=placeByTitle(d.title);if(pl)loc=pl.address;}
+  d.location=loc;
+  if(d.location&&!d.allDay){
+    const r=await estimateTrip(d).catch(()=>null);
+    if(r&&r.ok){
+      d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;if(r.pickupMin!=null)d.pickupMin=r.pickupMin;
+      if(r.to&&!placeFor(d.location)&&!/\b\d{5}\b/.test(d.location)) d.location=r.to;
+      if(r.from&&d.origin&&!placeFor(d.origin)&&!/\b\d{5}\b/.test(d.origin)) d.origin=r.from;
+    }else if(r) info.push(r.problem);
+    else info.push("Trajet non calculé : vérifie ta connexion.");
+  }
+  d.reminders=suggestReminders(d);d.reminders.forEach(r=>{r.min=remMinFor(d,r);});
+  if(links.length)d.notes=[...new Set(links)].slice(0,3).join("\n");
+  if(p.assumed&&p.assumed.date&&p.assumed.time) info.unshift("Date et heure non précisées : vérifie-les.");
+  else if(p.assumed&&p.assumed.time) info.unshift("Heure non précisée : vérifie-la.");
+  else if(p.assumed&&p.assumed.date) info.unshift(d.repeat?"Premier jour non précisé : vérifie-le.":"Date non précisée : vérifie-la.");
+  if(!homeAddr()) info.push("Enregistre ta maison dans les réglages pour calculer les trajets.");
+  return {d,info:info.join(" ")||null};
+}
+// « https://maps.apple.com/place?address=…&name=Café des Arts » devient « Café des Arts, 12 rue … »
+function sharedText(t){
+  t=String(t||"").replace(/\r/g,"").trim();
+  if(/BEGIN:VCARD/i.test(t)){
+    const fn=(/^FN[^:]*:(.+)$/im.exec(t)||[])[1]||"",adr=(/^(?:item\d+\.)?ADR[^:]*:(.+)$/im.exec(t)||[])[1]||"";
+    const a=adr.split(";").map(x=>x.replace(/\\n/g," ").replace(/\\,/g,",").trim()).filter(Boolean);
+    const v=[fn.trim(),a.length?a.slice(0,1).concat(a.slice(1).join(" ")).join(", "):""].filter(Boolean).join(", ");
+    if(v)t=v;
+  }
+  t=t.replace(/https?:\/\/[^\s<>"]+/g,u=>{
+    let x;try{x=new URL(u);}catch(_){return u;}
+    const h=x.hostname.replace(/^www\./,""),q=k=>(x.searchParams.get(k)||"").trim();
+    if(/(^|\.)maps\.apple\.com$/.test(h)){const name=q("name")||q("q"),addr=q("address")||q("daddr");
+      return [name,addr&&norm(addr)!==norm(name)?addr:""].filter(Boolean).join(", ")||u;}
+    if((/(^|\.)google\.[a-z.]+$/.test(h)&&/^\/maps/.test(x.pathname))||/^maps\.google\./.test(h)){
+      const m=/\/maps\/place\/([^/@]+)/.exec(x.pathname);let name="";try{name=m?decodeURIComponent(m[1].replace(/\+/g," ")):"";}catch(_){}
+      return name||q("q")||q("query")||q("destination")||u;}
+    return u;
+  });
+  return t.split("\n").map(l=>l.trim()).filter(Boolean).join("\n");
+}
 async function prepareText(text,b,label){
   // « ajoute du lait et des œufs » : ça va dans la liste de courses, pas dans l'agenda
   try{const p0=parseText(text,{places:[]});const s0=shopIntent(text,p0);
     if(s0){const add=await addToShop(s0);if(add.length){closeSheet();const t=shopTarget();toast("Ajouté à la liste : "+add.map(x=>x.t).join(", "));openShop(t?t.id:null);return;}}}catch(_){}
+  return prepareTexts([text],b,label);
+}
+async function prepareTexts(texts,b,label){
   b.disabled=true;b.textContent="";b.append(el("span",{class:"spinner"}),"Calcul du trajet…");
-  const info=[];
   try{
-    const pk=pickupFromText(text);if(pk)text=pk.rest;
-    const p=parseText(text,{places:placesSorted().map(x=>({name:x.name,kind:x.kind,address:x.address}))});
-    const d=blankDraft();
-    if(pk){d.who="both";d.pickupWho=pk.who;d.driver=memberIds().find(m=>m!==pk.who)||myId;d.pickup=pk.addr;d.pickupWait=5;
-      if(!pk.addr)info.push("Indique où "+(pk.who===myId?firstName(otherId())+" te récupère":"récupérer "+firstName(pk.who))+" (touche Modifier).");}
-    Object.assign(d,{title:p.title,category:CATS[p.category]?p.category:"autre",date:p.date,time:p.time});
-    d.marginMin=DEF_MARGIN[d.category]??10;d.durationMin=DEF_DUR[d.category]||60;
-    // « Hajjour dentiste mardi 9h » ou « dentiste pour Hajjour » : l'évènement est pour elle seule
-    if(!pk){const w=whoFromText(text);if(w){d.who=w.uid;if(w.strip)d.title=(d.title.replace(new RegExp("^"+w.strip+"\\s+","i"),"")||d.title).replace(/^./,c=>c.toUpperCase());}}
-    // sortie de jour sans heure précisée (zoo, parc, plage, musée…) : l'après-midi plutôt que 20h
-    if(p.assumed&&p.assumed.time&&DAYTIME.has(motifOf({title:d.title,category:d.category}))){d.time="14:00";
-      if(p.assumed.date&&startOf(d).getTime()<Date.now()){const t=new Date();t.setDate(t.getDate()+1);d.date=ymd(t);}}
-    if(p.origin) d.origin=p.origin;
-    let loc=p.location||"";
-    // Enseigne cochée (« courses chez Action ») : magasin le plus proche de la maison
-    const nt=norm(text);
-    const br=brands.find(x=>{const n=norm(x);return n&&(norm(loc).startsWith(n)||new RegExp("(^|[^a-z0-9])"+n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z0-9]|$)").test(nt));});
-    if(br&&!/\d/.test(loc)&&!placeFor(loc)){
-      const st=await brandStores(br).catch(()=>[]);
-      if(st.length){loc=st[0].address;if(!/courses/i.test(d.title)&&norm(d.title)===norm(br))d.title=st[0].name;}
-    }
-    if(!loc){const pl=placeByTitle(d.title);if(pl)loc=pl.address;}
-    d.location=loc;
-    if(d.location){
-      const r=await estimateTrip(d).catch(()=>null);
-      if(r&&r.ok){
-        d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;if(r.pickupMin!=null)d.pickupMin=r.pickupMin;
-        if(r.to&&!placeFor(d.location)&&!/\b\d{5}\b/.test(d.location)) d.location=r.to;
-        if(r.from&&d.origin&&!placeFor(d.origin)&&!/\b\d{5}\b/.test(d.origin)) d.origin=r.from;
-      }else if(r) info.push(r.problem);
-      else info.push("Trajet non calculé : vérifie ta connexion.");
-    }
-    d.reminders=suggestReminders(d);d.reminders.forEach(r=>{r.min=remMinFor(d,r);});
-    if(p.assumed&&p.assumed.date&&p.assumed.time) info.unshift("Date et heure non précisées : vérifie-les.");
-    else if(p.assumed&&p.assumed.time) info.unshift("Heure non précisée : vérifie-la.");
-    else if(p.assumed&&p.assumed.date) info.unshift("Date non précisée : vérifie-la.");
-    if(!homeAddr()) info.push("Enregistre ta maison dans les réglages pour calculer les trajets.");
-    openConfirm(d,info.join(" ")||null);
+    const parts=[];for(const t of texts){const sp=splitEvents(t);if(sp)parts.push(...sp);else parts.push(t);}
+    if(parts.length>1){
+      const list=[];for(const t of parts.slice(0,8))list.push(await draftFromText(t));
+      draftQueue={list,i:0,saved:0};
+      openConfirm(list[0].d,list[0].info);
+    }else{draftQueue=null;const r=await draftFromText(parts[0]);openConfirm(r.d,r.info);}
   }catch(e){console.error(e);toast("Préparation impossible. Réessaie, ou remplis toi-même.");}
   b.disabled=false;b.textContent=label;
 }
+/* ---------- Ajouts reçus de Siri ou du menu Partager ---------- */
+let addBusy=false,addCheckAt=0;const addSeen=new Set();
+async function pendingAdds(){const r=await pushPost("/api/addget",{uid:myId});return (r&&Array.isArray(r.items)?r.items:[]).filter(x=>x&&x.id&&!addSeen.has(x.id)).sort((a,b)=>(a.at||0)-(b.at||0));}
+async function openPendingAdd(aid){
+  if(addBusy||!coupleId||!myId)return;addBusy=true;
+  try{
+    let items=await pendingAdds();
+    if(aid&&!items.some(x=>x.id===aid)){if(addSeen.has(aid)||!items.length){toast("Cet ajout a déjà été vérifié.");return;}}
+    if(!items.length)return;
+    // celui qu'on vient de toucher d'abord, puis les autres reçus entre-temps
+    items=[...items.filter(x=>x.id===aid),...items.filter(x=>x.id!==aid)].slice(0,6);
+    for(const x of items)addSeen.add(x.id);
+    pushPost("/api/adddone",{uid:myId,ids:items.map(x=>x.id)});
+    const texts=items.map(x=>sharedText(x.t)).filter(Boolean);if(!texts.length)return;
+    openQuickAdd(false,texts.join("\n"));
+    const go=$("#q-go")||el("button");
+    if(texts.length===1)await prepareText(texts[0],go,"Préparer l'évènement");
+    else await prepareTexts(texts,go,"Préparer l'évènement");
+  }finally{addBusy=false;}
+}
+// L'app revient à l'écran (ou démarre) : un ajout fait par Siri attend peut-être
+async function checkAdds(force){
+  if(!coupleId||!myId||!pushToken()||firstSnap||addBusy||document.visibilityState==="hidden")return;
+  if(!force&&Date.now()-addCheckAt<15000)return;addCheckAt=Date.now();
+  const items=await pendingAdds();if(!items.length)return;
+  if($("#sheet-root").childNodes.length){
+    const f=items[0],line=(sharedText(f.t).split("\n")[0]||"").slice(0,60);
+    inNote("À vérifier : "+line,items.length>1?items.length+" ajouts reçus de Siri ou du menu Partager. Touche pour les voir.":"Reçu de Siri ou du menu Partager. Touche pour voir la fiche.",()=>openPendingAdd(f.id),12000);
+    return;}
+  openPendingAdd(items[0].id);
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(()=>checkAdds(false),600);});
 $("#input").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))$("#btn-analyze").click();});
 
 // Toutes les 30 s : le grand panneau suit l'heure ; au changement de jour, tout l'agenda est redessiné
@@ -5038,16 +5423,17 @@ function tripHero(n,t){
     el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.stale&&!here?" · dernière position "+agoShort(S.age):"")),b);
 }
 /* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
-let pendingLink=/[?&](trip|ev)=/.test(location.search)?location.search:null;
+let pendingLink=/[?&](trip|ev|add)=/.test(location.search)?location.search:null;
 function runPendingLink(){
   if(!pendingLink||firstSnap||!tripsReady)return;
   const q=pendingLink;pendingLink=null;
-  try{if(/[?&](trip|ev)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
+  try{if(/[?&](trip|ev|add)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
   setTimeout(()=>{if(!handleDeepLink(q))toast("Cet évènement n'existe plus.");},150);
 }
 function handleDeepLink(q){
   let p;try{p=new URLSearchParams(String(q||"").replace(/^[^?]*\?/,""));}catch(_){return false;}
-  const tid=p.get("trip"),eid=p.get("ev");
+  const tid=p.get("trip"),eid=p.get("ev"),aid=p.get("add");
+  if(aid){openPendingAdd(aid);return true;}
   if(tid&&(trips.has(tid)||events.has(tid))){openTrip(tid);return true;}
   if(eid&&events.has(eid)){const e=events.get(eid);if(canStartTrip(e)||tripFor(eid))openTrip(eid);else openEventCard(eid);return true;}
   return false;
@@ -5269,7 +5655,7 @@ function bootFromCache(){
     }
     const wasFirst=firstSnap;firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();}
+    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);}
     if(shopRefresh)shopRefresh();
     saveBoot();
     scheduleRender();

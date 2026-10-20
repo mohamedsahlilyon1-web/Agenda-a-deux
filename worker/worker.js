@@ -113,6 +113,33 @@ async function calKey(token) {
   let s = ""; for (const x of h) s += x.toString(16).padStart(2, "0"); return s.slice(0, 32);
 }
 async function getCals(env, id) { const k = await env.KV.get("k:" + id, "json"); return k && k.map ? k : { at: 0, map: {} }; }
+// Ajout depuis Siri ou le menu Partager (raccourci de l'iPhone) : /add/<couple>/<personne>/<clé>.
+// La clé est propre à chaque personne et ne permet que de proposer un ajout : rien ne s'enregistre sans la fiche vérifiée dans l'app.
+async function addKey(token, uid) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode("together-add:" + token + ":" + uid)));
+  let s = ""; for (const x of h) s += x.toString(16).padStart(2, "0"); return s.slice(0, 24);
+}
+const txt = (t, st) => new Response(t, { status: st || 200, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+async function getAdds(env, id) { const a = await env.KV.get("a:" + id, "json"); return (Array.isArray(a) ? a : []).filter((x) => x && x.id && Date.now() - (+x.at || 0) < 3 * 86400000); }
+async function putAdds(env, id, a) { if (a.length) await env.KV.put("a:" + id, JSON.stringify(a.slice(-20)), { expirationTtl: 3 * 86400 }); else await env.KV.delete("a:" + id); }
+// Liens courts de Plans ou de Google Maps partagés : on les déplie pour que l'app lise le nom et l'adresse
+async function expandLinks(t) {
+  const re = /https?:\/\/(?:maps\.apple\/p\/|maps\.app\.goo\.gl\/|goo\.gl\/maps\/)[^\s]+/g;
+  const found = [...new Set(t.match(re) || [])].slice(0, 2);
+  for (const u of found) {
+    try {
+      let cur = u;
+      for (let i = 0; i < 4; i++) {
+        const r = await fetch(cur, { redirect: "manual", headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)" }, ...(AbortSignal.timeout ? { signal: AbortSignal.timeout(4000) } : {}) });
+        const loc = r.headers.get("Location");
+        if (!loc || r.status < 300 || r.status >= 400) break;
+        cur = new URL(loc, cur).toString();
+      }
+      if (cur !== u && /^https:\/\//.test(cur)) t = t.split(u).join(cur.slice(0, 600));
+    } catch (_) {}
+  }
+  return t;
+}
 const UID_RE = /^[A-Za-z0-9_-]{1,80}$/;
 // Ancien format (tout dans la fiche du couple) : on recopie chaque partie dans sa clé, une seule fois
 async function migrate(env, id, c) {
@@ -150,6 +177,36 @@ export default {
       return new Response(req.method === "HEAD" ? null : (body || CAL_EMPTY), { headers: {
         "Content-Type": "text/calendar; charset=utf-8", "Cache-Control": "no-cache, max-age=0",
         "Content-Disposition": 'inline; filename="together.ics"', "Access-Control-Allow-Origin": "*" } });
+    }
+    const ad = /^\/add\/([A-Za-z0-9_-]{6,60})\/([A-Za-z0-9_-]{1,80})\/([0-9a-f]{24})\/?$/.exec(path);
+    if (ad) {
+      const [, id, uid, key] = ad;
+      const c = await getCouple(env, id);
+      if (!c || !c.token || key !== await addKey(c.token, uid)) return txt("Lien d'ajout inconnu. Copie à nouveau ton lien dans Together : Réglages, Ajouter avec Siri.", 404);
+      let t = url.searchParams.get("t") || url.searchParams.get("text") || "";
+      if (req.method === "POST") {
+        const ct = (req.headers.get("Content-Type") || "").toLowerCase();
+        try {
+          if (ct.includes("application/json")) { const j = await req.json(); const v = j && (j.t ?? j.text ?? j.texte); if (v != null) t = typeof v === "string" ? v : JSON.stringify(v); }
+          else if (ct.includes("form")) { const f = await req.formData(); const v = f.get("t") || f.get("text") || f.get("texte"); if (v) t = typeof v === "string" ? v : await v.text(); }
+          else { const v = await req.text(); if (v) t = v; }
+        } catch (_) {}
+      } else if (req.method !== "GET") return txt("Méthode refusée.", 405);
+      t = String(t || "").replace(/\r/g, "").replace(/[\u0000-\u0008\u000b-\u001f]/g, " ").trim().slice(0, 1500);
+      if (!t) return txt("Rien à ajouter : dis ou partage ce que vous avez prévu.", 400);
+      const list = await getAdds(env, id);
+      if (list.filter((x) => x.u === uid).length >= 10) return txt("Trop d'ajouts en attente : ouvre Together pour les vérifier.", 429);
+      t = await expandLinks(t);
+      const r8 = new Uint8Array(8); crypto.getRandomValues(r8);
+      const aid = b64u(r8).replace(/[^A-Za-z0-9]/g, "x").slice(0, 10);
+      list.push({ id: aid, u: uid, t, at: Date.now() });
+      await putAdds(env, id, list);
+      const first = (t.split("\n").map((l) => l.replace(/https?:\/\/\S+/g, "").trim()).find(Boolean) || "Lieu partagé").slice(0, 70);
+      const subs = await getSubs(env, id, c);
+      const r = await sendTo(env, subs, [uid], { title: "À vérifier : " + first, body: "Touche pour voir la fiche et l'enregistrer.", tag: "add-" + aid, url: "./?add=" + aid });
+      if (r.changed) await putSubs(env, id, subs);
+      try { await logSends(env, id, "a", r.codes.map((x) => ({ ...x, tag: "add" }))); } catch (_) {}
+      return txt(r.sent ? "C'est noté. Touche la notification de Together pour vérifier la fiche." : "C'est noté. Ouvre Together pour vérifier la fiche.");
     }
     if (path === "/api/w" && req.method === "GET") {
       const id = clean(url.searchParams.get("c"), 60), t = clean(url.searchParams.get("t"), 80);
@@ -221,6 +278,16 @@ export default {
         }
       }
       return json(req, { ok: true, count: c.sched.length });
+    }
+    if (path === "/api/addget") {
+      const uid = clean(b.uid, 80), list = await getAdds(env, id);
+      return json(req, { ok: true, items: list.filter((x) => x.u === uid).map((x) => ({ id: x.id, t: x.t, at: x.at })) });
+    }
+    if (path === "/api/adddone") {
+      const uid = clean(b.uid, 80), ids = new Set((Array.isArray(b.ids) ? b.ids : [b.id]).map((x) => clean(x, 20)).filter(Boolean));
+      const list = await getAdds(env, id), keep = list.filter((x) => !(x.u === uid && ids.has(x.id)));
+      if (keep.length !== list.length) await putAdds(env, id, keep);
+      return json(req, { ok: true, left: keep.filter((x) => x.u === uid).length });
     }
     if (path === "/api/calstat") {
       const seen = (await env.KV.get("ks:" + id, "json")) || {}, K = await getCals(env, id);
