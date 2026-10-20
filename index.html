@@ -526,7 +526,7 @@ header{flex-wrap:wrap;row-gap:4px}
 .tp-bar b{display:block;height:100%;width:0;background:var(--line);border-radius:inherit;transition:width .8s ease}
 .tp-st{display:flex;align-items:center;gap:9px;font-size:.9rem;color:var(--muted);font-weight:600}
 .tp-dot,.tl-live{flex:none;width:10px;height:10px;border-radius:50%;background:#22C55E;animation:tpPulse 1.6s ease-out infinite}
-.tp-st.est .tp-dot,.tl-live.est{background:var(--sun);animation:none}
+.tp-st.stale .tp-dot,.tl-live.stale{background:var(--sun);animation:none}
 @keyframes tpPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
 @media (prefers-reduced-motion:reduce){.tp-dot,.tl-live{animation:none}}
 .tp-msg{align-self:flex-start;max-width:92%;background:var(--ok-soft);color:var(--ink);border-radius:18px 18px 18px 5px;padding:9px 13px;font-weight:700}
@@ -538,7 +538,7 @@ header{flex-wrap:wrap;row-gap:4px}
 .tp-car,.tp-pin,.tp-dest{background:none;border:none;width:0!important;height:0!important}
 .tp-car-r{position:absolute;left:-22px;top:-22px;width:44px;height:44px;color:var(--line);filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));will-change:transform}
 .tp-car-r svg{display:block}
-.tp-car.est .tp-car-r{opacity:.72}
+.tp-car.stale .tp-car-r{opacity:.55;filter:grayscale(1) drop-shadow(0 3px 4px rgba(0,0,0,.3))}
 .tp-pin-in{position:absolute;left:0;top:0;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;pointer-events:none}
 .tp-pin-in .tp-av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;font:800 17px var(--f,system-ui);border:3px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.28);overflow:hidden}
 .tp-pin-in .tp-av img{width:100%;height:100%;object-fit:cover}
@@ -2228,11 +2228,6 @@ function pushItems(){
         title:leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+(isAllDay(ev)?"":" à "+ev.time),
         body:leave?"Départ maintenant pour arriver à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+".":(hasTrip(ev)?"Départ à "+hhmm(departOf(ev))+(ev.location?" pour "+shortAddr(ev.location):"")+".":(ev.location?shortAddr(ev.location):"Rappel"))});});
     if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
-  }
-  // trajet en cours : l'autre est prévenu 5 minutes avant l'arrivée prévue, même si Together est fermé chez le conducteur
-  for(const t of trips.values()){
-    if(t.stage!=="go"||!t.to||!(+t.eta>0))continue;const at=+t.eta-5*60000;if(at<=now+30000)continue;
-    items.push({id:"trip:"+t.id+":5",to:[t.to],at,tag:"trip-"+t.id,title:firstName(t.by)+" arrive dans 5 minutes",body:"Environ, d'après son trajet. Touche pour le suivre en direct."});
   }
   return items.sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,150);
 }
@@ -4538,10 +4533,10 @@ setInterval(()=>{
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ymd(new Date())!==renderedDay){renderedDay=ymd(new Date());scheduleRender();}});
 
 /* ---------- Trajet en direct : je passe prendre l'autre, qui suit ma voiture sur la carte (comme Uber) ----------
-   iOS ne laisse pas une app web lire la position quand elle n'est pas à l'écran. La position exacte part donc tant que
-   Together est ouvert sur le téléphone du conducteur (avec CarPlay, le guidage est sur l'écran de la voiture et le
-   téléphone reste libre pour ça). Sinon, la voiture continue d'avancer chez l'autre le long du trajet, au rythme prévu
-   (« position estimée »), et se recale dès que Together revient à l'écran. */
+   iOS ne laisse pas une app web lire la position quand elle n'est pas à l'écran : Together reste donc allumé chez le
+   conducteur pendant le trajet (avec CarPlay, le guidage est sur l'écran de la voiture). Seule la vraie position est
+   montrée : si elle n'arrive plus, la voiture reste à la dernière position reçue, avec son heure. Jamais de position
+   inventée. Si Together passe en arrière-plan, une notification rappelle au conducteur de le rouvrir. */
 let trips=new Map(),tripPos=new Map(),tripPosOff=new Map(),share=null,tripUI=null,firstTrips=true,tripsReady=false;
 let tripSendMs=4000;                 // au plus une position toutes les 4 s
 const TRIP_HERE_M=120,TRIP_FRESH_S=25;
@@ -4608,7 +4603,7 @@ async function startTrip(id,btn){
     if(!target){toast("Adresse de "+firstName(ev.pickupWho)+" introuvable : vérifie-la dans l'évènement.");return false;}
     const r=await tripRoute(fix,target,ev.mode);
     const now=Date.now(),doc={ev:id,by:myId,to:ev.pickupWho,mode:ev.mode||"car",stage:"go",startedAt:now,updatedAt:now,
-      title:String(ev.title||"").slice(0,80),target:{...target,addr:String(ev.pickup||"").slice(0,200)},...r};
+      title:String(ev.title||"").slice(0,80),target:{...target,addr:String(ev.pickup||"").slice(0,200)},...r,near:r.eta-now<=6*60000?now:0};
     await db.doc("trips/"+id).set(doc);trips.set(id,{id,...doc});
     await db.doc("tripPos/"+id).set({...fix,bg:false});tripPos.set(id,{...fix,bg:false});
     pushTo([ev.pickupWho],firstName(myId)+" est en route","Arrivée prévue vers "+hhmm(new Date(r.eta))+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id);
@@ -4627,7 +4622,15 @@ function beginShare(id,fix){
   share.watch=geoWatch();keepAwake(true);lsSet("a2.share",id);
 }
 function endWatch(){if(share&&share.watch!=null){try{navigator.geolocation.clearWatch(share.watch);}catch(_){}share.watch=null;}}
-function endShare(){endWatch();share=null;lsSet("a2.share",null);if(typeof shopRefresh==="undefined"||!shopRefresh)keepAwake(false);}
+function endShare(){endWatch();share=null;lsSet("a2.share",null);pauseNote(null,false);if(typeof shopRefresh==="undefined"||!shopRefresh)keepAwake(false);}
+function pauseNote(t,on){
+  try{if(!("serviceWorker" in navigator)||typeof Notification==="undefined"||Notification.permission!=="granted")return;
+    navigator.serviceWorker.ready.then(r=>{
+      if(on&&t)return r.showNotification("Partage en pause",{body:"Rouvre Together pour que "+firstName(t.to)+" voie ta vraie position.",tag:"share-pause",renotify:true,icon:"icons/icon-192.png",badge:"icons/icon-192.png",data:{url:"./?trip="+t.id}});
+      return r.getNotifications?r.getNotifications({tag:"share-pause"}).then(ns=>ns.forEach(n=>n.close())):null;
+    }).catch(()=>{});
+  }catch(_){}
+}
 function onFixErr(e){if(e&&e.code===1&&share&&!share.local){const t=trips.get(share.id);toast("Position refusée : "+(t?firstName(t.to):"l'autre")+" ne voit plus ton trajet.");if(t)tripStop(t);}}
 function onFix(p){
   if(!share)return;
@@ -4668,7 +4671,10 @@ function tripEta(t,fix){
     return;
   }
   share.offN=0;
-  const eta=now+Math.round(Math.max(0,a.total-a.s)/Math.max(1.2,+t.v||8)*1000);
+  const remS=Math.max(0,a.total-a.s)/Math.max(1.2,+t.v||8),eta=now+Math.round(remS*1000);
+  // à 5 minutes de l'arrivée, d'après la vraie position : l'autre est prévenu une fois
+  if(!t.near&&remS<=300){t.near=now;db.doc("trips/"+t.id).update({near:now}).catch(()=>{});
+    pushTo([t.to],firstName(myId)+" arrive dans "+Math.max(1,Math.round(remS/60))+" min","Position en direct : touche pour suivre le trajet.","trip-"+t.id,"./?trip="+t.id);}
   if(Math.abs(eta-(+t.eta||0))>=60000&&now-share.etaAt>=20000){share.etaAt=now;t.eta=eta;t.updatedAt=now;db.doc("trips/"+t.id).update({eta,updatedAt:now}).catch(()=>{});syncPush();}
 }
 // « en bas de chez vous » pour la maison, sinon l'adresse (ou le nom du lieu enregistré)
@@ -4743,11 +4749,11 @@ let heroT=0,heroTimer=null;
 function refreshHero(){if(events.size)renderNext([...events.values()].sort((a,b)=>startOf(a)-startOf(b)).filter(e=>startOf(e).getTime()>Date.now()-3*3600000).filter(passWho));}
 function heroSoon(now){clearTimeout(heroTimer);heroTimer=setTimeout(()=>{heroT=Date.now();refreshHero();},now?30:Math.max(0,4000-(Date.now()-heroT)));}
 function tripTick(force){if(tripUIOpen()){tripUI.st=null;if(force)tripPanel();}heroSoon(false);}
-/* ce que montre la carte : position exacte, ou estimée le long du trajet */
+/* ce que montre la carte : toujours la vraie position (la dernière reçue si elle n'arrive plus) */
 function tripState(id){
   const t=trips.get(id)||null,ev=events.get(id)||null,now=Date.now();
   const mine=t?t.by===myId:!!(ev&&hasPickup(ev)&&driverOf(ev)===myId);
-  const S={id,t,ev,mine,phase:t?({go:"go",here:"here",together:"together"}[t.stage]||"stop"):"ready",pt:null,hdg:null,live:false,est:false,age:0,remain:null,eta:t?(+t.eta||null):null,pos:null,done:0};
+  const S={id,t,ev,mine,phase:t?({go:"go",here:"here",together:"together"}[t.stage]||"stop"):"ready",pt:null,hdg:null,live:false,stale:false,age:0,remain:null,eta:t?(+t.eta||null):null,pos:null,done:0};
   if(!t){const g=ev&&ev.routeGeo;if(g&&okPt(g.from))S.pt={lat:+g.from.lat,lon:+g.from.lon};return S;}
   const route=Array.isArray(t.route)?t.route.filter(okPt):[];
   let pos=mine&&share&&share.id===id&&share.lastFix?share.lastFix:(tripPos.get(id)||null);
@@ -4756,15 +4762,9 @@ function tripState(id){
   if(S.phase==="go"&&route.length>1){
     const v=Math.max(1.2,+t.v||8),total=+t.routeM||pathLen(route);
     if(pos){const a=along(route,pos);
-      if(S.live){S.remain=a.off>250?distM(pos,t.target)*1.3:Math.max(0,a.total-a.s);S.eta=now+S.remain/v*1000;}
-      else if(a.off<=400){
-        // la voiture avance au rythme de la dernière heure d'arrivée connue, et s'arrête juste avant l'adresse
-        const t0=Math.min(now,+pos.t||now),rem0=Math.max(0,a.total-a.s);
-        const te=Math.max(+t.eta||0,t0+rem0/v*600);
-        const frac=te>t0?Math.max(0,Math.min(1,(now-t0)/(te-t0))):1;
-        const s=Math.max(a.s,Math.min(a.s+rem0*frac,a.total-40)),q=pointAt(route,s);
-        S.pt={lat:q.lat,lon:q.lon};S.hdg=q.hdg;S.remain=Math.max(0,a.total-s);S.eta=Math.max(te,now);S.est=true;}
-      else{S.remain=distM(pos,t.target)*1.3;S.eta=Math.max(now+S.remain/v*1000,+t.eta||0);S.est=true;}
+      S.remain=a.off>250?distM(pos,t.target)*1.3:Math.max(0,a.total-a.s);
+      // position à jour : heure d'arrivée recalculée ; sinon, la voiture reste où elle était, avec la dernière heure calculée
+      if(S.live)S.eta=now+S.remain/v*1000;else S.stale=true;
     }else{const q=pointAt(route,0);S.pt={lat:q.lat,lon:q.lon};S.hdg=q.hdg;S.remain=total;}
     S.done=Math.max(0,Math.min(1,1-(S.remain||0)/Math.max(1,total)));
   }
@@ -4869,14 +4869,15 @@ function tripAnimate(dt){
   const sig=(S.t&&S.t.route?S.t.route.length+":"+(S.t.routeM||0):"plan")+"|"+S.phase;
   if(sig!==U.routeSig){U.routeSig=sig;const pts=tripLinePts(S);try{U.line.setLatLngs(pts);U.lineBg.setLatLngs(pts);}catch(_){}tripPins(S);}
   if(!S.pt){if(U.car&&S.phase==="together"){try{U.car.remove();}catch(_){}U.car=null;}return;}
-  if(!U.shown)U.shown={lat:S.pt.lat,lon:S.pt.lon};
+  // grand écart (position revenue après une pause) : la voiture est posée directement à sa vraie place
+  if(!U.shown||distM(U.shown,S.pt)>400)U.shown={lat:S.pt.lat,lon:S.pt.lon};
   if(!U.car)tripCar(S);
   const k=1-Math.exp(-dt/0.45);
   U.shown.lat+=(S.pt.lat-U.shown.lat)*k;U.shown.lon+=(S.pt.lon-U.shown.lon)*k;
   if(S.hdg!=null&&Number.isFinite(+S.hdg)){const d=((+S.hdg-U.hdg+540)%360)-180;U.hdg=(U.hdg+d*Math.min(1,k*1.4)+360)%360;}
   if(U.car){U.car.setLatLng([U.shown.lat,U.shown.lon]);
     const e=U.car.getElement&&U.car.getElement();
-    if(e){const r=e.querySelector(".tp-car-r");if(r)r.style.transform="rotate("+Math.round(U.hdg)+"deg)";e.classList.toggle("est",!!S.est);}}
+    if(e){const r=e.querySelector(".tp-car-r");if(r)r.style.transform="rotate("+Math.round(U.hdg)+"deg)";e.classList.toggle("stale",!!S.stale);}}
   if(Date.now()-U.fitAt>2500){U.fitAt=Date.now();tripFit(false);}
 }
 function agoShort(s){s=Math.round(s);return s<60?"il y a "+s+" s":s<3600?"il y a "+Math.round(s/60)+" min":"il y a "+Math.round(s/3600)+" h";}
@@ -4910,7 +4911,7 @@ function tripBuild(S){
       P.append(el("p",{class:"tp-note"},(can?"":"Le bouton s'active 2 h avant le départ. ")+on+" reçoit une notification et voit ta position en direct jusqu'à ce que tu sois en bas. Le partage s'arrête tout seul ensuite."));
     }else if(S.phase==="go"){
       A.append(...nav(false),el("button",{type:"button",class:"btn primary",onclick:()=>tripArrived(T())},"Je suis en bas"));
-      P.append(el("p",{class:"tp-note"},"Avec CarPlay, lance le guidage sur l'écran de la voiture et garde Together ouvert sur ton iPhone : ta position part en direct. Si tu passes sur Waze ou Plans sur le téléphone, reviens ensuite sur Together (glisse le bas de l'écran vers la droite) ; en attendant, "+on+" voit une position estimée."),
+      P.append(el("p",{class:"tp-note"},"Garde Together à l'écran pendant le trajet : c'est lui qui envoie ta vraie position à "+on+", et l'écran reste allumé. Avec CarPlay, le guidage reste sur l'écran de la voiture. Sans CarPlay, lance le guidage puis reviens ici (glisse le bas de l'écran vers la droite) : Waze et Plans continuent de te guider à la voix."),
         el("button",{type:"button",class:"btn quiet tp-stop",onclick:()=>tripStop(T())},"Arrêter le partage"));
     }else if(S.phase==="here"){
       A.append(el("button",{type:"button",class:"btn primary tp-go",onclick:()=>tripTogether(T())},"C'est bon, on y va"));
@@ -4926,16 +4927,17 @@ function tripFill(S){
   const U=tripUI,ui=U.ui||{},t=S.t,ev=S.ev,now=Date.now(),on=firstName(tripWho(S));
   const title=(t&&t.title)||(ev&&ev.title)||"le rendez-vous";
   const inMin=S.eta?Math.round((S.eta-now)/60000):null;
-  let k="",big="",sub="",st="",est=false;
+  let k="",big="",sub="",st="",stale=false;
   if(S.phase==="ready"){
     k=S.mine?"Récupérer "+on:"Bientôt";big=ev&&hasPickup(ev)?hhmm(pickupAt(ev)):"";
     sub=S.mine?(ev?"Départ conseillé à "+hhmm(departOf(ev))+" · "+title:""):on+" n'est pas encore en route. Tu recevras une notification au départ.";
   }else if(S.phase==="go"){
     k=S.mine?"Tu vas chercher "+on:on+" arrive";big=S.eta?hhmm(new Date(S.eta)):"";
-    sub=[inMin==null?"":inMin<=0?"Arrivée imminente":"Dans "+fmtDur(inMin),S.remain!=null&&S.remain>0?kmTxt(S.remain):""].filter(Boolean).join(" · ");
+    sub=S.stale?["Arrivée prévue",S.remain!=null&&S.remain>0?"à "+kmTxt(S.remain)+" "+agoShort(S.age):""].filter(Boolean).join(" · "):
+      [inMin==null?"":inMin<=0?"Arrivée imminente":"Dans "+fmtDur(inMin),S.remain!=null&&S.remain>0?kmTxt(S.remain):""].filter(Boolean).join(" · ");
     if(!S.pos)st="En attente de la position…";
     else if(S.live)st=S.mine?(t.seenAt?on+" suit ton trajet en direct":"Ta position est partagée en direct avec "+on):"Position en direct";
-    else{est=true;st=S.mine?"Signal GPS faible : position estimée":"Position estimée · dernière position exacte "+agoShort(S.age);}
+    else{stale=true;st=S.mine?"Signal GPS faible : ta position n'est pas mise à jour":"Dernière position reçue "+agoShort(S.age)+(S.pos.bg?" : Together n'est plus ouvert chez "+on:"");}
   }else if(S.phase==="here"){
     k=S.mine?"Sur place":on+" est en bas";big=t.hereAt?hhmm(new Date(t.hereAt)):"";
     sub=S.mine?on+" a reçu « "+firstName(myId)+" est en bas »":on+" t'attend"+waitWhere(t.target&&t.target.addr)+".";
@@ -4945,7 +4947,7 @@ function tripFill(S){
   }else{k="Partage arrêté";sub=S.mine?on+" ne voit plus ta position.":on+" a arrêté le partage de sa position.";}
   if(ui.k)ui.k.textContent=k;if(ui.eta)ui.eta.textContent=big;if(ui.sub)ui.sub.textContent=sub;
   if(ui.bar)ui.bar.style.width=Math.round((S.done||0)*100)+"%";
-  if(ui.st){ui.st.hidden=!st;ui.st.classList.toggle("est",est);ui.stT.textContent=st;}
+  if(ui.st){ui.st.hidden=!st;ui.st.classList.toggle("stale",stale);ui.stT.textContent=st;}
 }
 // Grande carte de l'agenda pendant un trajet : l'heure d'arrivée et un bouton pour suivre
 function tripHero(n,t){
@@ -4954,12 +4956,12 @@ function tripHero(n,t){
   n.textContent="";n.hidden=false;n.dataset.ev=t.id;n.removeAttribute("style");n.classList.remove("themed","soon");n.classList.add("trip-live");delete n.dataset.mk;
   const k=S.mine?(here?"Sur place":"Trajet en cours vers "+on):(here?on+" est en bas":on+" est en route");
   const big=here?(t.hereAt?hhmm(new Date(t.hereAt)):""):(S.eta?hhmm(new Date(S.eta)):"");
-  const inT=here?(S.mine?"Message envoyé à "+on:on+" t'attend"):(inMin==null?"":inMin<=0?"Arrivée imminente":"Arrivée dans "+fmtDur(inMin));
+  const inT=here?(S.mine?"Message envoyé à "+on:on+" t'attend"):(inMin==null?"":S.stale?"Arrivée prévue vers "+hhmm(new Date(S.eta)):inMin<=0?"Arrivée imminente":"Arrivée dans "+fmtDur(inMin));
   const b=el("button",{type:"button",class:"btn sign-btn"},S.mine?"Voir le trajet":"Suivre en direct");
   b.onclick=e=>{e.stopPropagation();openTrip(t.id);};
-  n.append(el("div",{class:"k"},el("span",{class:"tl-live"+(S.est?" est":""),"aria-hidden":"true"}),k),
+  n.append(el("div",{class:"k"},el("span",{class:"tl-live"+(S.stale?" stale":""),"aria-hidden":"true"}),k),
     el("div",{class:"big num"},big),el("div",{class:"in"},inT),
-    el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.est&&!here?" · position estimée":"")),b);
+    el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.stale&&!here?" · dernière position "+agoShort(S.age):"")),b);
 }
 /* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
 let pendingLink=/[?&](trip|ev)=/.test(location.search)?location.search:null;
@@ -4982,8 +4984,9 @@ if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("messag
 document.addEventListener("visibilitychange",()=>{
   if(!share||share.local)return;
   if(document.visibilityState==="hidden"){
-    const t=trips.get(share.id);if(tripLive(t)&&share.lastFix)db.doc("tripPos/"+share.id).set({...share.lastFix,bg:true}).catch(()=>{});
-  }else{endWatch();share.watch=geoWatch();share.sentAt=0;keepAwake(true);}
+    const t=trips.get(share.id);
+    if(tripLive(t)){if(share.lastFix)db.doc("tripPos/"+share.id).set({...share.lastFix,bg:true}).catch(()=>{});if(t.stage==="go")pauseNote(t,true);}
+  }else{pauseNote(null,false);endWatch();share.watch=geoWatch();share.sentAt=0;keepAwake(true);}
 });
 
 /* ---------- Démarrage instantané : dernière copie de l'agenda gardée sur le téléphone ---------- */
