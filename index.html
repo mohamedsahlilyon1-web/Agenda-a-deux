@@ -1026,7 +1026,16 @@ const pad=n=>String(n).padStart(2,"0");
 const hhmm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const startOf=ev=>new Date(ev.date+"T"+(ev.time||"09:00")+":00");
-const departOf=ev=>new Date(startOf(ev).getTime()-((+ev.travelMin||0)+(+ev.marginMin||0))*60000);
+const departOf=ev=>new Date(startOf(ev).getTime()-((+ev.travelMin||0)+(+ev.marginMin||0)+((+ev.travelMin||0)>0?placeExtra(ev.location):0))*60000);
+// minutes pour se garer ou marcher, réglées sur un lieu enregistré (hôpital, gare…)
+let pxRef=null,pxMap=new Map();
+function placeExtra(addr){if(pxRef!==places){pxRef=places;pxMap=new Map();for(const p of places.values())if(+p.extra>0&&p.address)pxMap.set(norm(p.address),Math.min(60,Math.round(+p.extra)));}
+  return addr?(pxMap.get(norm(addr))||0):0;}
+// heure de retour à la maison : fin du rendez-vous puis le trajet dans l'autre sens (sans repasser chez l'autre)
+function returnAt(ev){const wait=Math.max(0,Math.min(60,ev.pickupWait==null?5:+ev.pickupWait||0));
+  const back=hasPickup(ev)?Math.max(5,(+ev.travelMin||0)-(+ev.pickupMin||0)-wait):Math.max(1,(+ev.travelMin||0)-((ev.mode||"car")==="car"?5:0));
+  return new Date(endOf(ev).getTime()+back*60000);}
+function showReturn(ev){return (+ev.travelMin||0)>0&&!isAllDay(ev)&&!!homeAddr()&&!!ev.location&&norm(ev.location)!==norm(homeAddr())&&!ev.pickedUp;}
 // Évènement « toute la journée » (anniversaire, jour férié, changement d'heure…) : pas d'heure de départ ni de rappel « c'est l'heure »
 function isAllDay(ev){return !!(ev&&(ev.allDay||/toute la journ/i.test(ev.notes||"")||(ev.time==="00:00"&&!ev.location&&!((+ev.travelMin||0)>0))));}
 /* ---------- Départ à deux depuis deux endroits : l'un passe prendre l'autre ---------- */
@@ -2744,7 +2753,7 @@ function stop(ev,who){
     el("div",{class:"body"},
       el("div",{class:"dep-line"},el("span",{class:"pill"},"Départ"),ev.origin?"de "+shortAddr(ev.origin):""),
       hasPickup(ev)?pickupLine(ev):null,
-      el("div",{class:"small"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode],el("span",{class:"more-info"},", "+(ev.marginMin||0)+" min de marge")))));
+      el("div",{class:"small"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode],el("span",{class:"more-info"},", "+(ev.marginMin||0)+" min de marge"+(placeExtra(ev.location)?", "+placeExtra(ev.location)+" min sur place":""))))));
 
   const tags=el("div",{class:"tags more-info"});
   if(ov)tags.append(el("span",{class:"tag warn"},"⚠ "+ovTxt));
@@ -2764,6 +2773,7 @@ function stop(ev,who){
   {const lt=tripFor(ev.id);
     if(canStartTrip(ev))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();startTrip(ev.id,e.currentTarget);}},"Je pars : prévenir "+firstName(ev.pickupWho)));
     else if(lt&&(lt.to===myId||lt.by===myId))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();openTrip(ev.id);}},lt.by===myId?"Voir le trajet":"Suivre en direct"));}
+  if(canWrite&&canStartHere(ev)) links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();tripFromHere(ev,e.currentTarget);}},"Partir d'où je suis"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openPostpone(ev)},"Reporter"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
@@ -2777,6 +2787,7 @@ function stop(ev,who){
     el("div",{class:"body"},
       el("div",{class:"ev-title"},el("span",{class:"ev-right"},ov?el("span",{class:"ov-badge",title:ovTxt,"aria-label":ovTxt},"⚠"):null,otherId()?whoBadge(ev):null,moreBtn,el("span",{class:"chev","aria-hidden":"true",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'})),el("span",{class:"ev-t"},ev.title||"Sans titre")),
       el("div",{class:"where"},mk?el("span",{class:"motif-chip",html:motifSvg(mk)+"<span>"+MOTIFS[mk].name+"</span>"}):null,[mk?"":(CATS[ev.category]||"Autre"),ev.location].filter(Boolean).join(", ")),
+      showReturn(ev)?el("div",{class:"small more-info ret-line"},"Fin vers "+hhmm(endOf(ev))+", retour à la maison vers "+hhmm(returnAt(ev))):null,
       tags.childNodes.length?tags:null,
       links,
       isShopping(ev)&&!expanded.has(ev.id)?el("div",{class:"shop-pill-row"},shopPill(ev)):null,
@@ -2924,6 +2935,27 @@ async function saveSeries(x,d,more){
     toast(list.length+" « "+x.title+" » modifiés pour vous deux");
     return true;
   }catch(e){toast(e&&e.code==="invalid_argument"?"Enregistrement refusé. Vérifie que tu as bien rejoint l'agenda.":"Enregistrement impossible. Réessaie.");return false;}
+}
+
+/* ---------- Partir d'où je suis ---------- */
+async function reverseAddr(lat,lon){try{const r=await getJson(`${BAN}/reverse/?lon=${lon}&lat=${lat}`,null,8000);const f=(r.features||[])[0];return f?featLabel(f):"";}catch(_){return "";}}
+function canStartHere(ev){const t=startOf(ev).getTime(),now=Date.now();return (+ev.travelMin||0)>0&&!!ev.location&&!isAllDay(ev)&&ev.pickupWho!==myId&&(whoOf(ev)==="both"||whoOf(ev)===myId)&&t>now&&t-now<12*3600000;}
+async function tripFromHere(ev,btn){
+  if(!db||!ev)return;
+  const lab=btn?btn.textContent:"";if(btn){btn.disabled=true;btn.textContent="Localisation…";}
+  try{
+    const f=await getFix(20000);
+    if(!f||f==="denied"){toast(f==="denied"?"Position refusée : autorise la localisation pour Together dans les réglages de l'iPhone.":"Position introuvable pour le moment. Réessaie dans un instant.");return;}
+    const label=(await reverseAddr(f.lat,f.lon))||("Ma position, "+f.lat.toFixed(4)+", "+f.lon.toFixed(4));
+    rememberGeo(label,f.lat,f.lon);
+    const x={...ev,origin:label},r=await estimateTrip(x);
+    if(!r||!r.ok){toast((r&&r.problem)||"Trajet non calculé. Vérifie ta connexion.");return;}
+    const upd={origin:label,travelMin:r.travelMin,travelNote:r.travelNote||"",routeGeo:cleanGeo(r.geo),...(r.pickupMin!=null?{pickupMin:r.pickupMin}:{}),updatedBy:myId,updatedAt:Date.now()};
+    await db.doc("events/"+ev.id).update(upd);
+    const dep=departOf({...ev,...upd}),late=dep.getTime()<Date.now()-60000;
+    toast(late?"Depuis ta position, il fallait partir à "+hhmm(dep)+" : pars dès que possible.":"Départ recalculé depuis ta position : pars à "+hhmm(dep)+".");
+  }catch(_){toast("Recalcul impossible. Vérifie ta connexion.");}
+  finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=lab;}}
 }
 
 /* ---------- Reporter d'un toucher ---------- */
@@ -3129,12 +3161,14 @@ async function computeTrip(from,to,mode,arriveAt){
     path=decodePolyline(r.geometry);km=r.distance/1000;base=r.duration/60;
   }
   let min;
-  if(mode==="car") min=base*(isRush(arriveAt)?1.25:1)+5;
+  // l'heure de pointe compte si l'on part ou si l'on arrive pendant (7 h 30 à 9 h 30, 16 h 30 à 19 h en semaine)
+  const rush=mode==="car"&&!!arriveAt&&(isRush(arriveAt)||isRush(new Date(arriveAt.getTime()-base*1.25*60000)));
+  if(mode==="car") min=base*(rush?1.25:1)+5;
   else if(mode==="transit") min=base*1.6+10;
   else if(mode==="bike") min=km/15*60+3;
   else min=base||km/4.8*60;
-  const raw=mode==="car"?base*(isRush(arriveAt)?1.15:1):min;
-  return {travelMin:Math.max(1,Math.round(min)),rawMin:Math.max(1,raw),distanceKm:Math.round(km*10)/10,path:thin(path,160)};
+  const raw=mode==="car"?base*(rush?1.15:1):min;
+  return {travelMin:Math.max(1,Math.round(min)),rawMin:Math.max(1,raw),rushMin:rush?Math.max(1,Math.round(base*0.25)):0,distanceKm:Math.round(km*10)/10,path:thin(path,160)};
 }
 async function estimateTrip(d){
   // Jamais plus de 12 secondes d'attente, même si un service ne répond pas
@@ -3159,7 +3193,8 @@ async function estimateTripRaw(d){
   if(!o) return {ok:false,problem:"Adresse de départ introuvable. Choisis un domicile enregistré ou une suggestion."};
   rememberGeo(t.label,t.lat,t.lon);rememberGeo(o.label,o.lat,o.lon);
   const r=await computeTrip(o,t,d.mode||"car",startOf(d));
-  const note=String(r.distanceKm).replace(".",",")+" km"+(d.mode==="car"?(isRush(startOf(d))?", heure de pointe et stationnement inclus":", stationnement inclus"):d.mode==="transit"?", durée estimée en transports":"");
+  const px=placeExtra(d.location);
+  const note=String(r.distanceKm).replace(".",",")+" km"+((d.mode||"car")==="car"?(r.rushMin?" · +"+r.rushMin+" min pour l'heure de pointe":"")+" · 5 min pour se garer":d.mode==="transit"?" · durée estimée en transports":"")+(px?" · "+px+" min sur place":"");
   return {ok:true,travelMin:r.travelMin,distanceKm:r.distanceKm,travelNote:note,route:[],routeVia:"",geo:{from:{lat:o.lat,lon:o.lon},to:{lat:t.lat,lon:t.lon},path:r.path,marks:[]},from:o.label,to:t.label};
 }
 
@@ -3258,7 +3293,7 @@ function refreshPlaceUI(){
   if(placesListRefresh)placesListRefresh();
 }
 let placesListRefresh=null;
-async function savePlace({id,name,address,kind,isDefault}){
+async function savePlace({id,name,address,kind,isDefault,owner,extra}){
   if(!db){toast("Synchronisation indisponible.");return false;}
   if(!address){toast("Indique une adresse.");return false;}
   kind=["home","work"].includes(kind)?kind:"place";
@@ -3270,7 +3305,8 @@ async function savePlace({id,name,address,kind,isDefault}){
   try{
     if(def) for(const p of placesSorted()) if(p.id!==docId&&p.isDefault) await db.doc("places/"+p.id).update({isDefault:false});
     const g=await geocode(address).catch(()=>null);
-    await db.doc("places/"+docId).set({name:name.slice(0,40),address:address.slice(0,200),kind,isDefault:def,...(g?{lat:g.lat,lon:g.lon}:{}),updatedBy:myId,updatedAt:Date.now()});
+    const ow=kind==="work"&&owner&&memberIds().includes(owner)?owner:"",ex=Math.max(0,Math.min(60,Math.round(+extra||0)));
+    await db.doc("places/"+docId).set({name:name.slice(0,40),address:address.slice(0,200),kind,isDefault:def,...(ow?{owner:ow}:{}),...(ex?{extra:ex}:{}),...(g?{lat:g.lat,lon:g.lon}:{}),updatedBy:myId,updatedAt:Date.now()});
     toast("« "+name+" » enregistrée pour vous deux");return true;
   }catch(e){toast("Enregistrement impossible. Réessaie.");return false;}
 }
@@ -3707,6 +3743,7 @@ function openConfirm(d,info){
     d.location?row("Où",shortAddr(d.location)):el("div",{class:"cf-row"},el("span",{class:"cf-k"},"Où"),el("span",{class:"cf-v muted"},"Pas de lieu")),
     hasTrip?row("Départ",el("span",{class:"pill"},hhmm(departOf(d))),"  depuis "+(d.origin?shortAddr(d.origin):"la maison")+", "+fmtDur(d.travelMin)+" "+MODE_IN[d.mode]):null,
     hasTrip&&hasPickup(d)?row(d.pickupWho===myId?"On te prend":"Récupérer",el("span",{class:"pill"},hhmm(pickupAt(d))),"  "+(d.pickupWho===myId?firstName(driverOf(d))+" passe te prendre":firstName(d.pickupWho))+" · "+shortAddr(d.pickup)):null,
+    showReturn(d)?row("Retour","Vers "+hhmm(returnAt(d))+" à la maison (fin vers "+hhmm(endOf(d))+")"):null,
     whoLine||(otherId()&&whoOf(d)!=="both"?row("Pour",whoOf(d)===myId?"Toi":firstName(whoOf(d))):null),
     row("Rappels",remSummary(d)),
   ];
@@ -4007,13 +4044,20 @@ function placeForm(p,done,presetKind){
   [["place","Destination"],["home","Domicile"],["work","Travail"]].forEach(([v,l])=>kind.append(el("option",{value:v,selected:k0===v},l)));
   const defCb=el("input",{type:"checkbox",id:"pf-def-"+(p?p.id:"new")});defCb.checked=p?!!p.isDefault:!placesSorted().some(x=>x.kind==="home");
   const defRow=el("label",{class:"rs-row",for:defCb.id,hidden:kind.value!=="home"},defCb,el("span",{class:"rs-txt"},el("strong",{},"Départ par défaut"),el("span",{},"Les trajets partent d'ici si rien d'autre n'est indiqué")));
-  kind.onchange=()=>{defRow.hidden=kind.value!=="home";if(!name.value.trim()&&kind.value!=="place")name.value=KIND_LABEL[kind.value];};
+  // travail : à qui il est (« depuis le boulot » prend celui de la bonne personne)
+  const oth=otherId(),own=el("select",{"aria-label":"Travail de qui"});
+  [[myId,"Mon travail"],...(oth?[[oth,"Travail de "+firstName(oth)]]:[]),["","Commun"]].forEach(([v,l])=>own.append(el("option",{value:v,selected:(p?(p.owner||""):myId)===v},l)));
+  const ownRow=el("div",{class:"field pf-own",hidden:k0!=="work"},el("span",{class:"lab"},"À qui"),own);
+  // minutes pour se garer ou marcher jusqu'à la porte : ajoutées à l'heure de départ
+  const ex=el("input",{type:"number",min:"0",max:"60",step:"5",inputmode:"numeric",value:p&&+p.extra>0?String(p.extra):"",placeholder:"0","aria-label":"Minutes sur place"});
+  const extraRow=el("div",{class:"field pf-extra",hidden:k0==="home"},el("span",{class:"lab"},"Temps sur place (se garer, marcher), en minutes"),ex);
+  kind.onchange=()=>{defRow.hidden=kind.value!=="home";ownRow.hidden=kind.value!=="work";extraRow.hidden=kind.value==="home";if(!name.value.trim()&&kind.value!=="place")name.value=KIND_LABEL[kind.value];};
   const form=el("div",{class:"pform"});
   const save=el("button",{type:"button",class:"btn primary"},"Enregistrer");
-  save.onclick=async()=>{save.disabled=true;if(await savePlace({id:p&&p.id,name:name.value.trim(),address:addr.value.trim(),kind:kind.value,isDefault:kind.value==="home"?defCb.checked:false}))done(form);else save.disabled=false;};
+  save.onclick=async()=>{save.disabled=true;if(await savePlace({id:p&&p.id,name:name.value.trim(),address:addr.value.trim(),kind:kind.value,isDefault:kind.value==="home"?defCb.checked:false,owner:own.value,extra:ex.value}))done(form);else save.disabled=false;};
   const del=p?el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)",onclick:async()=>{
     try{await db.doc("places/"+p.id).delete();toast("« "+p.name+" » supprimée");done(form);}catch(e){toast("Suppression impossible. Réessaie.");}}},"Supprimer"):el("span");
-  form.append(el("div",{class:"grid2"},name,kind),autocomplete(addr),defRow,
+  form.append(el("div",{class:"grid2"},name,kind),autocomplete(addr),defRow,ownRow,extraRow,
     el("div",{class:"sheet-foot"},del,el("div",{class:"psave-act"},el("button",{type:"button",class:"btn quiet",onclick:()=>done(form)},"Annuler"),save)));
   setTimeout(()=>(p?addr:name).focus(),50);
   return form;
@@ -4034,7 +4078,7 @@ function openSettings(){
       for(const p of items){
         const row=el("div",{class:"prow"},
           el("span",{class:"pdot "+p.kind}),
-          el("div",{class:"pinfo"},el("div",{class:"pname"},p.name,p.kind==="home"&&isDefaultHome(p)?el("span",{class:"pbadge"},"Départ par défaut"):null),el("div",{class:"small"},p.address)),
+          el("div",{class:"pinfo"},el("div",{class:"pname"},p.name,p.kind==="home"&&isDefaultHome(p)?el("span",{class:"pbadge"},"Départ par défaut"):null),el("div",{class:"small"},[p.address,p.kind==="work"&&p.owner?(p.owner===myId?"ton travail":"travail de "+firstName(p.owner)):"",+p.extra>0?"+"+p.extra+" min sur place":""].filter(Boolean).join(" · "))),
           canWrite?el("button",{type:"button",class:"btn quiet",onclick:()=>{editing=true;row.replaceWith(placeForm(p,()=>{editing=false;drawList();}));}},"Modifier"):null);
         listBox.append(row);
       }
@@ -4864,7 +4908,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="57";
+const APP_V="58";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -5025,7 +5069,7 @@ function pickupFromText(text){
   const nc=norm(clause);
   const pl=placesSorted().filter(p=>p.name&&nc.includes(norm(p.name))).sort((a,b)=>norm(b.name).length-norm(a.name).length)[0];
   let addr=pl?pl.address:"";
-  if(!addr&&/\b(travail|boulot|bureau|taf|job)\b/.test(nc)){const nm=norm(firstName(who));const w=placesSorted().filter(p=>p.kind==="work");addr=(w.find(p=>norm(p.name).includes(nm))||{}).address||"";}
+  if(!addr&&/\b(travail|boulot|bureau|taf|job)\b/.test(nc))addr=(workOf(who)||{}).address||"";
   if(!addr)addr=(lastPickups()[who]||[])[0]||"";
   return {who,addr,rest:text.replace(m[0]," ").replace(/\s+/g," ").trim()};
 }
@@ -5085,11 +5129,28 @@ function splitEvents(text){
 const SOLO_RE=/\b(dentiste|orthodont\w*|detartrage|coiff\w*|barbier|manucure|ongles?|esthetic\w*|epilation|kine|osteo\w*|ophtalmo\w*|dermato\w*|medecin|docteur|generaliste|dr|prise de sang|analyses?|radio|irm|scanner|vaccin|psy\w*|infirmi\w*|salle de sport|sport|gym|fitness|muscu\w*|yoga|pilates|footing|running|jogging|boxe|crossfit|reunion|travail|boulot|bureau|entretien|formation|seminaire|conference|client)\b/;
 const DUO_RE=/\b(avec|ensemble|a deux|nous|on|notre|nos|vous|gyneco\w*|echo\w*|pediatre|sage-femme|maternite|bebe|enfants?|creche|nounou|famille|parents|amis|potes|veto|veterinaire)\b/;
 function soloGuess(d,text){return (SOLO_RE.test(norm(d.title))||(d.category==="medecin"&&/^rendez-vous medical$/.test(norm(d.title))))&&!DUO_RE.test(norm(text));}
+// Le travail d'une personne : celui qui lui est attribué, sinon celui qui porte son prénom
+function workOf(uid){const w=placesSorted().filter(p=>p.kind==="work");return w.find(p=>p.owner===uid)||w.find(p=>norm(p.name).includes(norm(firstName(uid))))||null;}
+// pour les phrases : mon travail en premier (« depuis le boulot » = le mien)
+function placesForParse(){const mine=workOf(myId);return placesSorted().sort((a,b)=>(mine&&b.id===mine.id)-(mine&&a.id===mine.id)).map(x=>({name:x.name,kind:x.kind,address:x.address}));}
+// Le rendez-vous d'avant, fini depuis moins d'1 h 30, pour les mêmes personnes, ailleurs qu'à la maison
+function prevStop(d){
+  if(!d||!d.date||!d.time||isAllDay(d))return null;
+  const s=startOf(d).getTime(),mine=new Set(peopleOf(d)),home=norm(homeAddr());let best=null;
+  for(const e of events.values()){
+    if(!e||e.id===d.id||!e.location||!e.date||isAllDay(e))continue;
+    const loc=norm(e.location);if(loc===norm(d.location||"")||loc===home)continue;
+    if(!peopleOf(e).some(m=>mine.has(m)))continue;
+    const en=endOf(e).getTime();if(en>s||en<s-90*60000)continue;
+    if(!best||en>endOf(best).getTime())best=e;
+  }
+  return best;
+}
 async function draftFromText(text){
   const info=[],links=String(text||"").match(/https?:\/\/[^\s<>"]+/g)||[];
   if(links.length)text=String(text).replace(/https?:\/\/[^\s<>"]+/g," ").replace(/[ \t]+/g," ").trim();
   const pk=pickupFromText(text);if(pk)text=pk.rest;
-  const p=parseText(text,{places:placesSorted().map(x=>({name:x.name,kind:x.kind,address:x.address}))});
+  const p=parseText(text,{places:placesForParse()});
   const d=blankDraft();
   if(pk){d.who="both";d.pickupWho=pk.who;d.driver=memberIds().find(m=>m!==pk.who)||myId;d.pickup=pk.addr;d.pickupWait=5;
     if(!pk.addr)info.push("Indique où "+(pk.who===myId?firstName(otherId())+" te récupère":"récupérer "+firstName(pk.who))+" (touche Modifier).");}
@@ -5105,6 +5166,9 @@ async function draftFromText(text){
   // sortie de jour sans heure précisée (zoo, parc, plage, musée…) : l'après-midi plutôt que 20h
   if(p.assumed&&p.assumed.time&&DAYTIME.has(motifOf({title:d.title,category:d.category}))){d.time="14:00";
     if(p.assumed.date&&startOf(d).getTime()<Date.now()){const t=new Date();t.setDate(t.getDate()+1);d.date=ymd(t);}}
+  // « Hajjour réunion au travail » : le travail de Hajjour, pas le mien
+  {const w=whoOf(d),mine=workOf(myId),theirs=w!=="both"&&w!==myId?workOf(w):null;
+    if(mine&&theirs&&mine.id!==theirs.id){if(norm(p.location)===norm(mine.address)){p.location=theirs.address;p.locationName=theirs.name;}if(norm(p.origin)===norm(mine.address))p.origin=theirs.address;}}
   if(p.origin) d.origin=p.origin;
   let loc=p.location||"";
   // Enseigne cochée (« courses chez Action ») : magasin le plus proche de la maison
@@ -5116,6 +5180,8 @@ async function draftFromText(text){
   }
   if(!loc){const pl=placeByTitle(d.title);if(pl)loc=pl.address;}
   d.location=loc;
+  // juste après un autre rendez-vous : on part de là-bas, pas de la maison
+  if(!p.origin&&!d.allDay&&!d.pickup){const pv=prevStop(d);if(pv){d.origin=pv.location;info.push("Départ depuis « "+(pv.title||"le rendez-vous d'avant")+" », fini vers "+hhmm(endOf(pv))+".");}}
   if(d.location&&!d.allDay){
     const r=await estimateTrip(d).catch(()=>null);
     if(r&&r.ok){
