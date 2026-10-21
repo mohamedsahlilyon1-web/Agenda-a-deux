@@ -21,8 +21,9 @@ jobs:
           KEY_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/key")
           CAL_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/cal/zzzzzz/00000000000000000000000000000000/x.ics")
           ADD_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/add/zzzzzz/u/000000000000000000000000?t=x")
+          CAR_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/car/zzzzzz/u/000000000000000000000000")
           IDX=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/index")
-          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"calProbe\":$CAL_PROBE,\"addProbe\":$ADD_PROBE,\"couples\":[" > diag/result.json
+          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"calProbe\":$CAL_PROBE,\"addProbe\":$ADD_PROBE,\"carProbe\":$CAR_PROBE,\"couples\":[" > diag/result.json
           first=1
           for id in $(echo "$IDX" | jq -r '.[]?'); do
             V=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/c:$id")

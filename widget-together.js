@@ -256,6 +256,29 @@ if(!config.runsInWidget&&config.runsInApp){
   Script.complete();return;
 }
 
+// ---------- version voiture (CarPlay avec iOS 26) : paramètre « voiture » dans les réglages du widget ----------
+// Texte natif plutôt qu'une image : très lisible, et le temps restant se met à jour tout seul, sans attendre l'iPhone.
+const PARAM=String((typeof args!=="undefined"&&args.widgetParameter)||"").toLowerCase();
+const CAR=/voiture|carplay|auto/.test(PARAM);
+function carWidget(w){
+  const g=new LinearGradient();g.colors=[C(BG),C(mix(BG,"#000000",.4))];g.locations=[0,1];w.backgroundGradient=g;
+  w.setPadding(12,14,12,14);
+  if(!next){const t=w.addText("Together");t.font=Font.heavySystemFont(18);t.textColor=C("#ffffff");w.addSpacer(4);
+    const s=w.addText(data?"Rien de prévu":"Ouvre Together");s.font=Font.semiboldSystemFont(14);s.textColor=C(ACC);return;}
+  const pick=!!(next.pk&&dep);
+  const k=w.addText(next.a?"AUJOURD'HUI":pick?"RÉCUPÉRER "+String(next.pw||"").toUpperCase():dep?"DÉPART":"RENDEZ-VOUS");
+  k.font=Font.heavySystemFont(11);k.textColor=C(ACC);k.lineLimit=1;k.minimumScaleFactor=.7;
+  const big=w.addText(next.a?"Journée":hm(target));big.font=fNum(36);big.textColor=C("#ffffff");big.lineLimit=1;big.minimumScaleFactor=.6;
+  if(!next.a){const r=w.addDate(new Date(target));r.applyRelativeStyle();r.font=Font.semiboldSystemFont(14);r.textColor=C("#ffffff",.85);r.lineLimit=1;}
+  w.addSpacer();
+  const t=w.addText(next.t);t.font=Font.boldSystemFont(15);t.textColor=C("#ffffff");t.lineLimit=2;t.minimumScaleFactor=.8;
+  const where=pick?(next.pkl||""):(next.l||"");
+  if(where){const l=w.addText(where);l.font=Font.mediumSystemFont(12);l.textColor=C("#ffffff",.7);l.lineLimit=1;}
+  // un toucher sur l'écran de la voiture : l'itinéraire (chez l'autre d'abord s'il faut passer le ou la chercher)
+  const dest=pick?next.pk:(next.to||"");
+  if(dest)w.url="https://maps.apple.com/?daddr="+encodeURIComponent(dest)+"&dirflg=d";
+}
+
 // ---------- assemblage ----------
 const w=new ListWidget();w.refreshAfterDate=new Date(now+15*6e4);
 // toucher le widget ouvre la liste dans Scriptable (iOS ne permet pas d'ouvrir directement une app web)
@@ -267,6 +290,9 @@ else if(fam==="accessoryRectangular"){
   else{const k=w.addText(kicker());k.font=Font.boldSystemFont(10);k.lineLimit=1;
     const a=w.addText(next.t);a.font=Font.boldSystemFont(15);a.lineLimit=1;
     const b=w.addText(next.a?"Toute la journée":hm(next.s)+(next.l?" · "+next.l:""));b.font=Font.systemFont(12);b.lineLimit=1;}}
+else if(CAR){carWidget(w);
+  // juste après l'heure du départ, on passe au suivant
+  if(next&&target>now)w.refreshAfterDate=new Date(Math.min(now+15*6e4,target+6e4));}
 else{
   w.setPadding(0,0,0,0);
   w.backgroundImage=fam==="small"?drawSmall():fam==="large"?drawLarge():drawMedium();

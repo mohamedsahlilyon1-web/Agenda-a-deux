@@ -208,6 +208,52 @@ export default {
       try { await logSends(env, id, "a", r.codes.map((x) => ({ ...x, tag: "add" }))); } catch (_) {}
       return txt(r.sent ? "C'est noté. Touche la notification de Together pour vérifier la fiche." : "C'est noté. Ouvre Together pour vérifier la fiche.");
     }
+    // Siri en voiture : /car/<couple>/<personne>/<clé> (même clé personnelle que l'ajout)
+    //   (rien) ou ?a=go : l'adresse du prochain départ, en texte, pour l'action « Afficher l'itinéraire » du raccourci ;
+    //                     si l'on passe récupérer l'autre en chemin, son adresse d'abord, et l'autre reçoit « en route »
+    //   ?a=bas : prévient l'autre que l'on est en bas ;  ?a=next : le prochain départ, à lire par Siri
+    const cr = /^\/car\/([A-Za-z0-9_-]{6,60})\/([A-Za-z0-9_-]{1,80})\/([0-9a-f]{24})\/?$/.exec(path);
+    if (cr) {
+      const [, id, uid, key] = cr;
+      const c = await getCouple(env, id);
+      if (!c || !c.token || key !== await addKey(c.token, uid)) return txt("Lien voiture inconnu. Copie à nouveau ton lien dans Together : Réglages, Dans la voiture.", 404);
+      const act = String(url.searchParams.get("a") || "go").toLowerCase(), now = Date.now();
+      const W = await getWidgets(env, id, c), D = (W.map && W.map[uid]) || {};
+      let fmt; try { fmt = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: D.tz || "Europe/Paris" }); } catch (_) { fmt = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }); }
+      const hm = (ms) => fmt.format(new Date(ms)).replace(/\s/g, "");
+      const me = clean(D.me, 30) || "Together";
+      const items = (Array.isArray(D.items) ? D.items : []).filter((x) => x && !x.a && +x.s > 0).sort((p, q) => p.s - q.s);
+      const ref = (x) => +x.d || +x.s;
+      const nx = items.find((x) => ref(x) > now - 45 * 60000 && x.s > now - 10 * 60000 && ref(x) < now + 4 * 3600000);
+      const tell = async (to, msg, kind) => {
+        const subs = await getSubs(env, id, c), r = await sendTo(env, subs, [to], msg);
+        if (r.changed) await putSubs(env, id, subs);
+        try { await logSends(env, id, kind, r.codes.map((x) => ({ ...x, tag: msg.tag }))); } catch (_) {}
+        return r.sent;
+      };
+      if (act === "next" || act === "info") {
+        if (!nx) return txt("Rien de prévu dans les 4 prochaines heures.");
+        return txt((nx.d ? "Départ à " + hm(nx.d) : "Rendez-vous à " + hm(nx.s)) + " pour « " + clean(nx.t, 60) + " »" + (nx.pk ? ", en passant récupérer " + clean(nx.pw, 20) : "") + ".");
+      }
+      if (act === "bas" || act === "here") {
+        const p = items.find((x) => x.pk && x.pu && ref(x) > now - 90 * 60000 && x.s > now - 30 * 60000 && ref(x) < now + 2 * 3600000);
+        if (!p) return txt("Pas de récupération prévue maintenant.", 404);
+        await tell(p.pu, { title: me + " est en bas", body: me + " t'attend en bas pour « " + clean(p.t, 60) + " ».", tag: "car-bas", url: "./" }, "c");
+        return txt("C'est envoyé à " + clean(p.pw, 20) + ".");
+      }
+      if (!nx) { const h = clean(D.home, 160); return h ? txt(h) : txt("Rien de prévu dans les 4 prochaines heures.", 404); }
+      if (nx.pk && nx.pu) {
+        // une seule notification « en route » par départ, même si Siri relance le raccourci
+        const gk = "cg:" + id + ":" + uid + ":" + nx.s;
+        if (!(await env.KV.get(gk))) {
+          await env.KV.put(gk, "1", { expirationTtl: 3600 });
+          await tell(nx.pu, { title: me + " est en route", body: "Arrivée prévue vers " + hm(now + (+nx.pm || 0) * 60000) + " pour « " + clean(nx.t, 60) + " ».", tag: "car-go", url: "./" }, "c");
+        }
+        return txt(clean(nx.pk, 160));
+      }
+      const dest = clean(nx.to || nx.l, 160);
+      return dest ? txt(dest) : txt("« " + clean(nx.t, 60) + " » n'a pas d'adresse.", 404);
+    }
     if (path === "/api/w" && req.method === "GET") {
       const id = clean(url.searchParams.get("c"), 60), t = clean(url.searchParams.get("t"), 80);
       const c = id && await getCouple(env, id);
