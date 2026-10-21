@@ -260,6 +260,34 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .q-paste{align-self:flex-start;padding:6px 10px;font-size:.9rem}
 .del-series{display:flex;flex-direction:column;gap:10px}
 .del-series .btn{justify-content:center;padding:13px 16px}
+.pp-opt{flex-direction:column;align-items:flex-start!important;gap:2px;text-align:left}
+.pp-opt small{font-weight:500;font-size:.82rem;opacity:.8}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-row>.who-filter{flex:1;min-width:0;gap:6px}
+.bar-row .who-filter .pchip{padding-left:11px;padding-right:11px}
+.bar-fill{flex:1}
+.bar-btn{width:36px;height:36px;flex:none}
+.bar-btn svg{width:17px;height:17px}
+.q-tools{display:flex;gap:8px;flex-wrap:wrap}
+.ov-badge{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;flex:none;background:color-mix(in srgb,var(--warn) 18%,var(--surface));color:var(--warn);font-size:.78rem;font-weight:800}
+.tag.warn{background:color-mix(in srgb,var(--warn) 14%,var(--surface));color:var(--warn);font-weight:700}
+.series-ask{flex-wrap:wrap}
+.s-input{width:100%;font:inherit;font-size:1.05rem;padding:12px 14px;border-radius:14px;border:1px solid var(--hair);background:var(--surface);color:var(--ink)}
+.s-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.s-sum:empty{display:none}
+.s-k{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:var(--ok-soft)}
+.s-k small{font-size:.75rem;font-weight:700;color:var(--muted)}
+.s-k strong{font-size:.95rem}
+.s-k span{font-size:.82rem;color:var(--muted)}
+.s-res{display:flex;flex-direction:column;gap:6px}
+.s-row{display:flex;gap:12px;align-items:center;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--hair);background:var(--surface);color:var(--ink);font:inherit}
+.s-d{flex:none;width:68px;font-weight:800;font-size:.85rem;color:var(--line)}
+.s-t{display:flex;flex-direction:column;min-width:0}
+.s-t small{color:var(--muted);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.free-list{display:flex;flex-direction:column;gap:12px}
+.free-day{display:flex;flex-direction:column;gap:6px}
+.free-h{display:flex;gap:8px;align-items:baseline}
+.free-h small{color:var(--muted);font-size:.82rem}
 .add-box .lab{margin-top:4px}
 @media (max-width:430px){h1{font-size:1.25rem;white-space:nowrap}.brand{gap:8px}header .round{width:38px;height:38px}header .round svg{width:18px;height:18px}}
 #btn-import,#btn-shop{position:relative}
@@ -385,7 +413,10 @@ header{flex-wrap:wrap;row-gap:4px}
 .round{border:none;background:var(--surface);box-shadow:var(--lift)}
 
 /* Semaine : sept jours, un point par évènement */
-.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:-4px}
+.week{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin-top:-4px;scrollbar-width:none;overscroll-behavior-x:contain}
+.week::-webkit-scrollbar{display:none}
+.wk-page{flex:0 0 100%;display:grid;grid-template-columns:repeat(7,1fr);gap:4px;scroll-snap-align:start;scroll-snap-stop:always}
+.wd small.mo{color:var(--line);font-weight:800}
 .wd{border:none;background:transparent;border-radius:16px;padding:8px 0 9px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink)}
 .wd small{font-size:.72rem;color:var(--muted);font-weight:600}
 .wd strong{font-size:1.15rem;font-weight:800;font-variation-settings:"wdth" 85;line-height:1}
@@ -1106,7 +1137,7 @@ function updateTabs(){
   try{put("tab-mem",feedbackDue().length);}catch(_){}
 }
 // Plusieurs mises à jour d'un coup : un seul rafraîchissement de l'écran
-let renderQueued=false;
+let renderQueued=false,ovMap=new Map();
 function scheduleRender(){if(renderQueued)return;renderQueued=true;setTimeout(()=>{renderQueued=false;render();},30);}
 async function render(){
   try{updateTabs();}catch(_){}
@@ -1118,6 +1149,7 @@ async function render(){
   const today0=ymd(new Date());
   const isUp=e=>startOf(e).getTime()>now-3*3600000||(isAllDay(e)&&e.date>=today0);
   const upcoming=all.filter(isUp);
+  try{ovMap=computeOverlaps(upcoming);}catch(_){ovMap=new Map();}
   const past=all.filter(e=>!isUp(e)).reverse();
   $("#btn-past").hidden=past.length===0;
   $("#btn-past").textContent=showPast?"Masquer les évènements passés":"Voir les évènements passés ("+past.length+")";
@@ -1129,7 +1161,9 @@ async function render(){
   const who=id=>({name:id===myId?"toi":((ps[id]&&ps[id].name)||"l'autre"),color:(ps[id]&&ps[id].color)||"var(--muted)"});
   renderNext(upcoming.filter(passWho));
   renderedDay=today0;
-  {const wb=$("#who-bar");wb.textContent="";const wf=whoFilterBar();if(wf)wb.append(wf);wb.hidden=!wf;}
+  {const wb=$("#who-bar");wb.textContent="";const wf=whoFilterBar();
+    wb.append(el("div",{class:"bar-row"},wf||el("span",{class:"bar-fill"}),el("button",{type:"button",class:"round bar-btn",id:"btn-search","aria-label":"Chercher dans l'agenda",title:"Chercher",html:LOUPE_SVG,onclick:()=>openSearch()})));
+    wb.hidden=!wf&&!events.size;}
   {const pp=pushPromptCard();if(pp)list.append(pp);else{const ca=carPromptCard();if(ca)list.append(ca);}}
   if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
   syncPush();
@@ -1224,23 +1258,33 @@ function renderToday(){
     other?avatar(other):el("b",{class:"wait","aria-hidden":"true"},"+"));
   duo.append(av,el("span",{class:"duo-n"},other?[nm(me)||"Toi",nm(other)||"l'autre"].join(" et "):"En attente de ta moitié"));
 }
+const WEEK_PAGES=6;
 function renderWeek(){
   const w=$("#week");if(!w)return;
-  w.textContent="";
+  const keep=w.scrollLeft;   // la semaine regardée reste affichée après un rafraîchissement
+  w.textContent="";w.setAttribute("aria-label","Les "+WEEK_PAGES+" prochaines semaines");
   const base=new Date();base.setHours(0,0,0,0);
   const byDay={};
   for(const e of events.values())(byDay[e.date]=byDay[e.date]||[]).push(e);
-  for(let i=0;i<7;i++){
-    const d=new Date(base);d.setDate(base.getDate()+i);
-    const key=ymd(d),list=(byDay[key]||[]).sort((a,b)=>startOf(a)-startOf(b));
-    const dots=el("span",{class:"dots"},...list.slice(0,3).map(e=>{const k=motifOf(e);return el("i",{style:"--cat:"+(k?MOTIFS[k].c:"var(--c-"+(CATS[e.category]?e.category:"autre")+")")});}));
-    const lab=d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+(list.length?", "+list.length+" évènement"+(list.length>1?"s":""):", rien de prévu");
-    w.append(el("button",{type:"button",class:"wd"+(i===0?" is-today":"")+(list.length?"":" none"),"aria-label":lab,onclick:()=>{
-      const sec=document.getElementById("d-"+key);
-      if(sec)sec.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
-      else toast("Rien de prévu "+(i===0?"aujourd'hui":i===1?"demain":d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"}))+".","Ajouter",()=>{const x=blankDraft();x.date=key;openEditor(x);});
-    }},el("small",{},d.toLocaleDateString("fr-FR",{weekday:"short"}).replace(".","")),el("strong",{class:"num"},String(d.getDate())),dots));
+  for(let p=0;p<WEEK_PAGES;p++){
+    const d0=new Date(base);d0.setDate(base.getDate()+p*7);
+    const page=el("div",{class:"wk-page",role:"group","aria-label":p===0?"Cette semaine":"Semaine du "+d0.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})});
+    for(let j=0;j<7;j++){
+      const i=p*7+j,d=new Date(base);d.setDate(base.getDate()+i);
+      const key=ymd(d),list=(byDay[key]||[]).sort((a,b)=>startOf(a)-startOf(b));
+      const dots=el("span",{class:"dots"},...list.slice(0,3).map(e=>{const k=motifOf(e);return el("i",{style:"--cat:"+(k?MOTIFS[k].c:"var(--c-"+(CATS[e.category]?e.category:"autre")+")")});}));
+      const lab=d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+(list.length?", "+list.length+" évènement"+(list.length>1?"s":""):", rien de prévu");
+      // le 1er du mois montre le mois, pour se repérer en glissant
+      const top=d.getDate()===1&&i>0?el("small",{class:"mo"},d.toLocaleDateString("fr-FR",{month:"short"}).replace(".","")):el("small",{},d.toLocaleDateString("fr-FR",{weekday:"short"}).replace(".",""));
+      page.append(el("button",{type:"button",class:"wd"+(i===0?" is-today":"")+(list.length?"":" none"),"aria-label":lab,"data-date":key,onclick:()=>{
+        const sec=document.getElementById("d-"+key);
+        if(sec)sec.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
+        else toast("Rien de prévu "+(i===0?"aujourd'hui":i===1?"demain":d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"}))+".","Ajouter",()=>{const x=blankDraft();x.date=key;openEditor(x);});
+      }},top,el("strong",{class:"num"},String(d.getDate())),dots));
+    }
+    w.append(page);
   }
+  if(keep)w.scrollLeft=keep;
 }
 
 function mapsUrl(ev){const p=new URLSearchParams({api:"1",destination:ev.location||"",travelmode:GMODE[ev.mode]||"driving"});if(ev.origin)p.set("origin",ev.origin);if(hasPickup(ev)&&!ev.pickedUp)p.set("waypoints",ev.pickup);return "https://www.google.com/maps/dir/?"+p;}
@@ -2646,6 +2690,7 @@ function pickupLine(ev){
 function stop(ev,who){
   const hasTrip=(+ev.travelMin||0)>0;
   const mk=motifOf(ev);
+  const ov=ovMap.get(ev.id),ovTxt=ov?"Même créneau que « "+(ov.title||"un évènement")+" » ("+(isAllDay(ov)?"toute la journée":ov.time)+")":"";
   const front=el("div",{class:"front",style:"--cat:"+(mk?MOTIFS[mk].c:"var(--c-"+(CATS[ev.category]?ev.category:"autre")+")")});
   if(mk) front.append(el("span",{class:"motif-wm",html:motifSvg(mk)}));
 
@@ -2658,6 +2703,7 @@ function stop(ev,who){
       el("div",{class:"small"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode],el("span",{class:"more-info"},", "+(ev.marginMin||0)+" min de marge")))));
 
   const tags=el("div",{class:"tags more-info"});
+  if(ov)tags.append(el("span",{class:"tag warn"},"⚠ "+ovTxt));
   if((+ev.cost||0)>0) tags.append(el("span",{class:"tag cost num"},"Budget "+(+ev.cost).toLocaleString("fr-FR")+" €"));
   for(const r of liveReminders(ev)){const past=remWhen(ev,r).getTime()<Date.now();tags.append(el("span",{class:"tag num"+(presetOf(r)==="leave"?" alarm":"")+(past?" past":"")},remChip(ev,r)));}
   const added=ev.calendarAdded||{};
@@ -2674,6 +2720,7 @@ function stop(ev,who){
   {const lt=tripFor(ev.id);
     if(canStartTrip(ev))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();startTrip(ev.id,e.currentTarget);}},"Je pars : prévenir "+firstName(ev.pickupWho)));
     else if(lt&&(lt.to===myId||lt.by===myId))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();openTrip(ev.id);}},lt.by===myId?"Voir le trajet":"Suivre en direct"));}
+  if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openPostpone(ev)},"Reporter"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
 
@@ -2684,7 +2731,7 @@ function stop(ev,who){
     isAllDay(ev)?el("div",{class:"t allday"},"Toute la journée"):el("div",{class:"t num"},ev.time||""),
     el("div",{class:"rail"},el("span",{class:"node arr"})),
     el("div",{class:"body"},
-      el("div",{class:"ev-title"},el("span",{class:"ev-right"},otherId()?whoBadge(ev):null,moreBtn,el("span",{class:"chev","aria-hidden":"true",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'})),el("span",{class:"ev-t"},ev.title||"Sans titre")),
+      el("div",{class:"ev-title"},el("span",{class:"ev-right"},ov?el("span",{class:"ov-badge",title:ovTxt,"aria-label":ovTxt},"⚠"):null,otherId()?whoBadge(ev):null,moreBtn,el("span",{class:"chev","aria-hidden":"true",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'})),el("span",{class:"ev-t"},ev.title||"Sans titre")),
       el("div",{class:"where"},mk?el("span",{class:"motif-chip",html:motifSvg(mk)+"<span>"+MOTIFS[mk].name+"</span>"}):null,[mk?"":(CATS[ev.category]||"Autre"),ev.location].filter(Boolean).join(", ")),
       tags.childNodes.length?tags:null,
       links,
@@ -2821,6 +2868,147 @@ async function removeEvent(ev,scope){
     });
   }catch(e){toast("Suppression impossible. Réessaie.");}
 }
+/* ---------- Modifier une série ---------- */
+function shiftDate(date,days){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+days);return ymd(d);}
+async function saveSeries(x,d,more){
+  if(!db)return false;
+  const list=[d,...(more||seriesAfter(d))];
+  const shift=Math.round((new Date(x.date+"T12:00:00")-new Date(d.date+"T12:00:00"))/86400000);
+  try{
+    for(const e of list) await db.doc("events/"+e.id).set(buildBody({...x,date:shiftDate(e.date,shift)},e));
+    pushOther("Modifié : "+x.title+" ("+list.length+" fois)",firstName(myId)+" a modifié « "+x.title+" » à partir de "+dayWord(startOf(x))+" ("+list.length+" fois).","ev");
+    toast(list.length+" « "+x.title+" » modifiés pour vous deux");
+    return true;
+  }catch(e){toast(e&&e.code==="invalid_argument"?"Enregistrement refusé. Vérifie que tu as bien rejoint l'agenda.":"Enregistrement impossible. Réessaie.");return false;}
+}
+
+/* ---------- Reporter d'un toucher ---------- */
+async function postpone(ev,days){
+  if(!db||!ev)return;
+  const old={date:ev.date,startTs:startOf(ev).getTime()},x={...ev,date:shiftDate(ev.date,days)};
+  try{
+    await db.doc("events/"+ev.id).update({date:x.date,startTs:startOf(x).getTime(),updatedBy:myId,updatedAt:Date.now()});
+    const when=dayWord(startOf(x))+(isAllDay(ev)?"":" à "+ev.time),t=ev.title||"évènement";
+    pushOther("Reporté : "+t,firstName(myId)+" a reporté « "+t+" » à "+when+".","ev");
+    toast("« "+(ev.title||"Évènement")+" » reporté à "+when,"Annuler",async()=>{
+      try{await db.doc("events/"+ev.id).update({...old,updatedBy:myId,updatedAt:Date.now()});toast("Date d'origine remise");}catch(_){toast("Impossible d'annuler.");}});
+  }catch(_){toast("Report impossible. Vérifie ta connexion.");}
+}
+function openPostpone(ev){
+  const root=$("#sheet-root");root.textContent="";
+  const lab=n=>new Date(shiftDate(ev.date,n)+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  const opt=(t,n,cls)=>el("button",{type:"button",class:"btn pp-opt"+(cls?" "+cls:""),onclick:()=>{closeSheet();postpone(ev,n);}},el("strong",{},t),el("small",{},lab(n)+(isAllDay(ev)?"":" à "+ev.time)));
+  root.append(sheetShell("Reporter",[
+    el("div",{class:"sheet-h"},el("h2",{},"Reporter « "+(ev.title||"Évènement")+" »"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("div",{class:"del-series"},opt("Le lendemain, même heure",1,"primary"),opt("Une semaine plus tard",7),
+      el("button",{type:"button",class:"btn",onclick:()=>{closeSheet();openEditor({...ev});}},"Choisir une autre date"))]));
+}
+
+/* ---------- Chevauchements dans la liste ---------- */
+function computeOverlaps(list){
+  const m=new Map(),sp=[];
+  for(const e of list){if(!e||!e.date||isAllDay(e))continue;const [a,b]=busySpan(e);sp.push({e,a,b,p:peopleOf(e)});}
+  sp.sort((x,y)=>x.a-y.a);
+  const act=[];
+  for(const s of sp){
+    for(let i=act.length-1;i>=0;i--)if(act[i].b<=s.a)act.splice(i,1);
+    for(const o of act)if(o.b>s.a&&s.p.some(x=>o.p.includes(x))){if(!m.has(s.e.id))m.set(s.e.id,o.e);if(!m.has(o.e.id))m.set(o.e.id,s.e);}
+    act.push(s);
+  }
+  return m;
+}
+
+/* ---------- Chercher dans l'agenda ---------- */
+const LOUPE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>';
+const SEARCH_STOP=new Set(["le","la","les","de","du","des","un","une","quand","dernier","derniere","prochain","prochaine","etait","est","au","aux","on","nous","notre","nos","mon","ma","mes","pour","avec","chez","et","fois","rdv","rendez-vous","rendez","vous","quel","quelle","date","jour"]);
+function searchEvents(q){
+  const words=norm(q).replace(/[?!.,;:'’"«»()]/g," ").split(" ").filter(w=>w.length>1&&!SEARCH_STOP.has(w));
+  if(!words.length)return [];
+  return [...events.values()].filter(e=>{
+    const k=motifOf(e),w=whoOf(e);
+    const hay=norm([e.title,e.location,e.notes,k?MOTIFS[k].name:"",CATS[e.category]||"",w==="both"?"":firstName(w)].join(" "));
+    return words.every(x=>hay.includes(x)||(x.length>3&&/s$/.test(x)&&hay.includes(x.slice(0,-1))));
+  });
+}
+function isPastEv(e){return startOf(e).getTime()<Date.now()-3*3600000&&!(isAllDay(e)&&e.date>=ymd(new Date()));}
+function daysFromToday(e){const t=new Date();t.setHours(0,0,0,0);return Math.round((new Date(e.date+"T12:00:00")-t)/86400000-.5);}
+function relDay(e){
+  const n=daysFromToday(e);
+  if(n===0)return "aujourd'hui";if(n===1)return "demain";if(n===-1)return "hier";
+  const a=Math.abs(n),txt=a<31?a+" jours":a<365?Math.max(1,Math.round(a/30.4))+" mois":Math.floor(a/365)+(Math.floor(a/365)>1?" ans":" an");
+  return n>0?"dans "+txt:"il y a "+txt;
+}
+function longDay(e){const d=startOf(e),y=d.getFullYear()!==new Date().getFullYear();
+  return d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",...(y?{year:"numeric"}:{})}).replace(/^./,c=>c.toUpperCase())+(isAllDay(e)?"":" à "+e.time);}
+function openFound(e){closeSheet();if(isPastEv(e))showPast=true;openEventCard(e.id);}
+function openSearch(q0){
+  const root=$("#sheet-root");root.textContent="";
+  const inp=el("input",{type:"search",id:"s-q",class:"s-input",placeholder:"Dentiste, resto, Léa, un lieu…","aria-label":"Chercher dans l'agenda",autocomplete:"off"});
+  inp.setAttribute("enterkeyhint","search");
+  const sum=el("div",{class:"s-sum"}),res=el("div",{class:"s-res"});
+  const draw=()=>{
+    const q=inp.value.trim();res.textContent="";sum.textContent="";
+    if(norm(q).length<2){res.append(el("p",{class:"note"},"Écris un mot : dentiste, resto, coiffeur, un lieu, un prénom… Les évènements passés sont compris."));return;}
+    const hits=searchEvents(q);
+    if(!hits.length){res.append(el("p",{class:"note"},"Rien trouvé pour « "+q+" »."));return;}
+    const up=hits.filter(e=>!isPastEv(e)).sort((a,b)=>startOf(a)-startOf(b)),past=hits.filter(isPastEv).sort((a,b)=>startOf(b)-startOf(a));
+    // la réponse directe : la dernière fois et la prochaine
+    if(past[0])sum.append(el("div",{class:"s-k"},el("small",{},"Dernière fois"),el("strong",{},longDay(past[0])),el("span",{},relDay(past[0])+" · "+(past[0].title||""))));
+    if(up[0])sum.append(el("div",{class:"s-k"},el("small",{},"Prochaine fois"),el("strong",{},longDay(up[0])),el("span",{},relDay(up[0])+" · "+(up[0].title||""))));
+    const row=e=>{const d=startOf(e),w=whoOf(e);
+      return el("button",{type:"button",class:"s-row",onclick:()=>openFound(e)},
+        el("span",{class:"s-d num"},d.toLocaleDateString("fr-FR",{day:"numeric",month:"short",...(d.getFullYear()!==new Date().getFullYear()?{year:"2-digit"}:{})})),
+        el("span",{class:"s-t"},el("strong",{},e.title||"Sans titre"),el("small",{},[isAllDay(e)?"Toute la journée":e.time,e.location?shortAddr(e.location):"",w==="both"?"":(w===myId?"toi":firstName(w))].filter(Boolean).join(" · "))));};
+    if(up.length)res.append(el("div",{class:"pgroup-h"},"À venir ("+up.length+")"),...up.slice(0,30).map(row));
+    if(past.length)res.append(el("div",{class:"pgroup-h"},"Passés ("+past.length+")"),...past.slice(0,30).map(row));
+  };
+  inp.addEventListener("input",draw);
+  root.append(sheetShell("Chercher dans l'agenda",[el("div",{class:"sheet-h"},el("h2",{},"Chercher"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),inp,sum,res]));
+  if(q0)inp.value=q0;
+  draw();setTimeout(()=>inp.focus(),60);
+}
+
+/* ---------- Quand sommes-nous libres ? ---------- */
+// Soirées en semaine ; matin, après-midi et soirée le week-end. Un créneau compte s'il reste au moins 1 h 30 sans rien pour vous deux.
+const FREE_SLOTS={wk:[["Soirée","19:00","23:00"]],we:[["Matin","09:30","12:00"],["Après-midi","14:00","18:30"],["Soirée","19:00","23:00"]]};
+function freeSlots(days){
+  const out=[],now=Date.now(),ppl=memberIds();
+  const spans=[...events.values()].filter(e=>e&&e.date&&!isAllDay(e)).map(e=>{const [a,b]=busySpan(e);return {a,b,p:peopleOf(e)};}).filter(x=>x.p.some(u=>ppl.includes(u)));
+  const base=new Date();base.setHours(0,0,0,0);
+  for(let i=0;i<days;i++){
+    const d=new Date(base);d.setDate(base.getDate()+i);
+    const key=ymd(d),we=d.getDay()===0||d.getDay()===6,free=[];
+    for(const [lab,f,t] of (we?FREE_SLOTS.we:FREE_SLOTS.wk)){
+      const a=new Date(key+"T"+f+":00").getTime(),b=new Date(key+"T"+t+":00").getTime();
+      const a2=Math.max(a,Math.ceil(now/1800000)*1800000);if(b-a2<90*60000)continue;
+      let segs=[[a2,b]];
+      for(const x of spans){if(x.b<=a2||x.a>=b)continue;segs=segs.flatMap(([u,v])=>x.b<=u||x.a>=v?[[u,v]]:[[u,x.a],[x.b,v]].filter(([p,q])=>q-p>0));}
+      const best=segs.sort((p,q)=>(q[1]-q[0])-(p[1]-p[0]))[0];
+      if(best&&best[1]-best[0]>=90*60000)free.push({lab,date:key,from:hhmm(new Date(best[0])),to:hhmm(new Date(best[1]))});
+    }
+    if(free.length)out.push({d,key,free,notes:[...events.values()].filter(e=>e.date===key&&isAllDay(e)).map(e=>e.title).slice(0,2)});
+  }
+  return out;
+}
+function planFree(s){
+  const x=blankDraft();x.date=s.date;x.time=s.from;x.who="both";x.category="sortie";
+  closeSheet();openEditor(x,"Créneau libre pour vous deux : "+dayWord(new Date(s.date+"T12:00:00"))+", "+s.lab.toLowerCase()+" de "+s.from+" à "+s.to+".");
+}
+function openFree(){
+  const root=$("#sheet-root");root.textContent="";
+  const list=el("div",{class:"free-list"}),days=freeSlots(14),two=!!otherId();
+  if(!days.length)list.append(el("p",{class:"note"},"Pas de soirée ni de moment de week-end libre"+(two?" pour vous deux":"")+" dans les deux prochaines semaines."));
+  for(const g of days){const [a,b]=dayParts(g.d);
+    list.append(el("div",{class:"free-day"},
+      el("div",{class:"free-h"},el("strong",{},a),b?el("small",{},b):null),
+      el("div",{class:"pchips"},...g.free.map(x=>el("button",{type:"button",class:"pchip free-chip","data-date":x.date,"data-from":x.from,onclick:()=>planFree(x)},x.lab+" · "+x.from+"–"+x.to))),
+      g.notes.length?el("small",{class:"note"},"Ce jour-là : "+g.notes.join(", ")):null));}
+  root.append(sheetShell("Quand sommes-nous libres ?",[
+    el("div",{class:"sheet-h"},el("h2",{},two?"Quand sommes-nous libres ?":"Quand suis-je libre ?"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("p",{class:"note"},"Les soirées et les moments de week-end où rien n'est prévu"+(two?" pour vous deux":"")+", sur les deux prochaines semaines. Touche un créneau pour y prévoir quelque chose."),
+    list]));
+}
+
 async function markAdded(ev){
   if(!db||!myId) return;
   try{await db.doc("events/"+ev.id).update({["calendarAdded."+myId]:ev.updatedAt});}catch(e){}
@@ -3650,6 +3838,11 @@ function openEditor(d,info){
     el("button",{class:"btn danger",type:"button",onclick:()=>{closeSheet();removeEvent(d);}},"Supprimer"),
     el("button",{class:"btn quiet",type:"button",onclick:()=>confirmBox.hidden=true},"Garder"));
 
+  // Une répétition : les changements pour celui-ci seulement, ou aussi pour les suivants
+  const seriesMore=!isNew?seriesAfter(d):[];let seriesScope=null;
+  const seriesBox=el("div",{class:"confirm series-ask",hidden:true},el("span",{},"Cet évènement se répète. Appliquer les changements :"),
+    el("button",{class:"btn",type:"button",onclick:()=>{seriesScope="one";save.onclick();}},"Seulement à celui-ci"),
+    el("button",{class:"btn primary",type:"button",onclick:()=>{seriesScope="next";save.onclick();}},"Aussi aux "+seriesMore.length+" suivant"+(seriesMore.length>1?"s":"")));
   const save=el("button",{class:"btn primary",type:"button"},isNew?"Enregistrer pour nous deux":"Enregistrer les modifications");
   save.onclick=async()=>{
     if(!read().title){toast("Donne un titre à l'évènement.");title.focus();return;}
@@ -3660,7 +3853,8 @@ function openEditor(d,info){
     if(!read().location&&(+travel.value||0)>0){travel.value=0;pickupMin=0;routeGeo=null;route=[];}
     const x=read();
     if(x.pickup)rememberPickup(x.pickupWho,x.pickup);
-    if(await saveEventDraft(x,d,isNew?repeat:"none")){
+    if(seriesMore.length&&!seriesScope){seriesBox.hidden=false;save.disabled=false;seriesBox.scrollIntoView({block:"nearest"});return;}
+    if(seriesScope==="next"?await saveSeries(x,d,seriesMore):await saveEventDraft(x,d,isNew?repeat:"none")){
       if(d.fromWish)db.doc("wishes/"+d.fromWish).update({planned:Date.now()}).catch(()=>{});
       afterDraftSaved();
     }else save.disabled=false;
@@ -3750,7 +3944,7 @@ function openEditor(d,info){
       f("e-cost","Budget prévu (€)",cost),
       f("e-notes","Notes",notes),
       canWrite?el("div",{},tplBtn):null],isNew&&repeat!=="none"),
-    confirmBox,
+    confirmBox,seriesBox,
     el("div",{class:"sheet-foot sticky"},!isNew?el("button",{class:"btn quiet",style:"color:var(--danger)",type:"button",onclick:()=>confirmBox.hidden=false},"Supprimer"):el("span"),save)
   ]));
   mode.addEventListener("change",()=>{drawModes();updFrom();});
@@ -4625,7 +4819,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="54";
+const APP_V="55";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -4747,6 +4941,7 @@ function openQuickAdd(voice,prefill){
   const paste=navigator.clipboard&&navigator.clipboard.readText?el("button",{type:"button",class:"btn quiet q-paste",onclick:async()=>{
     try{const t=String(await navigator.clipboard.readText()||"").trim();if(!t){toast("Rien à coller : copie d'abord le message.");return;}ta.value=sharedText(t).slice(0,1500);go.click();}
     catch(_){toast("Collage refusé. Touche longuement la zone de texte, puis Coller.");}}},"Coller un message"):null;
+  const freeB=otherId()?el("button",{type:"button",class:"btn quiet q-paste",onclick:openFree},"Quand sommes-nous libres ?"):null;
   ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();go.click();}});
   // Modèles : un toucher, puis choisir le jour et l'heure
   const chips=el("div",{class:"pchips tpl-chips"});
@@ -4768,7 +4963,7 @@ function openQuickAdd(voice,prefill){
     el("div",{class:"sheet-h"},el("h2",{},"Ajouter un évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
     el("div",{class:"field"},el("span",{class:"lab"},"En un toucher"),chips),
     el("div",{class:"or"},el("span",{},"ou écris-le")),
-    el("div",{class:"q-row"},ta,micBtn),micHelp,sugg,paste,
+    el("div",{class:"q-row"},ta,micBtn),micHelp,sugg,paste||freeB?el("div",{class:"q-tools"},paste,freeB):null,
     el("div",{class:"note"},"Touche Parler et dis simplement quoi, quand et où. Par exemple : « dentiste vendredi 14h30 »."),
     el("div",{class:"sheet-foot"},el("button",{class:"btn quiet",type:"button",onclick:()=>{const d=blankDraft();const t=ta.value.trim();if(t)d.title=t.slice(0,80);openEditor(d);}},"Remplir moi-même"),go)
   ]));
