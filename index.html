@@ -575,6 +575,7 @@ header{flex-wrap:wrap;row-gap:4px}
 .tp-lock-ic{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--hero,#1E1A5E);color:var(--sun,#FFB547)}
 .tp-lock-tx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.tp-lock-tx strong{font-size:.95rem}.tp-lock-tx small{font-size:.8rem;color:var(--muted);line-height:1.3}
 .tp-lock .btn{flex:none}
+.tp-say{display:flex;gap:8px}.tp-say-in{flex:1;min-width:0;font:inherit;padding:10px 12px;border-radius:14px;border:1px solid var(--hair);background:var(--surface);color:var(--ink)}
 .sheet:has(.tp-sheet){padding:0;gap:0;max-height:94%;overflow:hidden;position:relative}
 .sheet:has(.tp-sheet)>.grab{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:600;margin:0;background:rgba(0,0,0,.28);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
 .tp-sheet{display:flex;flex-direction:column;min-height:0;max-height:94vh}
@@ -1249,7 +1250,7 @@ function renderNext(upcoming){
     trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||ev.title))):null,
     trip?el("div",{class:"trip-meta"},ev.pickedUp?"Prépare-toi pour "+hhmm(ref)+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Arrivée à "+ev.time+".":fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null,
     trip&&hasPickup(ev)&&!ev.pickedUp?el("div",{class:"pk-hero"},el("b",{class:"num"},hhmm(pickupAt(ev))),"Récupérer "+firstName(ev.pickupWho)+(ev.pickup?" · "+shortAddr(ev.pickup):"")):null].filter(Boolean));
-  if(canStartTrip(ev)){const b=el("button",{type:"button",class:"btn sign-btn go-live"},"Je pars : prévenir "+firstName(ev.pickupWho));b.onclick=e=>{e.stopPropagation();startTrip(ev.id,b);};n.append(b);}
+  if(canStartTrip(ev)&&hasPickup(ev)){const b=el("button",{type:"button",class:"btn sign-btn go-live"},"Je pars : prévenir "+firstName(ev.pickupWho));b.onclick=e=>{e.stopPropagation();startTrip(ev.id,b);};n.append(b);}
   else if(trip&&IS_IOS&&canWrite){const b=alarmButton(ev,"sign-btn");if(b)n.append(b);}
   if(isShopping(ev))n.append(shopPill(ev,"hero-pill"));
 }
@@ -2771,7 +2772,8 @@ function stop(ev,who){
   links.append(el("a",{class:"btn",href:gcalUrl(ev),target:"_blank",rel:"noopener",onclick:()=>markAdded(ev)},"Google Agenda"));
   if(IS_IOS&&(whoOf(ev)==="both"||whoOf(ev)===myId)){const ab=alarmButton(viewFor(ev,myId));if(ab)links.append(ab);}
   {const lt=tripFor(ev.id);
-    if(canStartTrip(ev))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();startTrip(ev.id,e.currentTarget);}},"Je pars : prévenir "+firstName(ev.pickupWho)));
+    if(canStartTrip(ev))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();startTrip(ev.id,e.currentTarget);}},(hasPickup(ev)?"Je pars : prévenir ":"J'y vais : prévenir ")+firstName(hasPickup(ev)?ev.pickupWho:otherId())));
+    if(canGoHome(ev))links.prepend(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();startHomeTrip(ev,e.currentTarget);}},"Je rentre : prévenir "+firstName(otherId())));
     else if(lt&&(lt.to===myId||lt.by===myId))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();openTrip(ev.id);}},lt.by===myId?"Voir le trajet":"Suivre en direct"));}
   if(canWrite&&canStartHere(ev)) links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();tripFromHere(ev,e.currentTarget);}},"Partir d'où je suis"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openPostpone(ev)},"Reporter"));
@@ -4908,7 +4910,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="58";
+const APP_V="59";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -5310,10 +5312,20 @@ function pointAt(route,s){let acc=0;
 }
 function tripLive(t){return !!t&&(t.stage==="go"||t.stage==="here")&&Date.now()-(t.updatedAt||t.startedAt||0)<4*3600000;}
 function tripFor(id){const t=trips.get(id);return tripLive(t)?t:null;}
-function myLiveTrip(){return [...trips.values()].filter(t=>tripLive(t)&&(t.to===myId||t.by===myId)&&events.has(t.id)).sort((a,b)=>(b.startedAt||0)-(a.startedAt||0))[0]||null;}
+function myLiveTrip(){return [...trips.values()].filter(t=>tripLive(t)&&(t.to===myId||t.by===myId)&&(events.has(t.id)||t.kind==="home")).sort((a,b)=>(b.startedAt||0)-(a.startedAt||0))[0]||null;}
+// pick : je passe prendre l'autre ; meet : je rejoins l'autre au rendez-vous ; home : je rentre à la maison
+const TRIP_QUICK={pick:["Je descends","Dans 2 min","Dans 5 min"],meet:["Je suis déjà là","J'arrive aussi","Prends ton temps"],home:["À tout de suite","Je t'attends"]};
+function tripKind(t){return (t&&t.kind)||"pick";}
+function tripKindFor(ev){
+  if(!ev||isAllDay(ev)||!otherId())return null;
+  if(hasPickup(ev))return driverOf(ev)===myId?"pick":null;
+  return whoOf(ev)==="both"&&(+ev.travelMin||0)>0&&ev.location?"meet":null;
+}
+// ce que l'arrivée annonce à l'autre, selon la sorte de trajet
+function arriveTxt(t,nm){const k=tripKind(t);return k==="meet"?nm+" est là":k==="home"?nm+" est à la maison":nm+" est en bas";}
 // Le conducteur peut partir de 2 h avant l'heure de départ jusqu'à l'heure du rendez-vous
 function canStartTrip(ev){
-  if(!ev||!tripsReady||!hasPickup(ev)||isAllDay(ev)||driverOf(ev)!==myId)return false;
+  if(!ev||!tripsReady||!tripKindFor(ev))return false;
   const t=trips.get(ev.id);if(tripLive(t)||(t&&t.stage==="together"))return false;
   const now=Date.now();return now>=departOf(ev).getTime()-2*3600000&&now<=startOf(ev).getTime()+30*60000;
 }
@@ -5323,6 +5335,14 @@ function fixOf(p){const c=(p&&p.coords)||{},n=(x,d)=>x!=null&&Number.isFinite(+x
 // ms : attente totale (la fenêtre « Autoriser la position ? » en fait partie) ; la mesure elle-même a 15 s
 function getFix(ms){return new Promise(res=>{let done=false;const end=v=>{if(!done){done=true;res(v);}};setTimeout(()=>end(null),ms);
   try{navigator.geolocation.getCurrentPosition(p=>end(fixOf(p)),e=>end(e&&e.code===1?"denied":null),{enableHighAccuracy:true,maximumAge:20000,timeout:Math.min(ms,15000)});}catch(_){end(null);}});}
+async function meetTarget(ev){
+  const g0=ev.routeGeo&&ev.routeGeo.to;if(okPt(g0))return {lat:+g0.lat,lon:+g0.lon};
+  const g=ev.location?await geocode(ev.location).catch(()=>null):null;return okPt(g)?{lat:+g.lat,lon:+g.lon}:null;
+}
+async function homeTarget(){
+  const h=defaultHome();if(h&&okPt(h))return {lat:+h.lat,lon:+h.lon};
+  const g=homeAddr()?await geocode(homeAddr()).catch(()=>null):null;return okPt(g)?{lat:+g.lat,lon:+g.lon}:null;
+}
 async function tripTarget(ev){
   const m=ev.routeGeo&&(ev.routeGeo.marks||[])[0];
   if(m&&okPt(m.at))return {lat:+m.at.lat,lon:+m.at.lon};
@@ -5348,21 +5368,50 @@ async function startTrip(id,btn){
     const fix=await getFix(45000);
     if(fix==="denied"){toast("Position refusée. Pour l'autoriser : Réglages de l'iPhone, Confidentialité, Service de localisation.");return false;}
     if(!fix){toast("Position introuvable pour l'instant. Réessaie dans un instant.");return false;}
-    const target=await tripTarget(ev);
-    if(!target){toast("Adresse de "+firstName(ev.pickupWho)+" introuvable : vérifie-la dans l'évènement.");return false;}
+    const kind=tripKindFor(ev),to=kind==="pick"?ev.pickupWho:otherId();
+    const target=kind==="pick"?await tripTarget(ev):await meetTarget(ev);
+    if(!target){toast(kind==="pick"?"Adresse de "+firstName(ev.pickupWho)+" introuvable : vérifie-la dans l'évènement.":"Adresse du rendez-vous introuvable : vérifie-la dans l'évènement.");return false;}
     const r=await tripRoute(fix,target,ev.mode);
-    const now=Date.now(),doc={ev:id,by:myId,to:ev.pickupWho,mode:ev.mode||"car",stage:"go",startedAt:now,updatedAt:now,
-      title:String(ev.title||"").slice(0,80),target:{...target,addr:String(ev.pickup||"").slice(0,200)},...r,near:r.eta-now<=6*60000?now:0};
+    // « due » : l'heure prévue d'arrivée, pour prévenir l'autre d'un retard
+    const now=Date.now(),doc={ev:id,by:myId,to,kind,mode:ev.mode||"car",stage:"go",startedAt:now,updatedAt:now,due:kind==="pick"?pickupAt(ev).getTime():startOf(ev).getTime(),
+      title:String(ev.title||"").slice(0,80),target:{...target,addr:String((kind==="pick"?ev.pickup:ev.location)||"").slice(0,200)},...r,near:r.eta-now<=6*60000?now:0};
     await db.doc("trips/"+id).set(doc);trips.set(id,{id,...doc});
     await db.doc("tripPos/"+id).set({...fix,bg:false});tripPos.set(id,{...fix,bg:false});
-    pushTo([ev.pickupWho],firstName(myId)+" est en route","Arrivée prévue vers "+hhmm(new Date(r.eta))+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id)
+    pushTo([to],firstName(myId)+" est en route","Arrivée prévue vers "+hhmm(new Date(r.eta))+(kind==="pick"?(ev.pickup?", "+shortAddr(ev.pickup):""):" au « "+String(ev.title||"rendez-vous").slice(0,60)+" »")+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id)
       .then(res=>{const ok=!!(res&&res.sent>0),cur=trips.get(id);if(cur)cur.notified=ok?1:-1;
         db.doc("trips/"+id).update({notified:ok?1:-1}).catch(()=>{});
-        if(!ok)toast("La notification n'a pas pu partir vers le téléphone de "+firstName(ev.pickupWho)+(res&&res.codes&&res.codes.includes(-1)?" : ses notifications ne sont pas activées dans Together.":"."));
+        if(!ok)toast("La notification n'a pas pu partir vers le téléphone de "+firstName(to)+(res&&res.codes&&res.codes.includes(-1)?" : ses notifications ne sont pas activées dans Together.":"."));
         tripTick(true);});
     beginShare(id,fix);
     if(tripUIOpen(id)){tripUI.key="";tripPanel();}else openTrip(id);
     syncPush(true);scheduleRender();
+    return true;
+  }catch(e){console.error(e);toast("Départ impossible pour l'instant. Réessaie.");return false;}
+  finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=lbl;}}
+}
+function canGoHome(ev){
+  if(!ev||!tripsReady||!otherId()||!homeAddr()||!ev.location||isAllDay(ev)||norm(ev.location)===norm(homeAddr()))return false;
+  const w=whoOf(ev),m=trips.get(ev.id),mineMeet=m&&tripKind(m)==="meet"&&m.by===myId;
+  if(!(w===myId||mineMeet))return false;
+  const h=trips.get(homeTripId(ev.id));if(tripLive(h))return false;
+  const now=Date.now();return now>=startOf(ev).getTime()-30*60000&&now<=endOf(ev).getTime()+3*3600000;
+}
+function homeTripId(evId){return "h-"+String(myId).slice(0,8)+"-"+evId;}
+async function startHomeTrip(ev,btn){
+  if(!ev||!canGoHome(ev))return false;
+  if(!navigator.geolocation){toast("Ce téléphone ne donne pas sa position.");return false;}
+  const lbl=btn?btn.textContent:"";if(btn){btn.disabled=true;btn.textContent="Position…";}
+  try{
+    const fix=await getFix(45000);
+    if(fix==="denied"){toast("Position refusée. Pour l'autoriser : Réglages de l'iPhone, Confidentialité, Service de localisation.");return false;}
+    if(!fix){toast("Position introuvable pour l'instant. Réessaie dans un instant.");return false;}
+    const target=await homeTarget();if(!target){toast("Adresse de la maison introuvable : vérifie-la dans les réglages.");return false;}
+    const id=homeTripId(ev.id),to=otherId(),r=await tripRoute(fix,target,ev.mode),now=Date.now();
+    const doc={ev:ev.id,by:myId,to,kind:"home",mode:ev.mode||"car",stage:"go",startedAt:now,updatedAt:now,due:0,title:"Retour à la maison",target:{...target,addr:String(homeAddr()).slice(0,200)},...r,near:r.eta-now<=6*60000?now:0};
+    await db.doc("trips/"+id).set(doc);trips.set(id,{id,...doc});
+    await db.doc("tripPos/"+id).set({...fix,bg:false});tripPos.set(id,{...fix,bg:false});
+    pushTo([to],firstName(myId)+" rentre","Arrivée à la maison vers "+hhmm(new Date(r.eta))+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id);
+    beginShare(id,fix);openTrip(id);syncPush(true);scheduleRender();
     return true;
   }catch(e){console.error(e);toast("Départ impossible pour l'instant. Réessaie.");return false;}
   finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=lbl;}}
@@ -5399,8 +5448,10 @@ function onFix(p){
   const t=trips.get(share.id);
   if(!t||t.by!==myId||!tripLive(t)){endShare();return;}
   // le partage ne dure jamais : 15 min sur place au plus, et rien après l'heure du rendez-vous
-  if(t.stage==="here"&&now0-(+t.hereAt||now0)>15*60000){tripTogether(t);return;}
-  if(ev&&now0>startOf(ev).getTime()+45*60000){tripStop(t);return;}
+  const hold=tripKind(t)==="pick"?15*60000:2*60000;   // rejoindre ou rentrer : c'est fini juste après l'arrivée
+  if(t.stage==="here"&&now0-(+t.hereAt||now0)>hold){tripTogether(t);return;}
+  if(tripKind(t)==="home"){if(now0-(+t.startedAt||now0)>3*3600000){tripStop(t);return;}}
+  else if(ev&&now0>startOf(ev).getTime()+45*60000){tripStop(t);return;}
   const dT=okPt(t.target)?distM(fix,t.target):Infinity;
   if(t.stage==="go"&&dT<=TRIP_HERE_M+Math.min(fix.acc,60))tripArrived(t);
   else if(t.stage==="here"&&dT>350){tripTogether(t);return;}
@@ -5420,24 +5471,37 @@ function tripEta(t,fix){
     share.offN++;
     if(share.offN>=2&&now-share.rerouteAt>90000){share.rerouteAt=now;share.offN=0;
       tripRoute(fix,t.target,t.mode).then(r=>{const cur=trips.get(t.id);if(!cur||cur.stage!=="go")return;Object.assign(cur,r,{updatedAt:Date.now()});
-        db.doc("trips/"+t.id).update({...r,updatedAt:Date.now()}).catch(()=>{});tripTick(true);syncPush();});}
+        if(share)share.hist=[];delete cur.vEff;
+        db.doc("trips/"+t.id).update({...r,vEff:0,updatedAt:Date.now()}).catch(()=>{});tripTick(true);syncPush();});}
     return;
   }
   share.offN=0;
-  const remS=Math.max(0,a.total-a.s)/Math.max(1.2,+t.v||8),eta=now+Math.round(remS*1000);
+  // la vitesse réelle des dernières minutes corrige celle de l'itinéraire (bouchons, feux, route rapide)
+  share.hist=(share.hist||[]).filter(h=>now-h.t<=10*60000&&h.s<=a.s+50);share.hist.push({t:now,s:a.s});
+  const h0=share.hist.find(h=>now-h.t>=180000);
+  const vR=Math.max(1.2,+t.v||8),vUse=h0?blendSpeed(vR,(a.s-h0.s)/((now-h0.t)/1000)):vR;
+  const remS=Math.max(0,a.total-a.s)/vUse,eta=now+Math.round(remS*1000);
+  const vEff=Math.abs(vUse-vR)/vR>0.1?+vUse.toFixed(2):0;
+  // retard : l'autre est prévenu dès 5 min, puis à chaque 5 min de plus (3 fois au plus)
+  if(+t.due>0){const late=Math.round((eta-t.due)/60000);
+    if(late>=5&&late>=(+t.lateN||0)+5&&(+t.lateC||0)<3){t.lateN=late;t.lateC=(+t.lateC||0)+1;
+      db.doc("trips/"+t.id).update({lateN:late,lateC:t.lateC}).catch(()=>{});
+      pushTo([t.to],firstName(myId)+" aura environ "+late+" min de retard","Arrivée prévue vers "+hhmm(new Date(eta))+" au lieu de "+hhmm(new Date(+t.due))+". Touche pour suivre le trajet en direct.","trip-"+t.id+"-late","./?trip="+t.id);}}
   // à 5 minutes de l'arrivée, d'après la vraie position : l'autre est prévenu une fois
   if(!t.near&&remS<=300){t.near=now;db.doc("trips/"+t.id).update({near:now}).catch(()=>{});
     pushTo([t.to],firstName(myId)+" arrive dans "+Math.max(1,Math.round(remS/60))+" min","Position en direct : touche pour suivre le trajet.","trip-"+t.id,"./?trip="+t.id);}
-  if(Math.abs(eta-(+t.eta||0))>=60000&&now-share.etaAt>=20000){share.etaAt=now;t.eta=eta;t.updatedAt=now;db.doc("trips/"+t.id).update({eta,updatedAt:now}).catch(()=>{});syncPush();}
+  if((Math.abs(eta-(+t.eta||0))>=60000||(+t.vEff||0)!==vEff)&&now-share.etaAt>=20000){share.etaAt=now;t.eta=eta;t.vEff=vEff;t.updatedAt=now;db.doc("trips/"+t.id).update({eta,vEff,updatedAt:now}).catch(()=>{});syncPush();}
 }
+// moitié itinéraire, moitié vitesse vraiment roulée (bornée : un arrêt au feu ne fait pas exploser l'heure)
+function blendSpeed(vRoute,vObs){if(!(vObs>0.3))return vRoute;return 0.5*vRoute+0.5*Math.max(vRoute*0.45,Math.min(vRoute*1.3,vObs));}
 // « en bas de chez vous » pour la maison, sinon l'adresse (ou le nom du lieu enregistré)
 function waitWhere(addr){const p=addr&&placeFor(addr);return p&&p.kind==="home"?" en bas de chez vous":" en bas"+(addr?", "+shortAddr(addr):"");}
 function tripArrived(t){
   if(!t||t.stage!=="go")return;
-  const now=Date.now(),nm=firstName(t.by);t.stage="here";t.hereAt=now;t.updatedAt=now;
+  const now=Date.now(),nm=firstName(t.by),k=tripKind(t);t.stage="here";t.hereAt=now;t.updatedAt=now;
   db.doc("trips/"+t.id).update({stage:"here",hereAt:now,updatedAt:now}).catch(()=>{});
-  pushTo([t.to],nm+" est en bas",nm+" t'attend"+waitWhere(t.target&&t.target.addr)+".","trip-"+t.id,"./?trip="+t.id);
-  if(!tripUIOpen(t.id))toast("Message envoyé à "+firstName(t.to)+" : tu es en bas");
+  pushTo([t.to],arriveTxt(t,nm),k==="meet"?nm+" vient d'arriver"+(t.title?" : « "+t.title+" »":"")+".":k==="home"?nm+" vient de rentrer.":nm+" t'attend"+waitWhere(t.target&&t.target.addr)+".","trip-"+t.id,"./?trip="+t.id);
+  if(!tripUIOpen(t.id))toast("Message envoyé à "+firstName(t.to)+" : "+(k==="meet"?"tu es là":k==="home"?"tu es à la maison":"tu es en bas"));
   tripTick(true);syncPush(true);
 }
 // L'autre est à bord : le partage s'arrête, l'aperçu du trajet continue sur ce téléphone jusqu'au rendez-vous
@@ -5460,10 +5524,11 @@ function tripStop(t){
 }
 function tripReply(t,text){
   if(!t)return;
-  const now=Date.now();t.reply={by:myId,text,at:now};
+  text=String(text||"").trim().slice(0,140);if(!text)return;
+  const now=Date.now(),other=t.by===myId?t.to:t.by;t.reply={by:myId,text,at:now};
   db.doc("trips/"+t.id).update({reply:{by:myId,text,at:now},updatedAt:now}).catch(()=>{});
-  pushTo([t.by],firstName(myId),text,"trip-"+t.id+"-r","./?trip="+t.id);
-  if(tripUIOpen(t.id))tripPanel();else toast("Envoyé à "+firstName(t.by)+" : « "+text+" »");
+  pushTo([other],firstName(myId),text,"trip-"+t.id+"-r","./?trip="+t.id);
+  if(tripUIOpen(t.id))tripPanel();else toast("Envoyé à "+firstName(other)+" : « "+text+" »");
 }
 /* réception : la liste des trajets, et la position de celui qu'on suit */
 function onTripsSnap(snap){
@@ -5476,11 +5541,11 @@ function onTripsSnap(snap){
     const old=prev.get(t.id)||{};
     if(t.to===myId&&!tripUIOpen(t.id)){
       const dn=firstName(t.by),open=()=>openTrip(t.id);
-      if(t.stage==="go"&&old.stage!=="go")inNote(dn+" est en route",(+t.eta>0?"Arrivée prévue vers "+hhmm(new Date(+t.eta))+". ":"")+"Touche pour suivre le trajet en direct.",()=>{open();if(lsGet("a2.lockFollow")!=="0")lockStart(t.id,true);},15000);
-      else if(t.stage==="here"&&old.stage!=="here")inNote(dn+" est en bas",dn+" t'attend"+waitWhere(t.target&&t.target.addr)+".",open,15000);
+      if(t.stage==="go"&&old.stage!=="go")inNote(dn+(tripKind(t)==="home"?" rentre":" est en route"),(+t.eta>0?"Arrivée prévue vers "+hhmm(new Date(+t.eta))+". ":"")+"Touche pour suivre le trajet en direct.",()=>{open();if(lsGet("a2.lockFollow")!=="0")lockStart(t.id,true);},15000);
+      else if(t.stage==="here"&&old.stage!=="here")inNote(arriveTxt(t,dn),tripKind(t)==="pick"?dn+" t'attend"+waitWhere(t.target&&t.target.addr)+".":tripKind(t)==="home"?dn+" vient de rentrer.":dn+" vient d'arriver.",open,15000);
       else if(t.stage==="go"&&t.near&&!old.near)inNote(dn+" arrive dans 5 min","Touche pour suivre le trajet en direct.",open,12000);
     }
-    if(t.by===myId&&t.reply&&t.reply.by!==myId&&(!old.reply||old.reply.at!==t.reply.at))inNote(firstName(t.reply.by),t.reply.text,()=>openTrip(t.id),10000);
+    if((t.by===myId||t.to===myId)&&t.reply&&t.reply.by!==myId&&(!old.reply||old.reply.at!==t.reply.at)&&!tripUIOpen(t.id))inNote(firstName(t.reply.by),t.reply.text,()=>openTrip(t.id),10000);
   }
   // trajet lancé sur ce téléphone, app relancée entre-temps : le partage reprend tout seul
   if(!share){const mine=[...trips.values()].find(t=>tripLive(t)&&t.by===myId);if(mine)beginShare(mine.id,null);}
@@ -5517,7 +5582,7 @@ function tripState(id){
   if(!okPt(pos))pos=null;S.pos=pos;
   if(pos){S.age=Math.max(0,(now-(+pos.t||0))/1000);S.pt={lat:+pos.lat,lon:+pos.lon};S.hdg=pos.hdg;S.live=S.age<=TRIP_FRESH_S&&!pos.bg;}
   if(S.phase==="go"&&route.length>1){
-    const v=Math.max(1.2,+t.v||8),total=+t.routeM||pathLen(route);
+    const v=Math.max(1.2,+t.vEff||+t.v||8),total=+t.routeM||pathLen(route);
     if(pos){const a=along(route,pos);
       S.remain=a.off>250?distM(pos,t.target)*1.3:Math.max(0,a.total-a.s);
       // position à jour : heure d'arrivée recalculée ; sinon, la voiture reste où elle était, avec la dernière heure calculée
@@ -5655,19 +5720,27 @@ function tripBuild(S){
   if(S.phase==="go"){ui.bar=el("b");P.append(el("div",{class:"tp-bar"},ui.bar));}
   if(S.t&&(S.phase==="go"||S.phase==="here")){ui.stT=el("span");ui.st=el("div",{class:"tp-st"},el("span",{class:"tp-dot","aria-hidden":"true"}),ui.stT);P.append(ui.st);}
   const rep=S.t&&S.t.reply;
-  if(rep&&(S.phase==="go"||S.phase==="here")){const me=rep.by===myId;P.append(el("div",{class:"tp-msg"+(me?" me":"")},(me?"Tu as répondu : ":firstName(rep.by)+" : ")+"« "+rep.text+" »"));}
+  if(rep&&(S.phase==="go"||S.phase==="here")){const me=rep.by===myId;P.append(el("div",{class:"tp-msg"+(me?" me":"")},(me?"Tu as écrit : ":firstName(rep.by)+" : ")+"« "+rep.text+" »"));}
   const A=el("div",{class:"tp-actions"});P.append(A);
   const T=()=>trips.get(U.id);
   const close=el("button",{type:"button",class:"btn quiet",onclick:closeSheet},"Fermer");
-  const nav=leg2=>ev?[el("a",{class:"btn",href:wazeUrl(ev,leg2),target:"_blank",rel:"noopener"},"Waze"),el("a",{class:"btn",href:appleUrl(ev,leg2),target:"_blank",rel:"noopener"},"Plans")]:[];
+  const K=tripKind(S.t||{kind:ev?tripKindFor(ev):"pick"}),ha=S.t&&S.t.target&&S.t.target.addr;
+  const nav=leg2=>ev&&K!=="home"?[el("a",{class:"btn",href:wazeUrl(ev,leg2),target:"_blank",rel:"noopener"},"Waze"),el("a",{class:"btn",href:appleUrl(ev,leg2),target:"_blank",rel:"noopener"},"Plans")]:
+    ha?[el("a",{class:"btn",href:"https://waze.com/ul?q="+encodeURIComponent(ha)+"&navigate=yes",target:"_blank",rel:"noopener"},"Waze"),el("a",{class:"btn",href:"https://maps.apple.com/?daddr="+encodeURIComponent(ha)+"&dirflg=d",target:"_blank",rel:"noopener"},"Plans")]:[];
+  // message libre, dans les deux sens
+  const say=()=>{const i=el("input",{type:"text",class:"tp-say-in",maxlength:"140",placeholder:"Écrire un message à "+on+"…","aria-label":"Message à "+on});
+    const go=()=>{const v=i.value.trim();if(!v)return;tripReply(T(),v);i.value="";};
+    i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go();}});
+    return el("div",{class:"tp-say"},i,el("button",{type:"button",class:"btn",onclick:go},"Envoyer"));};
   if(S.mine){
     if(S.phase==="ready"){
       const b=el("button",{type:"button",class:"btn primary tp-go"},"Je pars : prévenir "+on);b.onclick=()=>startTrip(U.id,b);
       const can=!!ev&&canStartTrip(ev);if(!can)b.disabled=true;
       A.append(b);
-      P.append(el("p",{class:"tp-note"},(can?"":"Le bouton s'active 2 h avant le départ. ")+on+" reçoit une notification et voit ta position en direct jusqu'à ce que tu sois en bas. Le partage s'arrête tout seul ensuite."));
+      P.append(el("p",{class:"tp-note"},(can?"":"Le bouton s'active 2 h avant le départ. ")+on+" reçoit une notification et voit ta position en direct jusqu'à "+(K==="meet"?"ton arrivée":"ce que tu sois en bas")+". Le partage s'arrête tout seul ensuite."));
     }else if(S.phase==="go"){
-      A.append(...nav(false),el("button",{type:"button",class:"btn primary",onclick:()=>tripArrived(T())},"Je suis en bas"));
+      A.append(...nav(false),el("button",{type:"button",class:"btn primary",onclick:()=>tripArrived(T())},K==="meet"?"Je suis là":K==="home"?"Je suis à la maison":"Je suis en bas"));
+      P.append(say());
       P.append(el("p",{class:"tp-note"},"Garde Together à l'écran pendant le trajet : c'est lui qui envoie ta vraie position à "+on+", et l'écran reste allumé. Avec CarPlay, le guidage reste sur l'écran de la voiture. Sans CarPlay, lance le guidage puis reviens ici (glisse le bas de l'écran vers la droite) : Waze et Plans continuent de te guider à la voix."),
         el("button",{type:"button",class:"btn quiet tp-stop",onclick:()=>tripStop(T())},"Arrêter le partage"));
       if(lockSupported()){const on2=lockOn(S.id);
@@ -5681,7 +5754,8 @@ function tripBuild(S){
     }else if(S.phase==="together")A.append(...nav(true),close);
     else A.append(close);
   }else{
-    if(S.phase==="go"||S.phase==="here"){for(const r of ["Je descends","Dans 2 min","Dans 5 min"])A.append(el("button",{type:"button",class:"btn"+(r==="Je descends"?" primary":""),onclick:()=>tripReply(T(),r)},r));
+    if(S.phase==="go"||S.phase==="here"){TRIP_QUICK[K].forEach((r,i)=>A.append(el("button",{type:"button",class:"btn"+(i===0?" primary":""),onclick:()=>tripReply(T(),r)},r)));
+      P.append(say());
       if(lockSupported()){
         const on=lockOn(S.id),LK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
         P.append(el("div",{class:"tp-lock"+(on?" on":"")},
@@ -5698,21 +5772,24 @@ function tripFill(S){
   const title=(t&&t.title)||(ev&&ev.title)||"le rendez-vous";
   const inMin=S.eta?Math.round((S.eta-now)/60000):null;
   let k="",big="",sub="",st="",stale=false;
+  const K=tripKind(t||{kind:ev?tripKindFor(ev):"pick"});
+  // retard annoncé : l'heure prévue d'arrivée est dépassée de plus de 4 min
+  const lateM=t&&+t.due>0&&S.eta?Math.round((S.eta-t.due)/60000):0,lateT=lateM>4?"environ "+lateM+" min de retard":"";
   if(S.phase==="ready"){
-    k=S.mine?"Récupérer "+on:"Bientôt";big=ev&&hasPickup(ev)?hhmm(pickupAt(ev)):"";
+    k=S.mine?(K==="meet"?"Rejoindre "+on:"Récupérer "+on):"Bientôt";big=ev&&hasPickup(ev)?hhmm(pickupAt(ev)):ev?ev.time:"";
     sub=S.mine?(ev?"Départ conseillé à "+hhmm(departOf(ev))+" · "+title:""):on+" n'est pas encore en route. Tu recevras une notification au départ.";
   }else if(S.phase==="go"){
-    k=S.mine?"Tu vas chercher "+on:on+" arrive";big=S.eta?hhmm(new Date(S.eta)):"";
+    k=S.mine?(K==="meet"?"Tu rejoins "+on:K==="home"?"Tu rentres à la maison":"Tu vas chercher "+on):(K==="home"?on+" rentre":on+" arrive");big=S.eta?hhmm(new Date(S.eta)):"";
     sub=S.stale?["Arrivée prévue",S.remain!=null&&S.remain>0?"à "+kmTxt(S.remain)+" "+agoShort(S.age):""].filter(Boolean).join(" · "):
-      [inMin==null?"":inMin<=0?"Arrivée imminente":"Dans "+fmtDur(inMin),S.remain!=null&&S.remain>0?kmTxt(S.remain):""].filter(Boolean).join(" · ");
+      [inMin==null?"":inMin<=0?"Arrivée imminente":"Dans "+fmtDur(inMin),S.remain!=null&&S.remain>0?kmTxt(S.remain):"",lateT].filter(Boolean).join(" · ");
     if(!S.pos)st="En attente de la position…";
     else if(S.live)st=S.mine?(t.seenAt?on+" suit ton trajet en direct":t.notified===-1?"Partagé en direct, mais la notification n'a pas pu partir vers le téléphone de "+on:"Ta position est partagée en direct avec "+on):"Position en direct";
     else{stale=true;st=S.mine?"Signal GPS faible : ta position n'est pas mise à jour":"Dernière position reçue "+agoShort(S.age)+(S.pos.bg?" : Together n'est plus ouvert chez "+on:"");}
   }else if(S.phase==="here"){
-    k=S.mine?"Sur place":on+" est en bas";big=t.hereAt?hhmm(new Date(t.hereAt)):"";
-    sub=S.mine?on+" a reçu « "+firstName(myId)+" est en bas »":on+" t'attend"+waitWhere(t.target&&t.target.addr)+".";
+    k=S.mine?(K==="home"?"À la maison":"Sur place"):arriveTxt(t,on);big=t.hereAt?hhmm(new Date(t.hereAt)):"";
+    sub=S.mine?on+" a reçu « "+arriveTxt(t,firstName(myId))+" »":K==="meet"?on+" vient d'arriver.":K==="home"?on+" vient de rentrer.":on+" t'attend"+waitWhere(t.target&&t.target.addr)+".";
   }else if(S.phase==="together"){
-    k=S.mine?"En route vers "+title:"Vous êtes ensemble";big=ev?ev.time:"";
+    k=S.mine&&K==="pick"?"En route vers "+title:"Vous êtes ensemble";big=ev&&K!=="home"?ev.time:"";
     sub=S.mine?"Rendez-vous à "+(ev?ev.time:"")+". Le partage avec "+on+" est terminé.":"Bon rendez-vous !";
   }else{k="Partage arrêté";sub=S.mine?on+" ne voit plus ta position.":on+" a arrêté le partage de sa position.";}
   if(ui.k)ui.k.textContent=k;if(ui.eta)ui.eta.textContent=big;if(ui.sub)ui.sub.textContent=sub;
@@ -5724,7 +5801,7 @@ function tripHero(n,t){
   const S=tripState(t.id),now=Date.now(),on=firstName(tripWho(S)),here=S.phase==="here";
   const inMin=S.eta?Math.max(0,Math.round((S.eta-now)/60000)):null;
   n.textContent="";n.hidden=false;n.dataset.ev=t.id;n.removeAttribute("style");n.classList.remove("themed","soon");n.classList.add("trip-live");delete n.dataset.mk;
-  const k=S.mine?(here?"Sur place":"Trajet en cours vers "+on):(here?on+" est en bas":on+" est en route");
+  const K=tripKind(t),k=S.mine?(here?"Sur place":K==="home"?"Retour à la maison":"Trajet en cours vers "+on):(here?arriveTxt(t,on):K==="home"?on+" rentre":on+" est en route");
   const big=here?(t.hereAt?hhmm(new Date(t.hereAt)):""):(S.eta?hhmm(new Date(S.eta)):"");
   const inT=here?(S.mine?"Message envoyé à "+on:on+" t'attend"):(inMin==null?"":S.stale?"Arrivée prévue vers "+hhmm(new Date(S.eta)):inMin<=0?"Arrivée imminente":"Arrivée dans "+fmtDur(inMin));
   const b=el("button",{type:"button",class:"btn sign-btn"},S.mine?"Voir le trajet":"Suivre en direct");
@@ -5746,7 +5823,7 @@ function handleDeepLink(q){
   const tid=p.get("trip"),eid=p.get("ev"),aid=p.get("add");
   if(aid){openPendingAdd(aid);return true;}
   if(tid&&(trips.has(tid)||events.has(tid))){openTrip(tid);return true;}
-  if(eid&&events.has(eid)){const e=events.get(eid);if(canStartTrip(e)||tripFor(eid))openTrip(eid);else openEventCard(eid);return true;}
+  if(eid&&events.has(eid)){const e=events.get(eid);if((canStartTrip(e)&&hasPickup(e))||tripFor(eid))openTrip(eid);else openEventCard(eid);return true;}
   return false;
 }
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const d=e.data||{};
@@ -5788,8 +5865,8 @@ async function lockStart(id,quiet){
   lockTrip={id,audio:a,url,timer:null,art:"",artKey:"",key:"",hereAt:0};
   lsSet("a2.lockFollow","1");
   const ms=navigator.mediaSession,h=(k,f)=>{try{ms.setActionHandler(k,f);}catch(_){}};
-  h("pause",()=>lockStop(true));h("stop",()=>lockStop(true));h("play",()=>{a.play().catch(()=>{});});
-  for(const k of ["previoustrack","nexttrack","seekbackward","seekforward","seekto"])h(k,null);
+  h("pause",()=>lockStop(true));h("stop",()=>lockStop(true));h("nexttrack",()=>lockNext());h("play",()=>{a.play().catch(()=>{});});
+  for(const k of ["previoustrack","seekbackward","seekforward","seekto"])h(k,null);
   // un appel ou une autre musique a repris la main : on s'efface (sans se battre avec elle), le bouton revient
   a.addEventListener("pause",()=>{if(lockTrip&&lockTrip.audio===a&&!lockTrip.stopping)lockStop(false);});
   lockUpdate(true);
@@ -5808,6 +5885,11 @@ function lockStop(byUser){
   if(tripUIOpen())tripPanel();
 }
 // Image du lecteur : l'heure d'arrivée en grand, et le trajet avec la voiture qui avance vers l'autre
+function lockNext(){
+  const L=lockTrip;if(!L)return;const t=trips.get(L.id);if(!t||!tripLive(t))return;
+  if(t.to===myId){const r=TRIP_QUICK[tripKind(t)][0];tripReply(t,r);L.sent=r;L.sentAt=Date.now();lockUpdate(true);return;}
+  if(t.by===myId&&t.stage==="go"){const S=tripState(t.id);if(S.remain!=null&&S.remain<1500){tripArrived(t);lockUpdate(true);}}
+}
 function lockArt(S){
   // dessinée sur 512, enregistrée en 384 px JPEG (léger : l'image change pendant tout le trajet)
   const c=document.createElement("canvas");c.width=c.height=384;const g=c.getContext("2d");if(!g)return "icons/icon-512.png";g.scale(.75,.75);
@@ -5820,7 +5902,7 @@ function lockArt(S){
   g.fillStyle=sun;g.font="800 150px "+F;g.fillText(here?(t.hereAt?hhmm(new Date(t.hereAt)):"En bas"):(S.eta?hhmm(new Date(S.eta)):"…"),36,226);
   const m=S.eta?Math.max(0,Math.round((S.eta-Date.now())/60000)):null;
   g.fillStyle="#fff";g.font="700 40px "+F;
-  g.fillText(here?(t.by===myId?"Arrivée chez "+firstName(t.to):firstName(t.by)+" est en bas"):S.stale?"Position d'il y a "+agoShort(S.age).replace("il y a ",""):m==null?"En route":m<=0?"Arrivée imminente":"Dans "+fmtDur(m),44,292);
+  g.fillText(here?(t.by===myId?"Sur place":arriveTxt(t,firstName(t.by))):S.stale?"Position d'il y a "+agoShort(S.age).replace("il y a ",""):m==null?"En route":m<=0?"Arrivée imminente":"Dans "+fmtDur(m),44,292);
   // le trajet : ligne, partie faite, voiture, et l'autre au bout
   const x0=70,x1=442,y=402,p=here?1:Math.max(0,Math.min(1,S.done||0)),xc=x0+(x1-x0)*p;
   g.lineCap="round";g.lineWidth=14;g.strokeStyle="rgba(255,255,255,.25)";g.beginPath();g.moveTo(x0,y);g.lineTo(x1,y);g.stroke();
@@ -5844,14 +5926,18 @@ function lockUpdate(force){
   if(S.phase==="here"){
     if(!L.hereAt)L.hereAt=now;
     if(now-L.hereAt>4*60000){lockStop();return;}   // quelques minutes après « en bas », le lecteur s'en va
-    title=drv?"Arrivée chez "+to:by+" est en bas";artist=drv?to+" a reçu la notification.":by+" t'attend"+waitWhere(t.target&&t.target.addr)+".";
+    const K=tripKind(t);
+    title=drv?({pick:"Arrivée chez "+to,meet:"Sur place",home:"À la maison"}[K]):arriveTxt(t,by);
+    artist=drv?to+" a reçu la notification.":K==="pick"?by+" t'attend"+waitWhere(t.target&&t.target.addr)+".":K==="home"?by+" vient de rentrer.":by+" vient d'arriver.";
   }else{
     const m=S.eta?Math.max(0,Math.round((S.eta-now)/60000)):null;
     // le conducteur (CarPlay, « En cours de lecture ») voit son arrivée chez l'autre ; l'autre voit l'arrivée du conducteur
-    title=drv?(S.eta?"Chez "+to+" à "+hhmm(new Date(S.eta)):"Vers "+to):by+(S.eta?" arrive à "+hhmm(new Date(S.eta)):" est en route");
+    title=drv?(S.eta?({pick:"Chez "+to+" à ",meet:"Arrivée à ",home:"À la maison à "}[tripKind(t)])+hhmm(new Date(S.eta)):"Vers "+to):by+(S.eta?" arrive à "+hhmm(new Date(S.eta)):" est en route");
     artist=[S.stale?"Dernière position "+agoShort(S.age):m==null?"":m<=0?"Arrivée imminente":"Dans "+fmtDur(m),S.remain!=null&&S.remain>0?kmTxt(S.remain):""].filter(Boolean).join(" · ");
   }
-  const album="Together · "+(t.title||"trajet");
+  // la ligne du dessous dit ce que fait ⏭ (ou que c'est envoyé)
+  const q=TRIP_QUICK[tripKind(t)][0],sent=L.sent&&now-L.sentAt<5*60000?L.sent:"";
+  const album=t.to===myId?(sent?"« "+sent+" » envoyé à "+by:"⏭ = « "+q+" »"):(t.by===myId&&S.phase==="go"?"⏭ à l'arrivée = « "+arriveTxt(t,"").trim().replace(/^est /,"Je suis ").replace(/^Je suis là$/,"Je suis là")+" »":"Together · "+(t.title||"trajet"));
   const artKey=[S.phase,Math.round((S.done||0)*30),S.eta?hhmm(new Date(S.eta)):"",S.stale?1:0,S.remain!=null?Math.round(S.remain/100):""].join("|");
   if(force||artKey!==L.artKey||!L.art){L.artKey=artKey;L.art=lockArt(S);}
   const key=[title,artist,L.artKey].join("|");
