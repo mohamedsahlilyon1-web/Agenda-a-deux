@@ -261,22 +261,38 @@ if(!config.runsInWidget&&config.runsInApp){
 const PARAM=String((typeof args!=="undefined"&&args.widgetParameter)||"").toLowerCase();
 const CAR=/voiture|carplay|auto/.test(PARAM);
 function carWidget(w){
-  const g=new LinearGradient();g.colors=[C(BG),C(mix(BG,"#000000",.4))];g.locations=[0,1];w.backgroundGradient=g;
-  w.setPadding(12,14,12,14);
-  if(!next){const t=w.addText("Together");t.font=Font.heavySystemFont(18);t.textColor=C("#ffffff");w.addSpacer(4);
-    const s=w.addText(data?"Rien de prévu":"Ouvre Together");s.font=Font.semiboldSystemFont(14);s.textColor=C(ACC);return;}
-  const pick=!!(next.pk&&dep);
-  const k=w.addText(next.a?"AUJOURD'HUI":pick?"RÉCUPÉRER "+String(next.pw||"").toUpperCase():dep?"DÉPART":"RENDEZ-VOUS");
-  k.font=Font.heavySystemFont(11);k.textColor=C(ACC);k.lineLimit=1;k.minimumScaleFactor=.7;
-  const big=w.addText(next.a?"Journée":hm(target));big.font=fNum(36);big.textColor=C("#ffffff");big.lineLimit=1;big.minimumScaleFactor=.6;
-  if(!next.a){const r=w.addDate(new Date(target));r.applyRelativeStyle();r.font=Font.semiboldSystemFont(14);r.textColor=C("#ffffff",.85);r.lineLimit=1;}
+  const g=new LinearGradient();g.colors=[C(BG),C(mix(BG,"#000000",.45))];g.locations=[0,1];w.backgroundGradient=g;
+  w.setPadding(11,13,11,13);
+  const T=Date.now(),WAZE=/waze/.test(PARAM);
+  const nav=a=>WAZE?"https://waze.com/ul?q="+encodeURIComponent(a)+"&navigate=yes":"https://maps.apple.com/?daddr="+encodeURIComponent(a)+"&dirflg=d";
+  const put=(st,s,font,col,n)=>{const t=st.addText(String(s||""));t.font=font;t.textColor=col;t.lineLimit=n||1;t.minimumScaleFactor=.6;return t;};
+  const head=(k,ic)=>{const h=w.addStack();h.layoutHorizontally();h.centerAlignContent();h.spacing=5;
+    try{const s=SFSymbol.named(ic);s.applyFont(Font.boldSystemFont(12));const i=h.addImage(s.image);i.imageSize=new Size(14,14);i.tintColor=C(ACC);}catch(e){}
+    put(h,k,Font.heavySystemFont(11),C(ACC));};
+  // les évènements à heure fixe pas encore commencés (une journée entière ne guide nulle part)
+  const up=items.filter(x=>!x.a&&x.s>T-5*6e4);
+  if(!up.length){head("TOGETHER","heart.fill");w.addSpacer(6);
+    put(w,data?"Rien de prévu":"Ouvre Together",Font.boldSystemFont(17),C("#ffffff"),2);
+    if(items[0]){w.addSpacer(4);put(w,items[0].t,Font.mediumSystemFont(12),C("#ffffff",.7));}
+    w.addSpacer();return;}
+  // l'étape du moment : partir, passer chez l'autre, arriver
+  const x=up[0],pkAt=x.pk&&x.d?x.d+(+x.pm||0)*6e4:0;let st;
+  if(x.d&&T<x.d)st={k:x.pk?"PARTIR · "+String(x.pw||"").toUpperCase():"PARTIR",ic:"car.fill",at:x.d,a:x.t,b:x.pk?"Chez "+x.pw+" à "+hm(pkAt):x.l,dest:x.pk||x.to};
+  else if(pkAt&&T<pkAt+5*6e4)st={k:"CHEZ "+String(x.pw||"").toUpperCase(),ic:"figure.wave",at:pkAt,a:x.pkl||x.pw,b:"Puis "+x.t+" à "+hm(x.s),dest:x.pk};
+  else st={k:"ARRIVÉE",ic:"flag.checkered",at:x.s,a:x.t,b:x.l,dest:x.to};
+  head(st.k,st.ic);
+  put(w,hm(st.at),fNum(38),C("#ffffff"));
+  // le temps restant se met à jour tout seul sur l'écran, sans attendre l'iPhone
+  const r=w.addDate(new Date(st.at));r.applyRelativeStyle();r.font=Font.semiboldSystemFont(14);r.textColor=C("#ffffff",.85);r.lineLimit=1;
   w.addSpacer();
-  const t=w.addText(next.t);t.font=Font.boldSystemFont(15);t.textColor=C("#ffffff");t.lineLimit=2;t.minimumScaleFactor=.8;
-  const where=pick?(next.pkl||""):(next.l||"");
-  if(where){const l=w.addText(where);l.font=Font.mediumSystemFont(12);l.textColor=C("#ffffff",.7);l.lineLimit=1;}
-  // un toucher sur l'écran de la voiture : l'itinéraire (chez l'autre d'abord s'il faut passer le ou la chercher)
-  const dest=pick?next.pk:(next.to||"");
-  if(dest)w.url="https://maps.apple.com/?daddr="+encodeURIComponent(dest)+"&dirflg=d";
+  put(w,st.a,Font.boldSystemFont(14),C("#ffffff"));
+  if(st.b)put(w,st.b,Font.mediumSystemFont(11.5),C("#ffffff",.72));
+  const nx=up[1];
+  if(nx&&dayN(nx.s)<=1){w.addSpacer(3);put(w,"Ensuite · "+(dayN(nx.s)===1?"demain ":"")+hm(nx.s)+" "+nx.t,Font.semiboldSystemFont(10.5),C(ACC,.9));}
+  // un toucher sur l'écran de la voiture : l'itinéraire de l'étape (Plans, ou Waze avec le paramètre « voiture waze »)
+  if(st.dest)w.url=nav(st.dest);
+  const marks=[x.d,pkAt?pkAt+5*6e4:0,x.s].filter(v=>v&&v>T);
+  w.refreshAfterDate=new Date(Math.min(T+15*6e4,(marks[0]||T+15*6e4)+3e4));
 }
 
 // ---------- assemblage ----------
@@ -290,9 +306,7 @@ else if(fam==="accessoryRectangular"){
   else{const k=w.addText(kicker());k.font=Font.boldSystemFont(10);k.lineLimit=1;
     const a=w.addText(next.t);a.font=Font.boldSystemFont(15);a.lineLimit=1;
     const b=w.addText(next.a?"Toute la journée":hm(next.s)+(next.l?" · "+next.l:""));b.font=Font.systemFont(12);b.lineLimit=1;}}
-else if(CAR){carWidget(w);
-  // juste après l'heure du départ, on passe au suivant
-  if(next&&target>now)w.refreshAfterDate=new Date(Math.min(now+15*6e4,target+6e4));}
+else if(CAR){carWidget(w);}
 else{
   w.setPadding(0,0,0,0);
   w.backgroundImage=fam==="small"?drawSmall():fam==="large"?drawLarge():drawMedium();

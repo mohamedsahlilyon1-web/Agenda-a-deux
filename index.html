@@ -2139,7 +2139,8 @@ function carPlaySection(){
     el("ol",{class:"sc-steps"},
       el("li",{},"Installe d'abord le widget Together sur l'iPhone (« Widget sur l'écran d'accueil », plus haut), si ce n'est pas déjà fait."),
       el("li",{},"Réglages de l'iPhone, Général, CarPlay : choisis ta voiture, puis Widgets, et ajoute Scriptable."),
-      el("li",{},"Règle ce widget : Script Together, et écris voiture dans Paramètre. Il prend alors sa version pour la voiture, très lisible.")),
+      el("li",{},"Règle ce widget : Script Together, et écris voiture dans Paramètre (ou voiture waze pour que le toucher ouvre Waze). Il prend alors sa version pour la voiture : l'étape du moment (partir, chez "+on+", arrivée), l'heure en grand, le temps restant, et l'évènement suivant."),
+      el("li",{},"Le widget Calendrier d'Apple est un autre widget : tu peux le laisser ou le retirer, Together a maintenant le sien.")),
     el("div",{class:"lab"},"2. Siri en voiture"),
     el("p",{class:"note"},"« Dis Siri, on y va » ouvre sur l'écran de la voiture l'itinéraire du prochain départ, en passant d'abord chez "+on+" si c'est prévu. "+on+" reçoit alors « en route ». « Dis Siri, je suis en bas » prévient "+on+" de ton arrivée."),
     st,el("div",{class:"pchips"},go,bas),
@@ -2571,7 +2572,7 @@ function calVevents(ev,uid){
   // l'étape « Récupérer … » (ou « … passe te prendre ») juste avant, à l'adresse où l'on se retrouve
   if(pk){const at=pickupAt(ev);
     const P=["BEGIN:VEVENT","UID:"+ev.id+"-pk"+CAL_UID,"DTSTAMP:"+stamp,"LAST-MODIFIED:"+stamp,"DTSTART:"+icsUtc(at),"DTEND:"+icsUtc(at.getTime()+Math.max(5,wait)*60000),
-      "SUMMARY:"+icsText((picked?dn+" passe te prendre":"Récupérer "+pn)+" · "+title)];
+      "SUMMARY:"+icsText(picked?dn+" passe te prendre":"Récupérer "+pn)];
     if(ev.pickup){P.push("LOCATION:"+icsText(ev.pickup),NO_TTL);const m=geo&&(geo.marks||[])[0],g=m&&icsGeo(ev.pickup,m.at);if(g)P.push(g);}
     if(drives&&(+ev.pickupMin||0)>0)P.push("X-APPLE-TRAVEL-DURATION;VALUE=DURATION:PT"+Math.round(+ev.pickupMin)+"M");
     P.push("DESCRIPTION:"+icsText((picked?"Prépare-toi : "+dn+" arrive à "+hhmm(at)+".":"Départ à "+hhmm(departOf(ev))+(ev.origin?" de "+shortAddr(ev.origin):"")+".")+
@@ -4863,7 +4864,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="56";
+const APP_V="57";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
