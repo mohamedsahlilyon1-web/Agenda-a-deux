@@ -120,6 +120,41 @@ async function addKey(token, uid) {
   let s = ""; for (const x of h) s += x.toString(16).padStart(2, "0"); return s.slice(0, 24);
 }
 const txt = (t, st) => new Response(t, { status: st || 200, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+// Ce que fait l'un et que l'autre reçoit : gardé une minute pour regrouper plusieurs ajouts d'affilée en une notification,
+// et gardé jusqu'à 7 h pour qui a choisi « Ne pas déranger la nuit » (clé h:<couple>)
+function quietNow(p, now) {
+  if (!p || !p.quiet) return false;
+  // (« fr-FR » écrirait « 01 h » : on lit l'heure seule, en 0-23)
+  let h = 12; try { h = +new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: p.tz || "Europe/Paris" }).format(new Date(now)) % 24; } catch (_) {}
+  if (!Number.isFinite(h)) h = 12;
+  return h >= 22 || h < 7;
+}
+function mergeHeld(list) {
+  if (list.length === 1) { const x = list[0]; return { title: x.title, body: x.body, tag: x.tag, url: x.url }; }
+  const M = list.map((x) => x.meta || null), who = M[0] && M[0].who, same = !!who && M.every((m) => m && m.who === who);
+  const adds = M.filter((m) => m && m.k === "add").length;
+  const title = same ? (adds === list.length ? who + " a ajouté " + list.length + " évènements" : who + " a fait " + list.length + " changements") : list.length + " nouveautés dans Together";
+  const body = list.map((x, i) => { const m = M[i]; if (!m || !m.t) return x.title;
+    return m.k === "add" ? "« " + m.t + " »" + (m.when ? " " + m.when : "") : (m.k === "del" ? "supprimé « " : "modifié « ") + m.t + " »"; }).join(", ");
+  return { title: clean(title, 120), body: clean(body, 300), tag: "ev", url: "./" };
+}
+async function flushHeld(env, id, c, now) {
+  const H = await env.KV.get("h:" + id, "json"); if (!Array.isArray(H) || !H.length) return;
+  const byU = {}, keep = [], codes = [];let subs = null, changed = false;
+  for (const x of H) if (x && x.u) (byU[x.u] = byU[x.u] || []).push(x);
+  for (const [u, list] of Object.entries(byU)) {
+    const ats = list.map((x) => +x.at || 0), newest = Math.max(...ats), oldest = Math.min(...ats);
+    const ready = !quietNow((c.prefs || {})[u], now) && (now - newest >= 60000 || now - oldest >= 5 * 60000);
+    if (!ready) { keep.push(...list); continue; }
+    const msg = mergeHeld(list.slice(-12));
+    subs = subs || await getSubs(env, id, c);
+    const r = await sendTo(env, subs, [u], msg); changed = changed || r.changed;
+    for (const cd of r.codes) codes.push({ ...cd, tag: msg.tag });
+  }
+  if (keep.length) await env.KV.put("h:" + id, JSON.stringify(keep.slice(-60))); else await env.KV.delete("h:" + id);
+  if (changed && subs) await putSubs(env, id, subs);
+  try { await logSends(env, id, "h", codes); } catch (_) {}
+}
 async function getAdds(env, id) { const a = await env.KV.get("a:" + id, "json"); return (Array.isArray(a) ? a : []).filter((x) => x && x.id && Date.now() - (+x.at || 0) < 3 * 86400000); }
 async function putAdds(env, id, a) { if (a.length) await env.KV.put("a:" + id, JSON.stringify(a.slice(-20)), { expirationTtl: 3 * 86400 }); else await env.KV.delete("a:" + id); }
 // Liens courts de Plans ou de Google Maps partagés : on les déplie pour que l'app lise le nom et l'adresse
@@ -283,6 +318,13 @@ export default {
     if (path === "/api/unsub") { const uid = clean(b.uid, 80), subs = await getSubs(env, id, c); if (subs[uid]) { subs[uid] = subs[uid].filter((x) => x.endpoint !== b.endpoint); await putSubs(env, id, subs); } return json(req, { ok: true }); }
     if (path === "/api/notify") {
       const to = (Array.isArray(b.to) ? b.to : [b.to]).map((x) => clean(x, 80)).filter(Boolean).slice(0, 2);
+      if (b.hold) {
+        const m = b.meta && typeof b.meta === "object" ? { k: clean(b.meta.k, 8), who: clean(b.meta.who, 30), t: clean(b.meta.t, 60), when: clean(b.meta.when, 40) } : null;
+        const H = (await env.KV.get("h:" + id, "json")) || [], now = Date.now();
+        for (const u of to) H.push({ u, title: clean(b.title, 120), body: clean(b.body, 300), tag: clean(b.tag, 60), url: clean(b.url, 200), ...(m ? { meta: m } : {}), at: now });
+        await env.KV.put("h:" + id, JSON.stringify(H.slice(-60)));
+        return json(req, { ok: true, sent: 0, held: to.length, codes: [] });
+      }
       const subs = await getSubs(env, id, c);
       const r = await sendTo(env, subs, to, { title: clean(b.title, 120), body: clean(b.body, 300), tag: clean(b.tag, 60), url: clean(b.url, 200) });
       if (r.changed) await putSubs(env, id, subs);
@@ -296,6 +338,10 @@ export default {
       // dernière synchronisation de chaque téléphone, avec la version de l'app (aide au diagnostic)
       const who = clean(b.uid, 80);
       if (who) { c.seen = c.seen && typeof c.seen === "object" ? c.seen : {}; c.seen[who] = { v: clean(b.v, 12) || "<51", at: now }; }
+      // ne pas déranger la nuit (choix de chacun) : le serveur en a besoin pour garder les nouveautés jusqu'à 7 h
+      if (b.prefs && typeof b.prefs === "object") { const P = {};
+        for (const [k, v] of Object.entries(b.prefs).slice(0, 4)) if (UID_RE.test(k)) P[k] = { quiet: !!(v && v.quiet), tz: clean(v && v.tz, 40) || "Europe/Paris" };
+        c.prefs = P; }
       await putCouple(env, id, c);
       // widgets : celui de ce téléphone, et celui de l'autre (sans toucher à ses couleurs)
       const W = await getWidgets(env, id, c), me = clean(b.uid, 80);
@@ -345,7 +391,9 @@ export default {
   async scheduled(ev, env) {
     const idx = (await env.KV.get("index", "json")) || [], now = Date.now();
     for (const id of idx) {
-      const c = await getCouple(env, id); if (!c || !c.sched || !c.sched.length) continue;
+      const c0 = await getCouple(env, id);
+      if (c0) { try { await flushHeld(env, id, c0, now); } catch (_) {} }
+      const c = c0; if (!c || !c.sched || !c.sched.length) continue;
       // Le cron n'écrit jamais la fiche du couple : il note seulement ce qui est parti (clé à part)
       const doneList = await getDone(env, id, c), done = new Set(doneList);
       const due = c.sched.filter((x) => x.at <= now + 20000 && !done.has(x.id));

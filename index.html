@@ -259,6 +259,8 @@ h1{font-weight:800;font-size:1.55rem;letter-spacing:-.025em;margin:0;line-height
 .sc-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
 .q-paste{align-self:flex-start;padding:6px 10px;font-size:.9rem}
 .del-series{display:flex;flex-direction:column;gap:10px}
+.np-cats{display:flex;flex-direction:column;gap:10px}.np-cat{display:flex;flex-direction:column;gap:4px}.np-cl{font-size:.85rem;font-weight:700;color:var(--muted)}
+.np-time input{max-width:140px}
 .del-series .btn{justify-content:center;padding:13px 16px}
 .pp-opt{flex-direction:column;align-items:flex-start!important;gap:2px;text-align:left}
 .pp-opt small{font-weight:500;font-size:.82rem;opacity:.8}
@@ -2164,6 +2166,33 @@ function carPlaySection(){
   return box;
 }
 
+/* ---------- Réglages : résumé du matin, ne pas déranger, rappels par défaut ---------- */
+const REM_SHORT={eve:"La veille 20h",h1:"1 h avant",m15:"15 min avant",leave:"Au départ"};
+function notifPrefsSection(){
+  const box=el("div",{class:"disc-box np-box"}),p=prefOf(myId),o=otherId(),on=o?firstName(o):"ta moitié";
+  const mOn=el("input",{type:"checkbox",id:"np-m"});mOn.checked=!!p.morning;
+  const mT=el("input",{type:"time",id:"np-mt",value:p.morning||"07:30"});
+  const q=el("input",{type:"checkbox",id:"np-q"});q.checked=p.quiet;
+  const save=async()=>{const v={morning:mOn.checked?(mT.value||"07:30"):"",quiet:q.checked};
+    try{notifCfg={...notifCfg,[myId]:v};await db.doc("config/notif").set({[myId]:v},{merge:true});syncPush(true);toast("Préférences enregistrées pour ton téléphone");}catch(_){toast("Enregistrement impossible.");}};
+  mOn.onchange=save;mT.onchange=()=>{if(mOn.checked)save();};q.onchange=save;
+  const cats=el("div",{class:"np-cats"});
+  const drawCats=()=>{cats.textContent="";
+    for(const [cat,label] of Object.entries(CATS)){const cur=defRemOf(cat);
+      cats.append(el("div",{class:"np-cat"},el("span",{class:"np-cl"},label),el("div",{class:"pchips"},...REM_PRESETS.map(P=>el("button",{type:"button",class:"pchip"+(cur.includes(P.id)?" on":""),"aria-pressed":cur.includes(P.id)?"true":"false",
+        onclick:async()=>{const nx=cur.includes(P.id)?cur.filter(x=>x!==P.id):[...cur,P.id],dr={...((notifCfg&&notifCfg.defRem)||{}),[cat]:nx};
+          notifCfg={...notifCfg,defRem:dr};drawCats();try{await db.doc("config/notif").set({defRem:dr},{merge:true});}catch(_){toast("Enregistrement impossible.");}}},REM_SHORT[P.id]||P.nameNoTrip)))));}};
+  drawCats();
+  box.append(
+    el("label",{class:"rs-row",for:"np-m"},mOn,el("span",{class:"rs-txt"},el("strong",{},"Résumé du matin"),el("span",{},"Une notification avec ta journée : tes rendez-vous et vos moments à deux, avec les heures de départ. Rien les jours sans rien."))),
+    el("div",{class:"field np-time"},el("label",{for:"np-mt"},"À quelle heure"),mT),
+    el("label",{class:"rs-row",for:"np-q"},q,el("span",{class:"rs-txt"},el("strong",{},"Ne pas déranger la nuit"),el("span",{},"De 22 h à 7 h, les rappels et les nouveautés de "+on+" attendent 7 h. Les départs et les trajets en direct arrivent quand même."))),
+    el("p",{class:"note"},"Ces deux réglages sont propres à ton téléphone. "+on+" règle les siens de son côté."),
+    el("div",{class:"lab"},"Rappels proposés pour un nouvel évènement, selon le type (pour vous deux)"),cats,
+    el("p",{class:"note"},"Tu peux toujours les changer évènement par évènement, dans « Rappels »."));
+  return box;
+}
+
 /* ---------- Nos envies ---------- */
 let wishes=new Map();
 function wishList(){return [...wishes.values()].sort((a,b)=>(!!a.planned-!!b.planned)||(Object.keys(b.hearts||{}).length-Object.keys(a.hearts||{}).length)||((b.createdAt||0)-(a.createdAt||0)));}
@@ -2363,12 +2392,26 @@ async function pushPost(path,body){
   try{const r=await fetch(base+path,{method:"POST",headers:{"Content-Type":"application/json"},keepalive:payload.length<60000,body:payload});return r.ok?await r.json().catch(()=>({ok:true})):null;}catch(_){return null;}
 }
 // Prévenir l'autre téléphone d'une action
-function pushTo(uids,title,body,tag,url){
+function pushTo(uids,title,body,tag,url,extra){
   const to=(Array.isArray(uids)?uids:[uids]).filter(u=>u&&u!==myId);
   if(!to.length||!pushToken())return Promise.resolve(null);
-  return pushPost("/api/notify",{to,title,body,tag:tag||"",url:url||"./"});
+  return pushPost("/api/notify",{to,title,body,tag:tag||"",url:url||"./",...(extra||{})});
 }
-function pushOther(title,body,tag){const o=otherId();if(o)pushTo([o],title,body,tag);}
+// ce que fait l'un, l'autre le reçoit : le serveur attend une minute pour regrouper plusieurs ajouts d'affilée,
+// et garde tout jusqu'à 7 h si l'autre a choisi « Ne pas déranger la nuit »
+function pushOther(title,body,tag,meta){const o=otherId();if(o)pushTo([o],title,body,tag,undefined,{hold:true,...(meta?{meta:{...meta,who:firstName(myId)}}:{})});}
+// « Hajjour a avancé « Resto » à 19:30 (au lieu de 20:00) » plutôt que « Modifié : Resto »
+function changeText(o,x){
+  const me=firstName(myId),t="« "+(x.title||"l'évènement")+" »",out=[];
+  if(o.title&&x.title&&o.title!==x.title)out.push("a renommé « "+o.title+" » en « "+x.title+" »");
+  if(o.date!==x.date)out.push("a déplacé "+t+" à "+dayWord(startOf(x))+(isAllDay(x)?"":" à "+x.time));
+  else if(o.time!==x.time&&!isAllDay(x))out.push((startOf(x)<startOf(o)?"a avancé ":"a reculé ")+t+" à "+x.time+" (au lieu de "+o.time+")");
+  if(norm(o.location||"")!==norm(x.location||""))out.push(x.location?"a changé le lieu de "+t+" : "+shortAddr(x.location):"a retiré le lieu de "+t);
+  if(whoOf(o)!==whoOf(x))out.push("a mis "+t+" "+(whoOf(x)==="both"?"pour vous deux":whoOf(x)===otherId()?"pour toi seulement":"pour "+me+" seulement"));
+  if(String(o.notes||"").trim()!==String(x.notes||"").trim()&&String(x.notes||"").trim())out.push("a ajouté une note : « "+noteLine(x)+" »");
+  if(!out.length)return me+" a modifié "+t+", "+dayParts(startOf(x))[0].toLowerCase()+" à "+x.time+".";
+  return me+" "+out.join(", ")+".";
+}
 function pushSupported(){return "Notification" in window&&"serviceWorker" in navigator&&"PushManager" in window;}
 function pushOn(){return pushSupported()&&Notification.permission==="granted"&&lsGet("a2.push")==="1";}
 function b64uBytes(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
@@ -2404,7 +2447,7 @@ function pushItems(){
       const tr=trips.get(ev.id),gone=!!tr&&["go","here","together"].includes(tr.stage);
       if(!gone)for(const uid of mem){const v=viewFor(ev,uid),picked=v.pickedUp,dn=firstName(driverOf(ev)),pn=firstName(ev.pickupWho);
         liveReminders(v).forEach((r,i)=>{const at=remWhen(v,r).getTime();if(at<=now+30000)return;const leave=presetOf(r)==="leave";
-          items.push({id:ev.id+":p"+uid.slice(0,6)+":r"+i+":"+at,to:[uid],at,tag:"ev-"+ev.id,
+          items.push({id:ev.id+":p"+uid.slice(0,6)+":r"+i+":"+at,to:[uid],at,tag:"ev-"+ev.id,lv:leave?1:0,st,
             title:picked?(leave?dn+" passe te prendre maintenant":dn+" passe te prendre à "+hhmm(pickupAt(ev))):(leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+" à "+ev.time),
             body:picked?(ev.title||"Évènement")+" à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+". Prépare-toi pour "+hhmm(pickupAt(ev))+(ev.pickup?" ("+shortAddr(ev.pickup)+")":"")+".":
               (leave?"Départ maintenant. Tu récupères "+pn+" à "+hhmm(pickupAt(ev))+", puis "+(ev.location?shortAddr(ev.location):"le rendez-vous")+" à "+ev.time+". Touche pour prévenir "+pn+".":"Départ à "+hhmm(departOf(ev))+", "+pn+" à récupérer à "+hhmm(pickupAt(ev))+".")});});}
@@ -2415,10 +2458,29 @@ function pushItems(){
       const leave=presetOf(r)==="leave";
       items.push({id:ev.id+":r"+i+":"+at,to,at,tag:"ev-"+ev.id,
         title:leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+(isAllDay(ev)?"":" à "+ev.time),
-        body:leave?"Départ maintenant pour arriver à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+".":(hasTrip(ev)?"Départ à "+hhmm(departOf(ev))+(ev.location?" pour "+shortAddr(ev.location):"")+".":(ev.location?shortAddr(ev.location):"Rappel"))});});
+        body:(leave?"Départ maintenant pour arriver à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+".":(hasTrip(ev)?"Départ à "+hhmm(departOf(ev))+(ev.location?" pour "+shortAddr(ev.location):"")+".":(ev.location?shortAddr(ev.location):"Rappel")))+(noteLine(ev)?" · "+noteLine(ev):""),lv:leave?1:0,st});});
     if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
   }
-  return items.sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,150);
+  // résumé du matin, pour chacun à son heure : la journée de la personne, avec les heures de départ
+  for(const uid of mem){const mt=prefOf(uid).morning;if(!mt)continue;
+    const [h,m]=mt.split(":").map(Number);
+    for(let i=0;i<7;i++){const d=new Date();d.setHours(h,m,0,0);d.setDate(d.getDate()+i);const at=d.getTime();if(at<=now+30000)continue;
+      const key=ymd(d),day=[...events.values()].filter(e=>e.date===key&&(whoOf(e)==="both"||whoOf(e)===uid)&&(isAllDay(e)||startOf(e).getTime()>at)).sort((a,b)=>startOf(a)-startOf(b));
+      if(!day.length)continue;
+      const parts=day.slice(0,6).map(e=>{const v=viewFor(e,uid);return (e.title||"Évènement")+(isAllDay(e)?" (toute la journée)":" à "+e.time+(hasTrip(v)?", départ "+hhmm(departOf(v)):""));});
+      items.push({id:"mrn:"+uid.slice(0,6)+":"+key+":"+mt,to:[uid],at,tag:"mrn",urgent:1,
+        title:"Aujourd'hui, "+d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"})+" : "+day.length+(day.length>1?" moments":" moment"),
+        body:parts.join(" · ")+(day.length>6?" · et "+(day.length-6)+" autre"+(day.length>7?"s":""):"")});}}
+  // ne pas déranger (22 h à 7 h) : un rappel tombant la nuit attend 7 h, ou disparaît si le moment est déjà passé.
+  // Les départs (« c'est l'heure de partir ») et le résumé du matin passent toujours.
+  const out=[];
+  for(const it of items){
+    if(it.lv||it.urgent){out.push(it);continue;}
+    const loud=it.to.filter(u=>!inQuiet(u,it.at)),calm=it.to.filter(u=>inQuiet(u,it.at));
+    if(loud.length)out.push({...it,to:loud});
+    for(const u of calm){const t7=quietEnd(it.at);if(!it.st||it.st-15*60000>t7)out.push({...it,id:it.id+":q"+u.slice(0,4),to:[u],at:t7});}
+  }
+  return out.map(({lv,st,urgent,...x})=>x).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,150);
 }
 // Icônes des thèmes converties en tracés simples (le widget Scriptable ne sait pas lire le SVG)
 const WICON={};
@@ -2482,11 +2544,12 @@ function hashStr(s){let h1=0xdeadbeef,h2=0x41c6ce57;
 async function syncPushNow(){
   if(!pushToken()||!coupleId||!myId||firstSnap)return false;
   let items,widget,widgets,cals;try{items=pushItems();widget=widgetData();widgets=widgetsAll();cals=calFeeds();}catch(_){return false;}
-  const sig=hashStr(JSON.stringify([APP_V,items,widget,widgets])),csig=hashStr(JSON.stringify(cals));
+  const prefs=Object.fromEntries(memberIds().map(u=>[u,{quiet:prefOf(u).quiet,tz:tzName()}]));
+  const sig=hashStr(JSON.stringify([APP_V,items,widget,widgets,prefs])),csig=hashStr(JSON.stringify(cals));
   // les calendriers ne partent que s'ils ont changé (ils sont plus gros que le reste)
   const calNew=lsGet("a2.calSig")!==csig;
   if(lsGet("a2.pushSig")===sig&&!calNew)return true;
-  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,items,widget,widgets,...(calNew?{cals}:{})});
+  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,items,widget,widgets,prefs,...(calNew?{cals}:{})});
   if(r){lsSet("a2.pushSig",sig);lsSet("a2.calSig",csig);}
   return !!r;
 }
@@ -2919,7 +2982,7 @@ async function removeEvent(ev,scope){
   const list=scope==="next"?[ev,...seriesAfter(ev)]:[ev],n=list.length,t=ev.title||"évènement";
   try{
     for(const e of list) await db.doc("events/"+e.id).delete();
-    pushOther("Supprimé : "+t+(n>1?" ("+n+" fois)":""),firstName(myId)+" a supprimé « "+t+" »"+(n>1?", "+n+" fois à partir de "+dayWord(startOf(ev)):"")+".","ev");
+    pushOther("Supprimé : "+t+(n>1?" ("+n+" fois)":""),firstName(myId)+" a supprimé « "+t+" »"+(n>1?", "+n+" fois à partir de "+dayWord(startOf(ev)):"")+".","ev",{k:"del",t});
     toast(n>1?n+" « "+t+" » supprimés pour vous deux":"« "+(ev.title||"Évènement")+" » supprimé pour vous deux","Annuler",async()=>{
       try{for(const e of list){const {id,...body}=e;await db.doc("events/"+id).set({...body,updatedBy:myId,updatedAt:Date.now()});}toast(n>1?n+" évènements rétablis":"Évènement rétabli");}catch(e){toast("Impossible de le rétablir.");}
     });
@@ -2967,7 +3030,7 @@ async function postpone(ev,days){
   try{
     await db.doc("events/"+ev.id).update({date:x.date,startTs:startOf(x).getTime(),updatedBy:myId,updatedAt:Date.now()});
     const when=dayWord(startOf(x))+(isAllDay(ev)?"":" à "+ev.time),t=ev.title||"évènement";
-    pushOther("Reporté : "+t,firstName(myId)+" a reporté « "+t+" » à "+when+".","ev");
+    pushOther("Reporté : "+t,firstName(myId)+" a reporté « "+t+" » à "+when+".","ev",{k:"edit",t});
     toast("« "+(ev.title||"Évènement")+" » reporté à "+when,"Annuler",async()=>{
       try{await db.doc("events/"+ev.id).update({...old,updatedBy:myId,updatedAt:Date.now()});toast("Date d'origine remise");}catch(_){toast("Impossible d'annuler.");}});
   }catch(_){toast("Report impossible. Vérifie ta connexion.");}
@@ -3503,7 +3566,7 @@ const REM_PRESETS=[
   {id:"leave",name:"À l'heure de partir",nameNoTrip:"À l'heure du rendez-vous",main:true},
 ];
 const hasTrip=x=>(+x.travelMin||0)>0;
-const depOff=x=>hasTrip(x)?(+x.travelMin||0)+(+x.marginMin||0):0;
+const depOff=x=>hasTrip(x)?(+x.travelMin||0)+(+x.marginMin||0)+placeExtra(x.location):0;
 function presetOf(r){if(!r)return null;if(r.preset)return r.preset;if(r.auto==="leave")return "leave";return null;}
 function remMinFor(x,r){
   const p=presetOf(r),s=startOf(x);
@@ -3530,11 +3593,22 @@ function remText(x,r){
   if(p==="eve") return "Demain à "+x.time+" : "+t+(hasTrip(x)?". Départ à "+hhmm(departOf(x)):"")+(x.category==="medecin"?". Prépare carte Vitale et ordonnance.":".");
   return (r.label&&r.label!=="Rappel"?r.label+" : ":"Rappel : ")+t+" à "+x.time;
 }
+/* ---------- Préférences de notification ---------- */
+// config/notif : {<personne>:{morning:"07:30"|"",quiet:true|false}, defRem:{<type>:[rappels]}}
+let notifCfg={};
+function prefOf(uid){const p=(notifCfg&&notifCfg[uid])||{};return {morning:/^\d\d:\d\d$/.test(p.morning||"")?p.morning:"",quiet:!!p.quiet};}
+function inQuiet(uid,t){if(!prefOf(uid).quiet)return false;const h=new Date(t).getHours();return h>=22||h<7;}
+function quietEnd(t){const d=new Date(t);if(d.getHours()>=22)d.setDate(d.getDate()+1);d.setHours(7,0,0,0);return d.getTime();}
+function tzName(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Paris";}catch(_){return "Europe/Paris";}}
+const DEF_REM_BUILTIN=c=>["medecin","rdv","travail"].includes(c)?["eve","leave"]:["h1","leave"];
+function defRemOf(cat){const pr=notifCfg&&notifCfg.defRem&&notifCfg.defRem[cat];return Array.isArray(pr)?pr.filter(p=>REM_PRESETS.some(q=>q.id===p)):DEF_REM_BUILTIN(cat);}
+// la première ligne des notes, pour le rappel (« prends la carte Vitale »)
+function noteLine(ev){const n=String((ev&&ev.notes)||"").split("\n").map(x=>x.trim()).find(Boolean)||"";return /^toute la journ/i.test(n)?"":n.slice(0,70);}
 function suggestReminders(x){
   const out=[];
   if(isAllDay(x))return [{preset:"eve"}];
-  if(["medecin","rdv","travail"].includes(x.category)) out.push({preset:"eve"}); else out.push({preset:"h1"});
-  out.push({preset:"leave"});
+  // rappels choisis pour ce type d'évènement dans les réglages (communs aux deux)
+  for(const p of defRemOf(x.category))out.push({preset:p});
   return out;
 }
 function relReminders(ev){
@@ -3651,10 +3725,10 @@ async function saveEventDraft(x,d,repeat,opts){
       for(const dt of dates) await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId,...extra}));
       const how=repeatText(x,repeat).replace(/\s*\([^)]*\)$/,"").toLowerCase();
       if(!quiet){toast(dates.length+" évènements créés ("+how+")");
-        pushOther("Nouveau : "+x.title,firstName(myId)+" a ajouté « "+x.title+" » ("+how+").","ev");}
+        pushOther("Nouveau : "+x.title,firstName(myId)+" a ajouté « "+x.title+" » ("+how+").","ev",{k:"add",t:x.title,when:"("+how+")"});}
     }else{
       await db.doc("events/"+(d.id||db.collection("events").doc().id)).set(buildBody(x,d));
-      if(!quiet){pushOther((isNew?"Nouveau : ":"Modifié : ")+x.title,firstName(myId)+(isNew?" a ajouté":" a modifié")+" « "+x.title+" », "+dayParts(startOf(x))[0].toLowerCase()+" à "+x.time+".","ev");
+      if(!quiet){pushOther((isNew?"Nouveau : ":"Modifié : ")+x.title,isNew?firstName(myId)+" a ajouté « "+x.title+" », "+dayParts(startOf(x))[0].toLowerCase()+" à "+x.time+".":changeText(d,x),"ev",{k:isNew?"add":"edit",t:x.title,when:dayWord(startOf(x))+(isAllDay(x)?"":" à "+x.time)});
         toast(isNew?"Enregistré, visible sur vos deux téléphones":"Modifications enregistrées pour vous deux");}
     }
     $("#input").value="";
@@ -4112,6 +4186,7 @@ function openSettings(){
     el("div",{class:"pgroup-h"},"Importer mon calendrier"),el("div",{class:"disc-box"},el("p",{class:"note"},"Récupère les évènements déjà enregistrés dans le Calendrier de ton iPhone."),el("button",{type:"button",class:"btn",onclick:openImport},"Importer depuis mon calendrier")),
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     coupleId?el("div",{class:"pgroup-h"},"Notifications"):null,coupleId?notifSection():null,
+    coupleId?el("div",{class:"pgroup-h",id:"np-h"},"Rappels et résumé du matin"):null,coupleId?notifPrefsSection():null,
     coupleId?el("div",{class:"pgroup-h",id:"car-h"},"Dans la voiture (CarPlay)"):null,coupleId?carPlaySection():null,
     coupleId?el("div",{class:"pgroup-h",id:"add-h"},"Ajouter avec Siri ou Partager"):null,coupleId?addSection():null,
     coupleId?el("div",{class:"pgroup-h",id:"cal-h"},"Calendrier de l'iPhone (facultatif)"):null,coupleId?carSection():null,
@@ -4910,7 +4985,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="59";
+const APP_V="60";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -6016,6 +6091,7 @@ function bootFromCache(){
     scheduleRender();saveBoot();
   },()=>{});
   db.doc("config/shortcuts").onSnapshot(snap=>{scLinks=snap.exists?snap.data():{};},()=>{});
+  db.doc("config/notif").onSnapshot(snap=>{notifCfg=snap.exists?snap.data():{};syncPush();},()=>{});
   db.collection("memories").onSnapshot(snap=>{
     memories=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     if(view==="mem")renderMemView();updateTabs();
