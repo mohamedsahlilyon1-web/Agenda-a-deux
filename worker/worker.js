@@ -277,6 +277,31 @@ async function fetchPage(u) {
   }
   return out.title || out.name ? out : null;
 }
+// Calendrier scolaire (data.education.gouv.fr) : [premier jour de vacances, jour de la rentrée), en dates de Paris
+const PARIS_D = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" });
+function parisDay(v) {
+  const s = String(v || "").trim(); if (!s) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s); if (isNaN(d)) return "";
+  const o = {}; for (const p of PARIS_D.formatToParts(d)) o[p.type] = p.value; return o.year + "-" + o.month + "-" + o.day;
+}
+async function fetchVacances(z) {
+  const from = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10);
+  const where = encodeURIComponent('zones="Zone ' + z + '" and end_date>=date\'' + from + '\'');
+  const u = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/records?select=description,start_date,end_date,population,zones,annee_scolaire&where=" + where + "&order_by=start_date&limit=100";
+  const r = await fetch(u, { headers: { Accept: "application/json", "User-Agent": "Together (agenda a deux)" } });
+  if (!r.ok) throw new Error("http " + r.status);
+  const j = await r.json();
+  const rows = Array.isArray(j.results) ? j.results : Array.isArray(j.records) ? j.records.map((x) => x.fields || x.record && x.record.fields || x) : [];
+  const seen = new Map();
+  for (const x of rows) {
+    if (!x || /enseignant/i.test(String(x.population || ""))) continue;
+    const a = parisDay(x.start_date), b = parisDay(x.end_date), n = tidy(x.description, 60);
+    if (!a || !b || b <= a || !n) continue;
+    const k = n + "|" + a; if (!seen.has(k)) seen.set(k, { n, a, b });
+  }
+  return [...seen.values()].sort((p, q) => p.a.localeCompare(q.a)).slice(0, 30);
+}
 // Ancien format (tout dans la fiche du couple) : on recopie chaque partie dans sa clé, une seule fois
 async function migrate(env, id, c) {
   if (!c || !(c.subs || c.widgets || c.done || c.widget)) return c;
@@ -347,8 +372,12 @@ export default {
     //   (rien) ou ?a=go : l'adresse du prochain départ, en texte, pour l'action « Afficher l'itinéraire » du raccourci ;
     //                     si l'on passe récupérer l'autre en chemin, son adresse d'abord, et l'autre reçoit « en route »
     //   ?a=bas : prévient l'autre que l'on est en bas ;  ?a=next : le prochain départ, à lire par Siri
+    //   ?a=auto : en montant dans la voiture (automatisation CarPlay), la phrase du départ dans l'heure, sinon « Rien »
+    //   ?a=day : la journée (et demain), à lire par Siri ;  ?a=retard&m=10 : prévient l'autre d'un retard
     const cr = /^\/car\/([A-Za-z0-9_-]{6,60})\/([A-Za-z0-9_-]{1,80})\/([0-9a-f]{24})\/?$/.exec(path);
     if (cr) {
+      // lisible aussi par l'app (bouton « Essayer » des réglages)
+      const txt = (t, st) => { const r = new Response(t, { status: st || 200, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...cors(req) } }); return r; };
       const [, id, uid, key] = cr;
       const c = await getCouple(env, id);
       if (!c || !c.token || key !== await addKey(c.token, uid)) return txt("Lien voiture inconnu. Copie à nouveau ton lien dans Together : Réglages, Dans la voiture.", 404);
@@ -357,7 +386,13 @@ export default {
       let fmt; try { fmt = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: D.tz || "Europe/Paris" }); } catch (_) { fmt = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }); }
       const hm = (ms) => fmt.format(new Date(ms)).replace(/\s/g, "");
       const me = clean(D.me, 30) || "Together";
-      const items = (Array.isArray(D.items) ? D.items : []).filter((x) => x && !x.a && +x.s > 0).sort((p, q) => p.s - q.s);
+      // nos moments à deux et les miens (pas ceux de l'autre seul), sauf avec une ancienne version de l'app
+      const mine = (x) => !x.wu || x.wu === uid;
+      const all = (Array.isArray(D.items) ? D.items : []).filter((x) => x && +x.s > 0).sort((p, q) => p.s - q.s);
+      const items = all.filter((x) => !x.a && mine(x));
+      const ids = Array.isArray(D.ids) ? D.ids.map((x) => clean(x, 80)) : [], names = Array.isArray(D.names) ? D.names.map((x) => clean(x, 30)) : [];
+      const nameOf = (u) => (ids.indexOf(u) >= 0 && names[ids.indexOf(u)]) || "";
+      const hs = (ms) => { const [h, m] = hm(ms).split(":"); return +h + " h" + (m && m !== "00" ? " " + m : ""); };
       const ref = (x) => +x.d || +x.s;
       const nx = items.find((x) => ref(x) > now - 45 * 60000 && x.s > now - 10 * 60000 && ref(x) < now + 4 * 3600000);
       const tell = async (to, msg, kind) => {
@@ -369,6 +404,54 @@ export default {
       if (act === "next" || act === "info") {
         if (!nx) return txt("Rien de prévu dans les 4 prochaines heures.");
         return txt((nx.d ? "Départ à " + hm(nx.d) : "Rendez-vous à " + hm(nx.s)) + " pour « " + clean(nx.t, 60) + " »" + (nx.pk ? ", en passant récupérer " + clean(nx.pw, 20) : "") + ".");
+      }
+      if (act === "auto" || act === "carplay") {
+        const ax = items.find((x) => { const r0 = ref(x); return r0 > now - 20 * 60000 && r0 < now + 60 * 60000 && x.s > now - 5 * 60000; });
+        if (!ax) return txt("Rien");
+        const dep = +ax.d || 0, mins = Math.round(((dep || ax.s) - now) / 60000);
+        let say = dep ? (mins < -4 ? "Le départ était prévu à " + hs(dep) + " : tu as environ " + (-mins) + " minutes de retard" : mins <= 1 ? "C'est l'heure de partir" : "Départ dans " + mins + " minutes")
+          : (mins <= 1 ? "C'est maintenant" : "Dans " + mins + " minutes");
+        say += " pour « " + clean(ax.t, 60) + " », à " + hs(ax.s) + ".";
+        if (ax.pk) say += " On passe d'abord récupérer " + clean(ax.pw, 20) + ".";
+        if (dep && mins < -4) say += " Dis « je suis en retard » pour prévenir " + (clean(ax.pw, 20) || nameOf(ids.find((u) => u !== uid)) || "l'autre") + ".";
+        return txt(say);
+      }
+      if (act === "day" || act === "jour" || act === "journee") {
+        const tz = D.tz || "Europe/Paris";
+        let dkf; try { dkf = new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }); } catch (_) { dkf = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }); }
+        const dk = (ms) => { const o = {}; for (const p of dkf.formatToParts(new Date(ms))) o[p.type] = p.value; return o.year + "-" + o.month + "-" + o.day; };
+        const d0 = dk(now), d1 = dk(now + 86400000);
+        const say1 = (x) => (x.a ? "toute la journée" : hs(x.s)) + ", " + clean(x.t, 60) + (x.wu && x.wu !== uid ? " pour " + (nameOf(x.wu) || "l'autre") : x.wu === uid ? " pour toi" : "")
+          + (!x.a && mine(x) && x.pk ? ", en passant récupérer " + clean(x.pw, 20) : "") + (!x.a && mine(x) && +x.d > now ? ", départ à " + hs(+x.d) : "");
+        const today = all.filter((x) => dk(x.s) === d0 && (x.a || x.s > now - 30 * 60000)).slice(0, 6), tom = all.filter((x) => dk(x.s) === d1).slice(0, 4);
+        if (!today.length && !tom.length) return txt("Rien de prévu aujourd'hui ni demain. Profitez-en !");
+        return txt((today.length ? "Aujourd'hui : " + today.map(say1).join(" ; ") + "." : "Plus rien aujourd'hui.") + (tom.length ? " Demain : " + tom.map(say1).join(" ; ") + "." : " Rien de prévu demain."));
+      }
+      if (act === "retard" || act === "late") {
+        const mm = /(\d{1,3})/.exec(String(url.searchParams.get("m") || url.searchParams.get("min") || ""));
+        const m = Math.max(1, Math.min(180, mm ? +mm[1] : 10));
+        // d'abord un moment à deux dans les 3 heures, sinon un des miens ; sans rien de prévu, un simple message
+        const win = (x) => x.s > now - 30 * 60000 && x.s < now + 3 * 3600000;
+        const lx = items.find((x) => !x.wu && win(x)) || items.find(win) || null;
+        const subs0 = await getSubs(env, id, c), to = lx && lx.pk && lx.pu ? lx.pu : (ids.find((u) => u !== uid) || Object.keys(subs0).find((u) => u !== uid) || "");
+        if (!to) return txt("Personne à prévenir pour l'instant.", 404);
+        // au plus 6 messages de retard par heure
+        const rk = "lr:" + id + ":" + uid, rn = +(await env.KV.get(rk)) || 0;
+        if (rn >= 6) return txt("Déjà prévenu plusieurs fois. Ouvre Together pour écrire un message.", 429);
+        await env.KV.put(rk, String(rn + 1), { expirationTtl: 3600 });
+        const who = nameOf(to) || (lx && clean(lx.pw, 20)) || "l'autre";
+        if (!lx) {
+          await tell(to, { title: me + " aura environ " + m + " min de retard", body: "Message envoyé depuis la voiture.", tag: "late-x", url: "./" }, "c");
+          return txt("C'est envoyé à " + who + " : environ " + m + " minutes de retard.");
+        }
+        const body = lx.pk && +lx.d ? "Passage pour te récupérer vers " + hm(+lx.d + (+lx.pm || 0) * 60000 + m * 60000) + " au lieu de " + hm(+lx.d + (+lx.pm || 0) * 60000) + " (« " + clean(lx.t, 60) + " »)."
+          : "Pour « " + clean(lx.t, 60) + " » à " + hm(lx.s) + " : arrivée vers " + hm(lx.s + m * 60000) + ".";
+        await tell(to, { title: me + " aura environ " + m + " min de retard", body, tag: "late-" + clean(lx.id || "x", 30), url: lx.id ? "./?ev=" + clean(lx.id, 40) : "./" }, "c");
+        // l'app l'affiche ensuite sur l'évènement, chez vous deux
+        const LT = ((await env.KV.get("lt:" + id, "json")) || []).filter((x) => now - x.at < 12 * 3600000 && !(x.u === uid && x.e === clean(lx.id, 40)));
+        LT.push({ e: clean(lx.id, 40), u: uid, m, at: now, s: lx.s, t: clean(lx.t, 60) });
+        await env.KV.put("lt:" + id, JSON.stringify(LT.slice(-10)));
+        return txt("C'est envoyé à " + who + " : environ " + m + " minutes de retard pour « " + clean(lx.t, 60) + " ».");
       }
       if (act === "bas" || act === "here") {
         const p = items.find((x) => x.pk && x.pu && ref(x) > now - 90 * 60000 && x.s > now - 30 * 60000 && ref(x) < now + 2 * 3600000);
@@ -388,6 +471,16 @@ export default {
       }
       const dest = clean(nx.to || nx.l, 160);
       return dest ? txt(dest) : txt("« " + clean(nx.t, 60) + " » n'a pas d'adresse.", 404);
+    }
+    if (path === "/api/vacances" && req.method === "GET") {
+      const z = String(url.searchParams.get("z") || "").toUpperCase();
+      if (!/^[ABC]$/.test(z)) return json(req, { ok: false, error: "zone" }, 400);
+      const ck = "vac:" + z, cached = await env.KV.get(ck, "json");
+      if (cached && Date.now() - cached.at < 7 * 86400000 && !url.searchParams.has("fresh")) return json(req, { ok: true, zone: z, list: cached.list, at: cached.at });
+      let list = null; try { list = await fetchVacances(z); } catch (_) {}
+      if (list && list.length) { const at = Date.now(); await env.KV.put(ck, JSON.stringify({ at, list })); return json(req, { ok: true, zone: z, list, at }); }
+      if (cached) return json(req, { ok: true, zone: z, list: cached.list, at: cached.at, stale: true });
+      return json(req, { ok: false, error: "source" }, 502);
     }
     if (path === "/api/w" && req.method === "GET") {
       const id = clean(url.searchParams.get("c"), 60), t = clean(url.searchParams.get("t"), 80);
@@ -473,7 +566,8 @@ export default {
     }
     if (path === "/api/addget") {
       const uid = clean(b.uid, 80), list = await getAdds(env, id);
-      return json(req, { ok: true, items: list.filter((x) => x.u === uid).map((x) => ({ id: x.id, t: x.t, at: x.at })) });
+      const lt = ((await env.KV.get("lt:" + id, "json")) || []).filter((x) => Date.now() - x.at < 12 * 3600000);
+      return json(req, { ok: true, items: list.filter((x) => x.u === uid).map((x) => ({ id: x.id, t: x.t, at: x.at })), late: lt });
     }
     if (path === "/api/adddone") {
       const uid = clean(b.uid, 80), ids = new Set((Array.isArray(b.ids) ? b.ids : [b.id]).map((x) => clean(x, 20)).filter(Boolean));

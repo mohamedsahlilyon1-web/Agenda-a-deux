@@ -1011,6 +1011,35 @@ body.film-on{overflow:hidden}
 .film-b{border:none;border-radius:999px;padding:10px 16px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .film-b:disabled{opacity:.8}
 .film-msg{position:absolute;color:#fff;text-align:center;padding:0 30px;font-size:1.05rem}
+/* Jours fériés, vacances, retards, « Occupé », voiture */
+.day-chips{display:inline-flex;gap:5px;margin-left:8px;vertical-align:middle;flex-wrap:wrap}
+.dchip{font-size:.7rem;font-weight:800;letter-spacing:0;text-transform:none;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.dchip.fer{background:color-mix(in oklab,#DC2626 14%,var(--surface));color:#B91C1C}
+.dchip.vac{background:color-mix(in oklab,#0EA5E9 16%,var(--surface));color:#0369A1}
+.mark-t{margin:2px 0 6px;font-size:.9rem;color:var(--muted)}
+.day-mark{opacity:.95}
+.day-mark .mark-t{padding:10px 14px;border-radius:16px;background:var(--surface);border:1px dashed var(--hair);color:var(--ink)}
+.wd.ferie strong{color:#DC2626}
+.wd.vac{box-shadow:inset 0 -3px 0 color-mix(in oklab,#0EA5E9 55%,transparent)}
+.md.ferie .num{color:#DC2626;font-weight:800}
+.md.vac{background:color-mix(in oklab,#0EA5E9 9%,transparent)}
+.md-mark{margin:0;font-size:.9rem;font-weight:700}
+.md-mark.fer{color:#B91C1C}
+.md-mark.vac{color:#0369A1}
+.lweek{--m:var(--sun)}
+.late-line{display:flex;gap:6px;align-items:center;font-size:.86rem;font-weight:800;color:#B45309;margin-top:4px}
+#next .late-line{color:#FCD34D}
+.busy-where{font-style:italic}
+.swipe:has(.busy-where) .front{opacity:.82}
+.cs-cal{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-top:1px solid var(--hair)}
+.cs-n{font-weight:800}
+.fr-next{margin:4px 0 0;padding-left:18px;font-size:.9rem;color:var(--muted)}
+.car-sc{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:16px;background:var(--surface);box-shadow:var(--lift);border:var(--cb,0 solid transparent)}
+.car-sc>strong{font-size:1rem}
+.car-sc .note{margin:0}
+.car-sc details summary{cursor:pointer;font-weight:700;color:var(--line)}
+.car-try{font-size:.88rem;margin:0;padding:8px 10px;border-radius:12px;background:color-mix(in oklab,var(--line) 8%,var(--surface))}
+.car-try:empty{display:none}
 .film-styles{position:absolute;top:calc(36px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;gap:6px;justify-content:center;pointer-events:none}
 .film-st{pointer-events:auto;border:none;border-radius:999px;padding:7px 15px;font-weight:800;font-size:.86rem;background:rgba(255,255,255,.16);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .film-st.on{background:#fff;color:#111}
@@ -1330,7 +1359,8 @@ async function render(){
   {const an=annivCard();if(an){const cb=list.querySelector(".cal-banner");cb?list.insertBefore(an,cb):list.append(an);}}
   {const due=feedbackDue();if(due.length){const box=el("section",{class:"wish-alerts","aria-label":"Sorties à raconter"},...due.slice(0,2).map(feedbackCard));const cb=list.querySelector(".cal-banner");cb?list.insertBefore(box,cb):list.append(box);}}
   {const wa=wishAlerts();if(wa){const cb=list.querySelector(".cal-banner");cb?list.insertBefore(wa,cb):list.append(wa);}}
-  {const wk=weekendCard();if(wk)list.append(wk);}
+  {const lw=longWeekendCard(),[sat]=nextWeekend();if(lw)list.append(lw);
+    if(!lw||!(sat>=lw.dataset.from&&sat<=lw.dataset.to)){const wk=weekendCard();if(wk)list.append(wk);}}
   if(!shown.length){
     list.append(el("div",{class:"empty"},el("strong",{},"Rien de prévu pour l'instant"),
       el("p",{},"Écris un rendez-vous, une sortie ou des courses : l'app calcule le trajet, l'heure de départ et propose les rappels."),
@@ -1338,13 +1368,19 @@ async function render(){
     return;
   }
   let cur=null,box=null;
+  // les jours fériés et le début des vacances, à leur place, même sans évènement ce jour-là
+  const marks=dayMarks(today0,45);let mi=0;
+  const flush=upto=>{while(mi<marks.length&&marks[mi].k<upto){const m=marks[mi++];if(!list.querySelector("#d-"+m.k))list.append(markRow(m));}};
   for(const ev of shown){
     const s=startOf(ev),key=ymd(s);
+    flush(key>=today0?key:"9999");
     if(key!==cur){cur=key;const [a,b]=dayParts(s);
       box=el("div",{class:"stops"});
-      list.append(el("section",{class:"day",id:"d-"+key},el("h2",{},a,b?el("span",{},b):null),box));}
+      const mk0=marks.find(m=>m.k===key);if(mk0)mi=Math.max(mi,marks.indexOf(mk0)+1);
+      list.append(el("section",{class:"day",id:"d-"+key},el("h2",{},a,b?el("span",{},b):null,dayChips(key)),mk0?el("p",{class:"mark-t"},mk0.t):null,box));}
     box.append(stop(ev,who));
   }
+  flush("9999");
   if(canWrite && !hintShown()) list.append(el("p",{class:"hint-swipe"},"Astuce : glisse un évènement vers la gauche pour le modifier ou le supprimer."));
 }
 function hintShown(){try{const v=localStorage.getItem("ad-hint")||"0";localStorage.setItem("ad-hint",String(+v+1));return +v>4;}catch(_){return false;}}
@@ -1355,7 +1391,7 @@ function renderNext(upcoming){
   renderToday();renderWeek();
   n.classList.remove("trip-live");
   {const lt=myLiveTrip();if(lt){tripHero(n,lt);return;}}
-  const ev0=upcoming.filter(e=>!isAllDay(e)).map(e=>viewFor(e,myId)).find(e=>(hasTripEv(e)?departOf(e):startOf(e)).getTime()>now-15*60000);
+  const ev0=upcoming.filter(e=>!isAllDay(e)&&!e.busy).map(e=>viewFor(e,myId)).find(e=>(hasTripEv(e)?departOf(e):startOf(e)).getTime()>now-15*60000);
   const ev=ev0||null;
   const ref=ev?(hasTripEv(ev)&&(trips.get(ev.id)||{}).stage!=="together"?departOf(ev):startOf(ev)):null;
   if(!ev||ref-now>7*86400000){n.hidden=true;delete n.dataset.ev;return;}
@@ -1386,6 +1422,7 @@ function renderNext(upcoming){
     el("div",{class:"big num"},hhmm(ref)),
     el("div",{class:"in"},when),
     el("div",{class:"what"},ev.title+(trip?", rendez-vous à "+ev.time:"")),
+    lateLine(ev),
     trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||ev.title))):null,
     trip?el("div",{class:"trip-meta"},ev.pickedUp?"Prépare-toi pour "+hhmm(ref)+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Arrivée à "+ev.time+".":fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null,
     trip&&hasPickup(ev)&&!ev.pickedUp?el("div",{class:"pk-hero"},el("b",{class:"num"},hhmm(pickupAt(ev))),"Récupérer "+firstName(ev.pickupWho)+(ev.pickup?" · "+shortAddr(ev.pickup):"")):null].filter(Boolean));
@@ -1425,7 +1462,8 @@ function renderWeek(){
       const lab=d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+(list.length?", "+list.length+" évènement"+(list.length>1?"s":""):", rien de prévu");
       // le 1er du mois montre le mois, pour se repérer en glissant
       const top=d.getDate()===1&&i>0?el("small",{class:"mo"},d.toLocaleDateString("fr-FR",{month:"short"}).replace(".","")):el("small",{},d.toLocaleDateString("fr-FR",{weekday:"short"}).replace(".",""));
-      page.append(el("button",{type:"button",class:"wd"+(i===0?" is-today":"")+(list.length?"":" none"),"aria-label":lab,"data-date":key,onclick:()=>{
+      const fer=ferieName(key),vac=vacOn(key);
+      page.append(el("button",{type:"button",class:"wd"+(i===0?" is-today":"")+(list.length?"":" none")+(fer?" ferie":"")+(vac?" vac":""),"aria-label":lab+(fer?", "+fer+" (férié)":"")+(vac?", "+vac.n.toLowerCase():""),"data-date":key,onclick:()=>{
         const sec=document.getElementById("d-"+key);
         if(sec)sec.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
         else toast("Rien de prévu "+(i===0?"aujourd'hui":i===1?"demain":d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"}))+".","Ajouter",()=>{const x=blankDraft();x.date=key;openEditor(x);});
@@ -2195,13 +2233,15 @@ function openMonth(y,m,sel){
     const d=new Date(key+"T12:00:00");
     panel.append(el("div",{class:"md-h"},el("strong",{},d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}).replace(/^./,c=>c.toUpperCase())),
       canWrite?el("button",{type:"button",class:"btn primary",onclick:()=>{const x=blankDraft();x.date=key;openEditor(x);}},"Ajouter ce jour-là"):null));
+    {const f=ferieName(key),v=vacOn(key);if(f)panel.append(el("p",{class:"md-mark fer"},f+" : jour férié."+lwText(key)));if(v)panel.append(el("p",{class:"md-mark vac"},v.n+" (zone "+schoolZone()+")"));}
     if(!list.length)panel.append(el("p",{class:"note"},"Rien de prévu. La journée est libre."));
     for(const e of list){const k=motifOf(e);panel.append(el("button",{type:"button",class:"md-ev",style:motifStyle(k),onclick:()=>{closeSheet();expanded.add(e.id);render().then(()=>{const s=document.getElementById("d-"+e.date);if(s)s.scrollIntoView({block:"start"});});}},
       el("span",{class:"md-dot",style:"background:"+(k?MOTIFS[k].c:"var(--line)")}),el("span",{class:"num"},e.time||""),el("span",{class:"md-t"},e.title||"Sans titre"),whoBadge(e)));}
   };
   for(let dnum=1;dnum<=days;dnum++){
     const d=new Date(y,m,dnum),key=ymd(d),list=byDay[key]||[];
-    grid.append(el("button",{type:"button",class:"md"+(key===ymd(now)?" today":"")+(list.length?" has":""),"data-k":key,"aria-label":d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+", "+(list.length?list.length+" évènement"+(list.length>1?"s":""):"libre"),onclick:()=>showDay(key)},
+    const fer=ferieName(key),vac=vacOn(key);
+    grid.append(el("button",{type:"button",class:"md"+(key===ymd(now)?" today":"")+(list.length?" has":"")+(fer?" ferie":"")+(vac?" vac":""),"data-k":key,"aria-label":d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+", "+(list.length?list.length+" évènement"+(list.length>1?"s":""):"libre"),onclick:()=>showDay(key)},
       el("span",{class:"num"},String(dnum)),el("span",{class:"dots"},...list.slice(0,3).map(e=>{const k=motifOf(e);return el("i",{style:"--cat:"+(k?MOTIFS[k].c:"var(--line)")});}))));
   }
   const prev=new Date(y,m-1,1),next=new Date(y,m+1,1);
@@ -3187,6 +3227,240 @@ async function openFilm(mems,opts){
 }
 function fmtClock(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");}
 
+/* ---------- Jours fériés, ponts et vacances scolaires ---------- */
+// Pâques (calcul grégorien), puis les 11 jours fériés de métropole
+function easterOf(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
+  l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da,12);}
+const FERIE_CACHE={};
+function feriesOf(y){if(FERIE_CACHE[y])return FERIE_CACHE[y];const e=easterOf(y),add=n=>{const d=new Date(e);d.setDate(d.getDate()+n);return ymd(d);};
+  return FERIE_CACHE[y]={[y+"-01-01"]:"Jour de l'an",[add(1)]:"Lundi de Pâques",[y+"-05-01"]:"Fête du Travail",[y+"-05-08"]:"Victoire 1945",[add(39)]:"Ascension",[add(50)]:"Lundi de Pentecôte",
+    [y+"-07-14"]:"Fête nationale",[y+"-08-15"]:"Assomption",[y+"-11-01"]:"Toussaint",[y+"-11-11"]:"Armistice",[y+"-12-25"]:"Noël"};}
+function ferieName(key){const y=+String(key||"").slice(0,4);return y?feriesOf(y)[key]||"":"";}
+function dayDiff(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5);}
+function addDays(key,n){const d=new Date(key+"T12:00:00");d.setDate(d.getDate()+n);return ymd(d);}
+// « dimanche 1er novembre »
+function frDay(key,noWd){const d=new Date(key+"T12:00:00"),n=d.getDate();return (noWd?"":d.toLocaleDateString("fr-FR",{weekday:"long"})+" ")+(n===1?"1er":n)+" "+d.toLocaleDateString("fr-FR",{month:"long"});}
+// Les longs week-ends : un jour férié collé au week-end (3 jours), ou à un jour près (le pont : 4 jours)
+function longWeekends(fromKey,days){
+  const out=[];
+  for(let i=0;i<days;i++){const k=addDays(fromKey,i),n=ferieName(k);if(!n)continue;const wd=new Date(k+"T12:00:00").getDay();
+    const span=(a,b,p)=>out.push({from:addDays(k,a),to:addDays(k,b),days:b-a+1,ferie:k,name:n,pont:p?addDays(k,p):""});
+    if(wd===5)span(0,2);else if(wd===1)span(-2,0);else if(wd===4)span(0,3,1);else if(wd===2)span(-3,0,-1);}
+  return out;}
+function lwShort(k){const L=longWeekends(addDays(k,-3),7).find(x=>x.ferie===k);return L?(L.pont?" (avec le pont du "+frDay(L.pont)+", "+L.days+" jours)":" (week-end de "+L.days+" jours)"):"";}
+function lwText(k){const L=longWeekends(addDays(k,-3),7).find(x=>x.ferie===k);if(!L)return "";
+  return L.pont?" Avec le pont du "+frDay(L.pont)+", "+L.days+" jours.":" Un week-end de "+L.days+" jours.";}
+// La zone des vacances scolaires : d'après le code postal de la maison, ou choisie dans les réglages (config/fr)
+const ZONE_DEP={A:"01 03 07 15 16 17 19 21 23 24 25 26 33 38 39 40 42 43 47 58 63 64 69 70 71 73 74 79 86 87 89 90",
+  B:"02 04 05 06 08 10 13 14 18 22 27 28 29 35 36 37 41 44 45 49 50 51 52 53 54 55 56 57 59 60 61 62 67 68 72 76 80 83 84 85 88",
+  C:"09 11 12 30 31 32 34 46 48 65 66 75 77 78 81 82 91 92 93 94 95"};
+let frCfg={};
+function zoneAuto(){const m=/\b(\d{5})\b/.exec(homeAddr()||"");if(!m)return "";const dep=m[1].slice(0,2);if(dep==="20"||dep==="97"||dep==="98")return "";
+  for(const [z,l] of Object.entries(ZONE_DEP))if((" "+l+" ").includes(" "+dep+" "))return z;return "";}
+function schoolZone(){const z=frCfg&&frCfg.zone;if(z==="none")return "";if(/^[ABC]$/.test(z||""))return z;return zoneAuto();}
+// Vacances : lues par le serveur sur data.education.gouv.fr (gardées une semaine) ; sinon le calendrier 2026-2027 officiel
+const VAC_KNOWN={all:[["Vacances de la Toussaint","2026-10-17","2026-11-02"],["Vacances de Noël","2026-12-19","2027-01-04"],["Pont de l'Ascension","2027-05-06","2027-05-10"],["Vacances d'été","2027-07-03","2027-09-01"]],
+  A:[["Vacances d'hiver","2027-02-13","2027-03-01"],["Vacances de printemps","2027-04-10","2027-04-26"]],
+  B:[["Vacances d'hiver","2027-02-20","2027-03-08"],["Vacances de printemps","2027-04-17","2027-05-03"]],
+  C:[["Vacances d'hiver","2027-02-06","2027-02-22"],["Vacances de printemps","2027-04-03","2027-04-19"]]};
+let vacList=null;
+const vacName=n=>String(n||"Vacances").replace(/\b(Hiver|Printemps|Été|Ete)\b/g,m=>m.toLowerCase()).replace(/^Vacances d'Été/i,"Vacances d'été").slice(0,60);
+function vacData(){const z=schoolZone();if(!z)return [];
+  if(vacList&&vacList.z===z)return vacList.list;
+  let c=null;try{c=JSON.parse(localStorage.getItem("a2.vac."+z)||"null");}catch(_){}
+  const list=c&&Array.isArray(c.list)&&c.list.length?c.list:[...VAC_KNOWN.all,...(VAC_KNOWN[z]||[])].map(([n,a,b])=>({n,a,b})).sort((p,q)=>p.a.localeCompare(q.a));
+  vacList={z,list};
+  if(!c||Date.now()-(+c.at||0)>3*86400000)setTimeout(()=>vacFetch(z),0);
+  return list;}
+async function vacFetch(z){if(vacFetch.busy)return;vacFetch.busy=true;
+  try{const base=await pushUrl();if(!base)return;
+    const r=await fetch(base+"/api/vacances?z="+z,{cache:"no-store"}),j=await r.json().catch(()=>null);
+    if(j&&j.ok&&Array.isArray(j.list)&&j.list.length){
+      const list=j.list.filter(x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.a)&&/^\d{4}-\d{2}-\d{2}$/.test(x.b)&&x.b>x.a).map(x=>({n:vacName(x.n),a:x.a,b:x.b}));
+      if(list.length){try{localStorage.setItem("a2.vac."+z,JSON.stringify({at:Date.now(),list}));}catch(_){}vacList={z,list};scheduleRender();}}}
+  catch(_){}finally{vacFetch.busy=false;}}
+function vacOn(key){return vacData().find(v=>key>=v.a&&key<v.b)||null;}
+function vacPhrase(v,start){const z=schoolZone(),end=frDay(addDays(v.b,-1));
+  if(/^vacances/i.test(v.n))return (start?"Début des v":"V")+v.n.slice(1)+" (zone "+z+"), jusqu'au "+end+".";
+  return v.n+" (zone "+z+") : "+(start?"du "+frDay(v.a)+" au "+end:"jusqu'au "+end)+".";}
+// Dans l'agenda : une petite étiquette dans l'en-tête du jour…
+function dayChips(key){const f=ferieName(key),v=vacOn(key);if(!f&&!v)return null;
+  return el("span",{class:"day-chips"},f?el("span",{class:"dchip fer"},"Férié · "+f):null,v?el("span",{class:"dchip vac",title:v.n},v.a===key?v.n:"Vacances"):null);}
+// …et les jours à montrer même sans évènement : les fériés, le début des vacances, et aujourd'hui pendant les vacances
+function dayMarks(fromKey,n){const out=[];
+  for(let i=0;i<n;i++){const k=addDays(fromKey,i),f=ferieName(k),v=vacOn(k);
+    if(f)out.push({k,t:f+" : jour férié."+lwText(k)});
+    else if(v&&(v.a===k||i===0))out.push({k,t:vacPhrase(v,v.a===k)});}
+  return out;}
+function markRow(m){const [a,b]=dayParts(new Date(m.k+"T12:00:00"));
+  return el("section",{class:"day day-mark",id:"d-"+m.k},el("h2",{},a,b?el("span",{},b):null,dayChips(m.k)),el("p",{class:"mark-t"},m.t));}
+// La carte des longs week-ends : dès 3 semaines avant, avec une idée tirée de vos envies
+function longWeekendCard(day0){
+  const today=day0||ymd(new Date()),lw=longWeekends(today,24).find(x=>x.to>=today);if(!lw)return null;
+  let hide="";try{hide=localStorage.getItem("a2.lwHide")||"";}catch(_){}if(hide===lw.ferie)return null;
+  if([...events.values()].some(e=>e.date>=lw.from&&e.date<=lw.to&&whoOf(e)==="both"&&isOuting(e)))return null;
+  const card=el("section",{class:"weekend lweek"}),o=otherId();
+  const head=lw.pont?lw.days+" jours avec le pont : "+lw.name:"Week-end de "+lw.days+" jours : "+lw.name;
+  const sub="Du "+frDay(lw.from)+" au "+frDay(lw.to)+(lw.pont?", en posant le "+frDay(lw.pont):"")+(dayDiff(today,lw.from)>0?" (dans "+dayDiff(today,lw.from)+" jour"+(dayDiff(today,lw.from)>1?"s":"")+")":"");
+  const idea=el("div",{class:"wk-idea"}),acts=el("div",{class:"pchips"});
+  const day=lw.pont?lw.ferie:(lw.ferie>today?lw.ferie:lw.to);
+  let list=wishList().some(wishOpen)?rankIdeas({date:day,from:"14:00",to:"18:30",lab:"Après-midi"},null):[],i=0;
+  const draw=()=>{idea.textContent="";acts.textContent="";const it=list.length?list[i%list.length]:null;
+    if(it){const w=it.w;card.setAttribute("style",motifStyle(it.k));
+      idea.append(el("span",{class:"wish-ic",html:it.k?motifSvg(it.k):""}),el("span",{},"Une idée : ",el("strong",{},w.title),it.why.length?el("small",{class:"wk-why"},it.why.join(" · ")):null));
+      acts.append(o?el("button",{type:"button",class:"btn primary",onclick:()=>openPropose(w,{date:day,time:"14:00"})},"Proposer à "+firstName(o)):el("button",{type:"button",class:"btn primary",onclick:()=>planWish(w,day)},"Planifier"));
+      if(list.length>1)acts.append(el("button",{type:"button",class:"btn",onclick:()=>{i++;draw();}},"Une autre"));}
+    else{idea.append(el("span",{},"Une envie de week-end pour l'occasion ? Notez-la dans « Nos envies »."));acts.append(el("button",{type:"button",class:"btn",onclick:openWishes},"Nos envies"));}
+    acts.append(el("button",{type:"button",class:"btn quiet",onclick:()=>{try{localStorage.setItem("a2.lwHide",lw.ferie);}catch(_){}card.remove();}},"Plus tard"));};
+  card.append(el("div",{class:"wk-h"},el("strong",{},head),el("small",{},sub)),idea,acts);draw();
+  card.dataset.from=lw.from;card.dataset.to=lw.to;
+  return card;
+}
+function holidaySection(){
+  const box=el("div",{class:"disc-box fr-box"}),za=zoneAuto();
+  const chips=el("div",{class:"pchips fr-zone"}),next=el("ul",{class:"fr-next"});
+  const draw=()=>{chips.textContent="";const cur=(frCfg&&frCfg.zone)||"";
+    for(const [v,t] of [["","Auto"+(za?" (zone "+za+")":"")],["A","Zone A"],["B","Zone B"],["C","Zone C"],["none","Aucune"]])
+      chips.append(el("button",{type:"button",class:"pchip"+(cur===v?" on":""),"aria-pressed":String(cur===v),onclick:async()=>{frCfg={...frCfg,zone:v};vacList=null;draw();scheduleRender();
+        try{await db.doc("config/fr").set({zone:v},{merge:true});}catch(_){toast("Enregistrement impossible.");}}},t));
+    next.textContent="";const today=ymd(new Date());
+    const fer=[];for(let i=0;i<400&&fer.length<3;i++){const k=addDays(today,i),n=ferieName(k);if(n)fer.push(el("li",{},frDay(k).replace(/^./,c=>c.toUpperCase())+" : "+n+lwShort(k)));}
+    const v=vacData().filter(x=>x.b>today).slice(0,2).map(x=>el("li",{},x.n+" : du "+frDay(x.a)+" au "+frDay(addDays(x.b,-1))));
+    next.append(...fer,...v);};
+  draw();
+  box.append(el("p",{class:"note"},"Les jours fériés s'affichent dans l'agenda et dans le mois, avec les ponts et les week-ends de 3 jours. Une carte vous en prévient 3 semaines avant, avec une idée de sortie."),
+    el("div",{class:"lab"},"Vacances scolaires"+(za?" (d'après votre adresse : zone "+za+")":"")),chips,el("div",{class:"lab"},"Bientôt"),next);
+  return box;
+}
+
+/* ---------- Le calendrier de l'iPhone suivi tout seul ---------- */
+// config/calsync : pour chacun {auto, mode (me | both | busy), cals : {Travail:"busy", …}}
+let calCfgAll={};
+function calCfg(uid){const c=(calCfgAll&&calCfgAll[uid||myId])||{};
+  return {auto:c.auto!==false,mode:["me","both","busy"].includes(c.mode)?c.mode:"me",cals:c.cals&&typeof c.cals==="object"?c.cals:{}};}
+function calModeFor(cfg,cal){const m=cal&&cfg.cals[cal];return ["me","both","busy","skip"].includes(m)?m:cfg.mode;}
+// une empreinte du titre (pour un « Occupé », le vrai titre ne quitte pas le téléphone)
+async function impKey(title,cal){const t=norm(title)+"|"+norm(cal||"");
+  try{const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("together-imp:"+t)));return [...h.slice(0,8)].map(x=>x.toString(16).padStart(2,"0")).join("");}
+  catch(_){return hashStr("together-imp:"+t).replace(/[^a-z0-9]/g,"").slice(0,16);}}
+function busyNames(){try{return JSON.parse(localStorage.getItem("a2.busyN")||"{}")||{};}catch(_){return {};}}
+function busyName(ev){if(!ev||!ev.busy||!ev.imp||ev.imp.by!==myId)return "";const n=busyNames()[ev.id];return (n&&n.t)||"";}
+function setBusyName(id,t,l){const m=busyNames();m[id]={t:String(t||"").slice(0,80),l:String(l||"").slice(0,120),at:Date.now()};
+  const ks=Object.keys(m);if(ks.length>400)ks.sort((a,b)=>m[a].at-m[b].at).slice(0,ks.length-400).forEach(k=>delete m[k]);try{localStorage.setItem("a2.busyN",JSON.stringify(m));}catch(_){}}
+function evTitle(ev){return ev&&ev.busy?(busyName(ev)||"Occupé"):((ev&&ev.title)||"");}
+function impGone(){try{return new Set(JSON.parse(localStorage.getItem("a2.impGone")||"[]"));}catch(_){return new Set();}}
+function addImpGone(s){const g=[...impGone()].filter(x=>x!==s);g.push(s);try{localStorage.setItem("a2.impGone",JSON.stringify(g.slice(-300)));}catch(_){}}
+function agoTxt(t){const m=Math.round((Date.now()-t)/60000);return m<1?"à l'instant":m<60?"il y a "+m+" min":m<1440?"il y a "+Math.round(m/60)+" h":"le "+new Date(t).toLocaleDateString("fr-FR",{day:"numeric",month:"long"});}
+// les jours fériés et les anniversaires de l'iPhone ne sont pas repris quand on ne sait pas de quel calendrier ils viennent
+function calNoise(it){if(it.cal||!it.allDay)return false;const t=norm(it.title),f=ferieName(it.date);
+  return (f&&(t.includes(norm(f))||/ferie/.test(t)))||/^anniversaire (de |d')/.test(t);}
+async function impAdd(it){
+  const busy=it.mode==="busy",d=blankDraft();
+  Object.assign(d,{title:busy?"Occupé":String(it.title).slice(0,80),date:it.date,time:it.allDay?"00:00":it.time,category:busy?"autre":guessCat(it.title),
+    notes:it.allDay&&!busy?"Toute la journée":"",allDay:!!it.allDay,who:it.mode==="both"?"both":myId});
+  d.marginMin=busy?0:(DEF_MARGIN[d.category]??10);d.durationMin=it.dur||(busy?60:(DEF_DUR[d.category]||60));
+  if(busy){d.location="";d.reminders=[];}
+  else{const pl=placeFor(it.location)||placeByTitle(it.title);d.location=pl?pl.address:(it.location||"");
+    if(d.location&&!it.allDay){try{const r=await estimateTrip(d);if(r.ok){d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;}}catch(_){}}
+    d.reminders=suggestReminders(d);}
+  const id=db.collection("events").doc().id;
+  try{await db.doc("events/"+id).set(buildBody(d,{calendarAdded:{[myId]:Date.now()+86400000*365}},{imp:{by:myId,k:it.k,d:it.date,t:it.t,at:Date.now(),cal:String(it.cal||"").slice(0,40)},...(busy?{busy:true}:{})}));
+    if(busy)setBusyName(id,it.title,it.location);return true;}catch(_){return false;}
+}
+async function impMove(e,it){
+  const t=it.allDay?"00:00":it.time,patch={date:it.date,time:t,startTs:new Date(it.date+"T"+t+":00").getTime(),imp:{...e.imp,d:it.date,t:it.t,at:Date.now()}};
+  if(it.allDay)patch.allDay=true;else if(e.allDay)patch.allDay=false;
+  if(it.dur)patch.durationMin=it.dur;
+  try{await db.doc("events/"+e.id).set(patch,{merge:true});if(e.busy)setBusyName(e.id,it.title,it.location);return true;}catch(_){return false;}
+}
+async function impRemode(e,it){
+  const busy=it.mode==="busy",patch={who:it.mode==="both"?"both":myId,imp:{...e.imp,at:Date.now()}};
+  if(busy){Object.assign(patch,{busy:true,title:"Occupé",location:"",notes:"",reminders:[],travelMin:0,travelNote:"",routeGeo:null,category:"autre"});setBusyName(e.id,it.title,it.location);}
+  else{Object.assign(patch,{busy:firebase.firestore.FieldValue.delete(),title:String(it.title).slice(0,80),category:guessCat(it.title)});if(!e.location&&it.location)patch.location=String(it.location).slice(0,200);}
+  try{await db.doc("events/"+e.id).update(patch);}catch(_){}
+}
+let calSyncT=null;
+function calSyncSoon(ms){clearTimeout(calSyncT);calSyncT=setTimeout(()=>{calSync().catch(()=>{});},ms==null?1500:ms);}
+// À chaque envoi du raccourci « Export Agenda » : ajouter, déplacer, retirer ce qui a changé dans l'iPhone
+async function calSync(){
+  if(calSync.busy||!inboxText||firstSnap||!myId||!coupleId||!db)return null;
+  const cfg=calCfg();if(!cfg.auto)return null;
+  calSync.busy=true;const res={add:0,move:0,del:0,keep:0,shared:[]};
+  try{
+    const today=ymd(new Date()),limK=addDays(today,62);
+    const items=parseImport(inboxText).filter(it=>it.date>=today&&it.date<=limK);
+    const maxD=items.reduce((m,it)=>it.date>m?it.date:m,"");
+    for(const it of items){it.mode=calNoise(it)?"skip":calModeFor(cfg,it.cal||"");it.k=await impKey(it.title,it.cal||"");it.t=it.allDay?"":it.time;}
+    const live=items.filter(it=>it.mode!=="skip");
+    const mine=[...events.values()].filter(e=>e.imp&&e.imp.by===myId&&e.date>=today);
+    const used=new Set(),left=[];
+    // 1. rien n'a changé dans l'iPhone (même si l'évènement a été retouché dans Together)
+    for(const it of live){
+      const e=mine.find(x=>!used.has(x.id)&&x.imp.k===it.k&&x.imp.d===it.date&&(x.imp.t||"")===it.t);
+      if(!e){left.push(it);continue;}
+      used.add(e.id);res.keep++;
+      if(!e.imp.link&&(!!e.busy!==(it.mode==="busy")||(it.mode==="both")!==(whoOf(e)==="both")))await impRemode(e,it);
+      else if(e.busy&&busyName(e)!==it.title)setBusyName(e.id,it.title,it.location);}
+    // 2. déplacé dans l'iPhone : même titre et même calendrier, un autre jour ou une autre heure
+    const add=[];
+    for(const it of left){
+      const cand=mine.filter(x=>!used.has(x.id)&&x.imp.k===it.k).sort((a,b)=>Math.abs(dayDiff(a.imp.d,it.date))-Math.abs(dayDiff(b.imp.d,it.date)))[0];
+      if(cand&&Math.abs(dayDiff(cand.imp.d,it.date))<=45){used.add(cand.id);if(await impMove(cand,it)){res.move++;if(whoOf(cand)==="both")res.shared.push(["move",it]);}}
+      else add.push(it);}
+    // 3. nouveau : ajouté tout seul (sauf ce qu'on a retiré de Together, ou refusé avant le suivi automatique)
+    const gone=impGone();let first=!lsGet("a2.impInit"),seen=first?calSeenSet():null;
+    for(const it of add){const gk=it.k+"|"+it.date+"|"+it.t;if(gone.has(gk))continue;
+      const dup=[...events.values()].find(e=>!e.imp&&!e.busy&&norm(e.title)===norm(it.title)&&e.date===it.date&&(e.time===it.time||(it.allDay&&isAllDay(e))));
+      if(dup){try{await db.doc("events/"+dup.id).set({imp:{by:myId,k:it.k,d:it.date,t:it.t,at:Date.now(),cal:String(it.cal||"").slice(0,40),link:1}},{merge:true});}catch(_){}continue;}
+      if(first&&seen&&seen.has(calKey(it))){addImpGone(gk);continue;}
+      if(await impAdd(it)){res.add++;if(it.mode==="both")res.shared.push(["add",it]);}}
+    if(first)lsSet("a2.impInit","1");
+    // 4. supprimé dans l'iPhone : retiré de Together (dans la période envoyée, si l'envoi n'est pas vide et sans tout effacer d'un coup)
+    const del=mine.filter(x=>!used.has(x.id)&&maxD&&x.date<=maxD&&!x.imp.ed&&!x.imp.link);
+    if(live.length&&!(del.length>5&&del.length>mine.length/2))
+      for(const e of del){try{await db.doc("events/"+e.id).delete();res.del++;if(whoOf(e)==="both")res.shared.push(["del",{title:e.title,date:e.date,time:e.time,allDay:isAllDay(e)}]);}catch(_){}}
+    // l'autre est prévenu de ce qui change dans vos moments à deux
+    if(res.shared.length&&otherId()){const s=res.shared,word={add:"Ajouté",move:"Déplacé",del:"Supprimé"};
+      pushOther(s.length>1?"Le calendrier de "+firstName(myId)+" : "+s.length+" changements":word[s[0][0]]+" : "+s[0][1].title,
+        s.slice(0,4).map(([k,it])=>word[k]+" : « "+it.title+" », "+calWhen(it).toLowerCase()).join(" ; ")+".","ev");}
+    lsSet("a2.impSync",JSON.stringify({at:Date.now(),n:live.length,add:res.add,move:res.move,del:res.del}));
+    if(res.add||res.move||res.del)scheduleRender();
+  }finally{calSync.busy=false;}
+  return res;
+}
+function calSyncSection(){
+  const box=el("div",{class:"disc-box cs-box"}),o=otherId(),on=o?firstName(o):"ta moitié";
+  const saveCs=async patch=>{const nx={...calCfg(),...patch};calCfgAll={...calCfgAll,[myId]:nx};draw();
+    try{await db.doc("config/calsync").set({[myId]:nx},{merge:true});}catch(_){toast("Enregistrement impossible.");}calSyncSoon(300);};
+  const chips=(cur,pick,skip)=>el("div",{class:"pchips"},...[["me","Pour moi"],["both","À deux"],["busy","« Occupé »"],...(skip?[["skip","Ignorer"]]:[])]
+    .map(([v,t])=>el("button",{type:"button",class:"pchip"+(cur===v?" on":""),"aria-pressed":String(cur===v),onclick:()=>pick(v)},t)));
+  const draw=()=>{box.textContent="";const cfg=calCfg();
+    const cals=[...new Set([...parseImport(inboxText).map(it=>it.cal).filter(Boolean),...Object.keys(cfg.cals)])].sort().slice(0,12);
+    let st=null;try{st=JSON.parse(lsGet("a2.impSync")||"null");}catch(_){}
+    const auto=el("input",{type:"checkbox",id:"cs-auto"});auto.checked=cfg.auto;auto.onchange=()=>saveCs({auto:auto.checked});
+    box.append(
+      el("label",{class:"rs-row",for:"cs-auto"},auto,el("span",{class:"rs-txt"},el("strong",{},"Ajouter tout seuls les rendez-vous de mon iPhone"),
+        el("span",{},"Sans fenêtre à valider. Un rendez-vous déplacé ou supprimé dans le Calendrier de l'iPhone l'est aussi dans Together."))),
+      el("div",{class:"lab"},cals.length?"Les autres calendriers":"Mes rendez-vous de l'iPhone, dans Together"),chips(cfg.mode,v=>saveCs({mode:v})),
+      el("p",{class:"note"},"« Occupé » : "+on+" voit seulement « Occupé » à ces heures, sans le titre ni le lieu. Les moments libres proposés pour vos sorties en tiennent compte."));
+    if(cals.length){box.append(el("div",{class:"lab"},"Calendrier par calendrier"));
+      for(const c of cals)box.append(el("div",{class:"cs-cal"},el("span",{class:"cs-n"},c),chips(calModeFor(cfg,c),v=>saveCs({cals:{...cfg.cals,[c]:v}}),true)));}
+    else box.append(el("p",{class:"note"},"Pour régler calendrier par calendrier (Travail en « Occupé », Famille à deux…), ajoute le calendrier à la fin de la ligne du raccourci « Export Agenda » : Titre | Début | Lieu | cal:Calendrier. Avec | fin:Date de fin, la durée est reprise aussi."));
+    box.append(st?el("p",{class:"note cs-st"},"Dernier envoi de l'iPhone "+agoTxt(st.at)+" : "+st.n+" rendez-vous suivis."):el("p",{class:"note cs-st"},inboxText?"Prêt : le prochain envoi du raccourci sera repris tout seul.":"Le raccourci « Export Agenda » n'a encore rien envoyé (voir « Installer sur l'iPhone de ta moitié »)."),
+      el("div",{class:"pchips"},el("button",{type:"button",class:"btn",onclick:openImport},"Importer à la main"),
+        el("button",{type:"button",class:"btn quiet",onclick:async()=>{const r=await calSync();toast(r?"Synchronisé : "+r.add+" ajouté"+(r.add>1?"s":"")+", "+r.move+" déplacé"+(r.move>1?"s":"")+", "+r.del+" retiré"+(r.del>1?"s":""):"Rien à synchroniser pour l'instant");draw();}},"Synchroniser maintenant")));};
+  draw();return box;
+}
+
+/* ---------- « Je suis en retard » : ce que Siri a envoyé s'affiche sur l'évènement, chez vous deux ---------- */
+let lateMap=new Map();
+function lateFrom(list){const now=Date.now(),m=new Map();
+  for(const x of (Array.isArray(list)?list:[])){if(!x||!x.e||now-(+x.at||0)>12*3600000)continue;const cur=m.get(String(x.e));
+    if(!cur||+x.at>cur.at)m.set(String(x.e),{e:String(x.e),u:String(x.u||""),m:Math.max(1,Math.min(180,+x.m||0)),at:+x.at||now});}
+  const sig=JSON.stringify([...m.values()]);if(sig!==lateFrom.sig){lateFrom.sig=sig;lateMap=m;scheduleRender();}}
+function lateLine(ev){const x=ev&&lateMap.get(ev.id);if(!x)return null;const st=startOf(ev).getTime();if(Date.now()>st+(x.m+90)*60000)return null;
+  return el("div",{class:"late-line"},el("span",{"aria-hidden":"true"},"⏱"),(x.u===myId?"Ton retard annoncé":firstName(x.u))+" : environ "+x.m+" min, arrivée vers "+hhmm(new Date(st+x.m*60000)));}
+
 /* ---------- Code de secours : reprendre sa place si l'app perd ses données ---------- */
 function recFormat(k){return (k||"").replace(/(.{4})(?=.)/g,"$1-");}
 function recNorm(t){return String(t||"").toUpperCase().replace(/[^A-Z0-9]/g,"");}
@@ -3307,17 +3581,24 @@ const CAR_IC='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke
 function carPlaySection(){
   const box=el("div",{class:"disc-box car-play"});
   const o=otherId(),on=o?firstName(o):"ta moitié";
-  let url="";
+  let url="";const btns=[];
   const put=(u,what)=>navigator.clipboard.writeText(u).then(()=>toast("Lien copié : colle-le dans le raccourci « "+what+" »"),()=>prompt("Copie ce lien :",u));
-  const go=el("button",{type:"button",class:"btn primary",disabled:true,onclick:()=>{if(url)put(url,"On y va");}},"Copier le lien « On y va »");
-  const bas=el("button",{type:"button",class:"btn",disabled:true,onclick:()=>{if(url)put(url+"?a=bas","Je suis en bas");}},"Copier le lien « Je suis en bas »");
+  const copy=(label,suffix,what,primary)=>{const b=el("button",{type:"button",class:"btn"+(primary?" primary":""),disabled:true,onclick:()=>{if(url)put(url+suffix,what);}},label);btns.push(b);return b;};
+  // « Essayer » : ce que Siri dirait maintenant (sans rien envoyer à l'autre)
+  const tryBtn=(suffix,out)=>{const b=el("button",{type:"button",class:"btn quiet",disabled:true,onclick:async()=>{b.disabled=true;
+      try{const r=await fetch(url+suffix,{cache:"no-store"}),t=(await r.text()).trim();
+        out.textContent=t==="Rien"?"Maintenant : rien dans l'heure, le raccourci s'arrêterait sans rien dire.":"Siri dirait : « "+t+" »";}
+      catch(_){out.textContent="Serveur injoignable pour le moment.";}b.disabled=false;}},"Essayer");btns.push(b);return b;};
   const st=el("p",{class:"note"},"Préparation des liens…");
   (async()=>{
     if(!pushToken()){st.textContent="Active d'abord les notifications (plus haut) : Siri passe par le même serveur.";return;}
     url=await carLinkUrl().catch(()=>"");
-    if(url){go.disabled=false;bas.disabled=false;st.textContent="Ces liens sont personnels : ils ne servent qu'à ton téléphone. Garde-les pour toi.";}
+    if(url){btns.forEach(b=>b.disabled=false);st.textContent="Ces liens sont personnels : ils ne servent qu'à ton téléphone. Garde-les pour toi.";}
     else st.textContent="Serveur injoignable pour le moment. Réessaie dans un instant.";
   })();
+  const sc=(title,what,acts,steps,out)=>el("div",{class:"car-sc"},el("strong",{},title),el("p",{class:"note"},what),el("div",{class:"pchips"},...acts),out||null,
+    el("details",{},el("summary",{},"Le créer (une seule fois)"),el("ol",{class:"sc-steps"},...steps.map(t=>el("li",{},t)))));
+  const outAuto=el("p",{class:"car-try",role:"status"}),outDay=el("p",{class:"car-try",role:"status"});
   box.append(
     el("div",{class:"lab"},"1. Le widget Together sur l'écran de la voiture"),
     el("p",{class:"note"},"Avec iOS 26, CarPlay affiche les widgets de l'iPhone. Celui de Together montre le prochain départ en grand, le temps restant qui se met à jour tout seul, et qui récupérer en chemin. Un toucher lance l'itinéraire."),
@@ -3327,13 +3608,38 @@ function carPlaySection(){
       el("li",{},"Règle ce widget : Script Together, et écris voiture dans Paramètre (ou voiture waze pour que le toucher ouvre Waze). Il prend alors sa version pour la voiture : l'étape du moment (partir, chez "+on+", arrivée), l'heure en grand, le temps restant, et l'évènement suivant."),
       el("li",{},"Le widget Calendrier d'Apple est un autre widget : tu peux le laisser ou le retirer, Together a maintenant le sien.")),
     el("div",{class:"lab"},"2. Siri en voiture"),
-    el("p",{class:"note"},"« Dis Siri, on y va » ouvre sur l'écran de la voiture l'itinéraire du prochain départ, en passant d'abord chez "+on+" si c'est prévu. "+on+" reçoit alors « en route ». « Dis Siri, je suis en bas » prévient "+on+" de ton arrivée."),
-    st,el("div",{class:"pchips"},go,bas),
-    el("ol",{class:"sc-steps"},
-      el("li",{},"Touche « Copier le lien « On y va » »."),
-      el("li",{},"Dans Raccourcis, touche +, nomme le raccourci : On y va. Ajoute « Obtenir le contenu de l'URL » et colle le lien."),
-      el("li",{},"Ajoute « Afficher l'itinéraire » : destination « Contenu de l'URL », en voiture, avec Plans (ou Waze)."),
-      el("li",{},"Pour « Je suis en bas » : même chose avec l'autre lien, puis l'action « Afficher le résultat » à la place de l'itinéraire.")),
+    el("p",{class:"note"},"Des raccourcis à créer une fois dans l'app Raccourcis. Ils marchent à la voix, aussi sur l'écran de la voiture."),st,
+    sc("En montant dans la voiture, tout se lance seul",
+      "Quand l'iPhone se connecte à CarPlay et qu'un départ est prévu dans l'heure, Siri l'annonce (« Départ dans 10 minutes pour le resto, on passe d'abord récupérer "+on+" ») et l'itinéraire s'ouvre. Sans départ prévu, rien ne se passe.",
+      [copy("Copier le lien « En voiture »","?a=auto","En voiture",true),tryBtn("?a=auto",outAuto)],
+      ["Crée d'abord le raccourci « On y va » (juste en dessous).",
+       "Dans Raccourcis, onglet Automatisation, touche +, puis CarPlay : choisis « Se connecte » et « Exécuter immédiatement ».",
+       "Ajoute l'action « Obtenir le contenu de l'URL » et colle le lien « En voiture ».",
+       "Ajoute l'action « Si » : Contenu de l'URL, « n'est pas », et écris Rien.",
+       "Dans le « Si », ajoute « Énoncer le texte » (Contenu de l'URL), puis « Exécuter le raccourci » : On y va."],outAuto),
+    sc("« Dis Siri, on y va »",
+      "L'itinéraire du prochain départ s'ouvre sur l'écran de la voiture, en passant d'abord chez "+on+" si c'est prévu. "+on+" reçoit alors « en route ».",
+      [copy("Copier le lien « On y va »","","On y va")],
+      ["Dans Raccourcis, touche +, et nomme le raccourci : On y va.",
+       "Ajoute « Obtenir le contenu de l'URL » et colle le lien.",
+       "Ajoute « Afficher l'itinéraire » : destination « Contenu de l'URL », en voiture, avec Plans (ou Waze)."]),
+    sc("« Dis Siri, notre journée »",
+      "Siri lit vos moments d'aujourd'hui et de demain, avec les heures de départ et qui récupérer en chemin.",
+      [copy("Copier le lien « Notre journée »","?a=day","Notre journée"),tryBtn("?a=day",outDay)],
+      ["Dans Raccourcis, touche +, et nomme le raccourci : Notre journée.",
+       "Ajoute « Obtenir le contenu de l'URL » et colle le lien.",
+       "Ajoute « Énoncer le texte » : Contenu de l'URL."],outDay),
+    sc("« Dis Siri, je suis en retard »",
+      "Siri demande combien de minutes, puis "+on+" reçoit « "+firstName(myId)+" aura environ 10 min de retard », avec l'heure d'arrivée. Le retard s'affiche aussi sur l'évènement, chez vous deux.",
+      [copy("Copier le lien « Je suis en retard »","?a=retard&m=","Je suis en retard")],
+      ["Dans Raccourcis, touche +, et nomme le raccourci : Je suis en retard.",
+       "Ajoute « Demander une entrée » : type Nombre, question « De combien de minutes ? ».",
+       "Ajoute « Obtenir le contenu de l'URL » : colle le lien, puis ajoute juste à la fin la variable « Entrée fournie ».",
+       "Ajoute « Énoncer le texte » : Contenu de l'URL. Siri te confirme que c'est envoyé."]),
+    sc("« Dis Siri, je suis en bas »",
+      "Prévient "+on+" que tu attends en bas.",
+      [copy("Copier le lien « Je suis en bas »","?a=bas","Je suis en bas")],
+      ["Comme « On y va », avec ce lien, puis l'action « Afficher le résultat » à la place de l'itinéraire."]),
     el("div",{class:"lab"},"3. Pendant un trajet en direct"),
     el("p",{class:"note"},"Quand tu pars chercher "+on+", touche « Afficher dans la voiture » dans la fenêtre du trajet : l'heure d'arrivée et la distance s'affichent dans « En cours de lecture » sur CarPlay, à côté du guidage. Ta musique se met en pause pendant ce temps."));
   return box;
@@ -3624,7 +3930,7 @@ const DICE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 function pickSlots(days){return freeSlots(days||8).flatMap(g=>g.free.map(x=>({...x,d:g.d}))).slice(0,12);}
 function slotText(s){const d=new Date(s.date+"T12:00:00"),[a]=dayParts(d);const day=/^(Aujourd'hui|Demain)$/.test(a)?a:d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"});
   const lab=s.lab==="Soirée"?(a==="Aujourd'hui"?"ce soir":"le soir"):s.lab==="Matin"?"le matin":"l'après-midi";
-  return (a==="Aujourd'hui"&&s.lab==="Soirée"?"Ce soir":day.replace(/^./,c=>c.toUpperCase())+", "+lab)+" ("+s.from+"–"+s.to+")";}
+  return (a==="Aujourd'hui"&&s.lab==="Soirée"?"Ce soir":day.replace(/^./,c=>c.toUpperCase())+(ferieName(s.date)&&new Date(s.date+"T12:00:00").getDay()%6?" (férié)":"")+", "+lab)+" ("+s.from+"–"+s.to+")";}
 // Le classement : ce qui ne colle pas du tout au moment est écarté (pluie pour une sortie dehors, zoo le soir,
 // trop loin pour le temps libre, trop cher pour le mois, hors saison) ; le reste est trié, vos envies communes d'abord
 const DAY_MOTIFS=new Set(["zoo","parc","plage","fun","aqua","visite","neige"]);
@@ -3986,7 +4292,7 @@ function pushItems(){
   for(const uid of mem){const mt=prefOf(uid).morning;if(!mt)continue;
     const [h,m]=mt.split(":").map(Number);
     for(let i=0;i<7;i++){const d=new Date();d.setHours(h,m,0,0);d.setDate(d.getDate()+i);const at=d.getTime();if(at<=now+30000)continue;
-      const key=ymd(d),day=[...events.values()].filter(e=>e.date===key&&(whoOf(e)==="both"||whoOf(e)===uid)&&(isAllDay(e)||startOf(e).getTime()>at)).sort((a,b)=>startOf(a)-startOf(b));
+      const key=ymd(d),day=[...events.values()].filter(e=>e.date===key&&!e.busy&&(whoOf(e)==="both"||whoOf(e)===uid)&&(isAllDay(e)||startOf(e).getTime()>at)).sort((a,b)=>startOf(a)-startOf(b));
       if(!day.length)continue;
       const parts=day.slice(0,6).map(e=>{const v=viewFor(e,uid);return (e.title||"Évènement")+(isAllDay(e)?" (toute la journée)":" à "+e.time+(hasTrip(v)?", départ "+hhmm(departOf(v)):""));});
       items.push({id:"mrn:"+uid.slice(0,6)+":"+key+":"+mt,to:[uid],at,tag:"mrn",urgent:1,
@@ -4035,18 +4341,18 @@ function widgetTheme(){
 function widgetData(){
   const now=Date.now();
   // Le widget montre tout l'agenda du couple, sans tenir compte du filtre choisi à l'écran
-  const up=[...events.values()].filter(e=>startOf(e).getTime()>now-3600000).sort((a,b)=>startOf(a)-startOf(b)).slice(0,12);
+  const up=[...events.values()].filter(e=>!e.busy&&startOf(e).getTime()>now-3600000).sort((a,b)=>startOf(a)-startOf(b)).slice(0,12);
   const ic={};
   const items=up.map(e=>{const k=motifOf(e);if(k&&ic[k]==null)ic[k]=iconLines(k);const w=whoOf(e);
     const me=viewFor(e,myId);
-    return {t:(e.title||"Évènement").slice(0,40),s:startOf(e).getTime(),d:(+me.travelMin||0)>0?departOf(me).getTime():0,l:e.location?String(shortAddr(e.location)).slice(0,40):"",
+    return {id:e.id,wu:w==="both"?"":w,t:(e.title||"Évènement").slice(0,40),s:startOf(e).getTime(),d:(+me.travelMin||0)>0?departOf(me).getTime():0,l:e.location?String(shortAddr(e.location)).slice(0,40):"",
       c:k?MOTIFS[k].c:"#6D5DF6",k:k?MOTIFS[k].name:"",m:k||"",w:w==="both"?"":firstName(w).slice(0,1).toUpperCase(),
       a:isAllDay(e)?1:0,
       // pour la voiture : l'adresse complète (itinéraire), et qui récupérer en chemin quand c'est moi qui conduis
       to:e.location?String(e.location).slice(0,160):"",
       ...(hasPickup(e)&&e.pickupWho!==myId&&driverOf(e)===myId?{pk:String(e.pickup).slice(0,160),pkl:String(shortAddr(e.pickup)).slice(0,40),pu:e.pickupWho,pw:firstName(e.pickupWho).slice(0,20),pm:Math.max(0,Math.round(+e.pickupMin||0))}:{})};});
   let tz="Europe/Paris";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz;}catch(_){}
-  return {names:memberIds().map(firstName),me:firstName(myId).slice(0,30),home:String(homeAddr()||"").slice(0,160),tz,items,ic,th:widgetTheme(),
+  return {ids:memberIds(),names:memberIds().map(firstName),me:firstName(myId).slice(0,30),home:String(homeAddr()||"").slice(0,160),tz,items,ic,th:widgetTheme(),
     wishes:wishTodos().length,fb:feedbackDue().length};
 }
 // Widget de chacun : calculé par n'importe quel téléphone, pour que l'ajout de l'un apparaisse aussi chez l'autre
@@ -4150,7 +4456,7 @@ function icsGeo(addr,pt){
 // Ce que voit chacun : ses évènements et ceux à deux, sauf ceux déjà copiés dans son propre calendrier
 function calList(uid){
   const now=Date.now(),from=now-21*864e5,to=now+200*864e5;
-  return [...events.values()].filter(e=>{const w=whoOf(e);if(w!=="both"&&w!==uid)return false;
+  return [...events.values()].filter(e=>{const w=whoOf(e);if(e.busy||(w!=="both"&&w!==uid))return false;
       const t=startOf(e).getTime();if(!(t>=from&&t<=to))return false;
       return !((e.calendarAdded||{})[uid]>=(e.updatedAt||0));})
     .sort((a,b)=>startOf(a)-startOf(b)||String(a.id).localeCompare(String(b.id))).slice(0,300);
@@ -4367,6 +4673,7 @@ function stop(ev,who){
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
 
+  if(ev.busy){links.textContent="";tags.textContent="";}
   const author=who(ev.createdBy), editor=ev.updatedBy&&ev.updatedBy!==ev.createdBy?who(ev.updatedBy):null;
   const moreBtn=canWrite?el("button",{class:"more",type:"button","aria-label":"Modifier ou supprimer",html:ICON.more,onclick:()=>setOpen(front,!front.dataset.open)}):null;
 
@@ -4374,8 +4681,10 @@ function stop(ev,who){
     isAllDay(ev)?el("div",{class:"t allday"},"Toute la journée"):el("div",{class:"t num"},ev.time||""),
     el("div",{class:"rail"},el("span",{class:"node arr"})),
     el("div",{class:"body"},
-      el("div",{class:"ev-title"},el("span",{class:"ev-right"},ov?el("span",{class:"ov-badge",title:ovTxt,"aria-label":ovTxt},"⚠"):null,otherId()?whoBadge(ev):null,moreBtn,el("span",{class:"chev","aria-hidden":"true",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'})),el("span",{class:"ev-t"},ev.title||"Sans titre")),
+      el("div",{class:"ev-title"},el("span",{class:"ev-right"},ov?el("span",{class:"ov-badge",title:ovTxt,"aria-label":ovTxt},"⚠"):null,otherId()?whoBadge(ev):null,moreBtn,el("span",{class:"chev","aria-hidden":"true",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'})),el("span",{class:"ev-t"},ev.busy?evTitle(ev):(ev.title||"Sans titre"))),
+      ev.busy?el("div",{class:"where busy-where"},(isAllDay(ev)?"Toute la journée":"Jusqu'à "+hhmm(endOf(ev)))+(busyName(ev)?" · vu « Occupé » par "+firstName(otherId()||myId):" · détails privés")):
       el("div",{class:"where"},mk?el("span",{class:"motif-chip",html:motifSvg(mk)+"<span>"+MOTIFS[mk].name+"</span>"}):null,[mk?"":(CATS[ev.category]||"Autre"),ev.location].filter(Boolean).join(", ")),
+      lateLine(ev),
       showReturn(ev)?el("div",{class:"small more-info ret-line"},"Fin vers "+hhmm(endOf(ev))+", retour à la maison vers "+hhmm(returnAt(ev))):null,
       tags.childNodes.length?tags:null,
       links,
@@ -4505,7 +4814,7 @@ async function removeEvent(ev,scope){
   if(more.length){askSeriesDelete(ev,more);return;}
   const list=scope==="next"?[ev,...seriesAfter(ev)]:[ev],n=list.length,t=ev.title||"évènement";
   try{
-    for(const e of list) await db.doc("events/"+e.id).delete();
+    for(const e of list){await db.doc("events/"+e.id).delete();if(e.imp&&e.imp.by===myId)addImpGone(e.imp.k+"|"+e.imp.d+"|"+(e.imp.t||""));}
     pushOther("Supprimé : "+t+(n>1?" ("+n+" fois)":""),firstName(myId)+" a supprimé « "+t+" »"+(n>1?", "+n+" fois à partir de "+dayWord(startOf(ev)):"")+".","ev",{k:"del",t});
     toast(n>1?n+" « "+t+" » supprimés pour vous deux":"« "+(ev.title||"Évènement")+" » supprimé pour vous deux","Annuler",async()=>{
       try{for(const e of list){const {id,...body}=e;await db.doc("events/"+id).set({...body,updatedBy:myId,updatedAt:Date.now()});}toast(n>1?n+" évènements rétablis":"Évènement rétabli");}catch(e){toast("Impossible de le rétablir.");}
@@ -4642,7 +4951,7 @@ function freeSlots(days){
   const base=new Date();base.setHours(0,0,0,0);
   for(let i=0;i<days;i++){
     const d=new Date(base);d.setDate(base.getDate()+i);
-    const key=ymd(d),we=d.getDay()===0||d.getDay()===6,free=[];
+    const key=ymd(d),we=d.getDay()===0||d.getDay()===6||!!ferieName(key),free=[];
     for(const [lab,f,t] of (we?FREE_SLOTS.we:FREE_SLOTS.wk)){
       const a=new Date(key+"T"+f+":00").getTime(),b=new Date(key+"T"+t+":00").getTime();
       const a2=Math.max(a,Math.ceil(now/1800000)*1800000);if(b-a2<90*60000)continue;
@@ -5223,6 +5532,8 @@ function buildBody(x,d,overrides){
     ...(Array.isArray(y.items)||Array.isArray(d.items)?{items:(y.items||d.items).slice(0,200)}:{}),
     ...(y.shopDone||d.shopDone?{shopDone:true}:{}),
     ...(y.allDay?{allDay:true}:{}),
+    ...(y.imp?{imp:y.imp}:d.imp?{imp:{...d.imp,ed:now}}:{}),
+    ...(y.busy||d.busy?{busy:true}:{}),
     ...(y.pickup&&(y.who||d.who||"both")==="both"&&y.pickupWho?{pickup:String(y.pickup).slice(0,200),pickupWho:y.pickupWho,driver:y.driver||myId,pickupMin:Math.max(0,Math.round(+y.pickupMin||0)),pickupWait:Math.max(0,Math.min(60,y.pickupWait==null?5:+y.pickupWait||0))}:{})};
 }
 async function saveEventDraft(x,d,repeat,opts){
@@ -5708,7 +6019,8 @@ function openSettings(){
     el("p",{class:"note"},"Coche les magasins où vous allez. En remplissant « Où », touche une enseigne : l'app propose ses magasins les plus proches de chez vous."),
     brandsSection(),
     el("div",{class:"pgroup-h"},"Version de l'app"),el("div",{class:"disc-box"},el("p",{class:"note"},"Version "+APP_V+". Si une nouveauté n'apparaît pas, touche ce bouton : l'app télécharge la dernière version et redémarre. Tes évènements ne sont pas touchés."),el("button",{type:"button",class:"btn primary",onclick:forceUpdate},"Mettre à jour l'app")),
-    el("div",{class:"pgroup-h"},"Importer mon calendrier"),el("div",{class:"disc-box"},el("p",{class:"note"},"Récupère les évènements déjà enregistrés dans le Calendrier de ton iPhone."),el("button",{type:"button",class:"btn",onclick:openImport},"Importer depuis mon calendrier")),
+    el("div",{class:"pgroup-h",id:"imp-h"},"Mon calendrier de l'iPhone dans Together"),coupleId?calSyncSection():el("div",{class:"disc-box"},el("button",{type:"button",class:"btn",onclick:openImport},"Importer mon calendrier")),
+    el("div",{class:"pgroup-h",id:"fer-h"},"Jours fériés et vacances"),holidaySection(),
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     coupleId?el("div",{class:"pgroup-h"},"Notifications"):null,coupleId?notifSection():null,
     coupleId?el("div",{class:"pgroup-h",id:"np-h"},"Rappels et résumé du matin"):null,coupleId?notifPrefsSection():null,
@@ -6156,15 +6468,19 @@ function parseImport(text){
   const out=[];
   for(const raw of String(text||"").split(/\r?\n/)){
     const line=raw.replace(/["«»“”]/g," ").replace(/\s+/g," ").trim();if(!line)continue;
-    const parts=line.split(/\s*\|\s*/);
+    // « cal:Travail » (le calendrier) et « fin:… » (la fin) peuvent suivre, dans n'importe quel ordre
+    let cal="",end=null;
+    const parts=line.split(/\s*\|\s*/).filter(p=>{let m=/^(?:cal|calendrier)\s*:\s*(.*)$/i.exec(p);if(m){cal=m[1].trim().slice(0,40);return false;}
+      m=/^fin\s*:\s*(.*)$/i.exec(p);if(m){end=impDate(m[1]);return false;}return true;});
     let found=null,pi=-1;
     for(let i=0;i<parts.length;i++){const dd=impDate(parts[i]);if(dd){found=dd;pi=i;break;}}
-    if(!found){ if(out.length){const l=out[out.length-1];l.location=[l.location,line.replace(/\|/g," ").trim()].filter(Boolean).join(", ");} continue; }
+    if(!found){ if(out.length&&!cal&&!end){const l=out[out.length-1];l.location=[l.location,line.replace(/\|/g," ").trim()].filter(Boolean).join(", ");} continue; }
     let title=parts.slice(0,pi).join(" ").trim();
     const after=parts.slice(pi+1).filter(x=>x&&!impDate(x)).join(", ").trim();
     if(!title){title=parts[pi].slice(0,found.idx).trim();}
     const allDay=!found.time||found.time==="00:00";
-    out.push({title:title||"Évènement",date:found.date,time:allDay?"00:00":found.time,allDay,location:after});
+    let dur=0;if(end&&!allDay&&end.time){const mn=Math.round((new Date(end.date+"T"+end.time+":00")-new Date(found.date+"T"+found.time+":00"))/60000);if(mn>=5&&mn<=24*60)dur=mn;}
+    out.push({title:title||"Évènement",date:found.date,time:allDay?"00:00":found.time,allDay,location:after,cal,...(dur?{dur}:{})});
   }
   return out;
 }
@@ -6188,6 +6504,7 @@ function shopBadge(){
 }
 function importBadge(){
   const b=$("#btn-import");if(!b)return;
+  if(calCfg().auto){const d0=b.querySelector(".imp-dot");if(d0)d0.remove();return;}
   const n=inboxItems().filter(it=>!importDuplicate(it)).length;
   let dot=b.querySelector(".imp-dot");
   if(!n){if(dot)dot.remove();return;}
@@ -6208,7 +6525,7 @@ async function startInbox(){
   fs.doc("inbox/"+inboxKey).onSnapshot(snap=>{
     inboxText=snap.exists?String(snap.data().texte||""):"";
     importBadge();if(inboxRefresh)inboxRefresh();
-    maybeCalPopup();
+    maybeCalPopup();calSyncSoon();
   },()=>{});
 }
 function importDuplicate(it){return [...events.values()].some(e=>norm(e.title)===norm(it.title)&&e.date===it.date&&(e.time===it.time||(it.allDay&&isAllDay(e))));}
@@ -6235,6 +6552,7 @@ function maybeCalPopup(){
   clearTimeout(calPopT);
   calPopT=setTimeout(()=>{
     if(!inboxText||firstSnap||!myId||!coupleId||document.visibilityState==="hidden")return;
+    if(calCfg().auto)return;
     // Toute première fois : on retient ce qui est déjà là, sans tout ressortir d'un coup
     if(calSeenSet()==null){calSeenAdd(inboxItems().map(calKey));return;}
     const fresh=calFresh();if(!fresh.length)return;
@@ -6510,7 +6828,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="63";
+const APP_V="64";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -6851,7 +7169,7 @@ async function prepareTexts(texts,b,label){
 }
 /* ---------- Ajouts reçus de Siri ou du menu Partager ---------- */
 let addBusy=false,addCheckAt=0;const addSeen=new Set();
-async function pendingAdds(){const r=await pushPost("/api/addget",{uid:myId});return (r&&Array.isArray(r.items)?r.items:[]).filter(x=>x&&x.id&&!addSeen.has(x.id)).sort((a,b)=>(a.at||0)-(b.at||0));}
+async function pendingAdds(){const r=await pushPost("/api/addget",{uid:myId});try{lateFrom(r&&r.late);}catch(_){}return (r&&Array.isArray(r.items)?r.items:[]).filter(x=>x&&x.id&&!addSeen.has(x.id)).sort((a,b)=>(a.at||0)-(b.at||0));}
 async function openPendingAdd(aid){
   if(addBusy||!coupleId||!myId)return;addBusy=true;
   try{
@@ -7632,6 +7950,8 @@ function bootFromCache(){
   },()=>{});
   db.doc("config/shortcuts").onSnapshot(snap=>{scLinks=snap.exists?snap.data():{};},()=>{});
   db.doc("config/notif").onSnapshot(snap=>{notifCfg=snap.exists?snap.data():{};syncPush();},()=>{});
+  db.doc("config/calsync").onSnapshot(snap=>{calCfgAll=snap.exists?snap.data():{};calSyncSoon();},()=>{});
+  db.doc("config/fr").onSnapshot(snap=>{const z0=schoolZone();frCfg=snap.exists?snap.data():{};if(schoolZone()!==z0){vacList=null;scheduleRender();}},()=>{});
   db.doc("config/budget").onSnapshot(snap=>{budgetCfg=snap.exists?snap.data():{};if(openWishes.redraw)openWishes.redraw();scheduleRender();},()=>{});
   db.collection("memories").onSnapshot(snap=>{
     memories=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
@@ -7669,7 +7989,7 @@ function bootFromCache(){
     }
     const wasFirst=firstSnap;firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);}
+    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);calSyncSoon(2500);}
     if(shopRefresh)shopRefresh();
     migrateShop(shopRaw);
     saveBoot();

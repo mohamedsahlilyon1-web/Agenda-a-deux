@@ -23,7 +23,9 @@ jobs:
           ADD_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/add/zzzzzz/u/000000000000000000000000?t=x")
           CAR_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/car/zzzzzz/u/000000000000000000000000")
           IDX=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/index")
-          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"calProbe\":$CAL_PROBE,\"addProbe\":$ADD_PROBE,\"carProbe\":$CAR_PROBE,\"couples\":[" > diag/result.json
+          # vacances scolaires lues par le serveur (données publiques : noms et dates)
+          VAC=$(curl -s --max-time 30 "$URL/api/vacances?z=C&fresh=1" | jq -c '{ok:(.ok//false),zone,stale,error,n:((.list//[])|length),first:((.list//[])[0]//null),next:((.list//[])[1]//null)}' 2>/dev/null || echo '{"ok":"err"}')
+          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"calProbe\":$CAL_PROBE,\"addProbe\":$ADD_PROBE,\"carProbe\":$CAR_PROBE,\"vacances\":$VAC,\"couples\":[" > diag/result.json
           first=1
           for id in $(echo "$IDX" | jq -r '.[]?'); do
             V=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/c:$id")
