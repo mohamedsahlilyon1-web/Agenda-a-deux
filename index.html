@@ -910,6 +910,43 @@ body{background:var(--bgimg,none),var(--bg);min-height:100vh}
 .invite .btn.inv-no{color:var(--danger)}
 .inv-done{margin:0;color:var(--muted);font-size:.9rem}
 .inv-accepted .inv-title::after{content:" ✓";color:var(--m,var(--line))}
+button.wish-t{border:0;background:none;padding:0;margin:0;text-align:left;font:inherit;color:inherit;cursor:pointer;gap:2px}
+.wish-facts{font-size:.84rem;color:var(--ink);opacity:.8;overflow-wrap:anywhere}
+.wish-match{font-size:.84rem;font-weight:800;color:#E11D48;margin:1px 0}
+.wish-match::before{content:"♥♥";letter-spacing:-.25em;margin-right:.45em}
+.wish.match{box-shadow:0 0 0 2px color-mix(in oklab,#E11D48 55%,transparent),var(--lift)}
+.wish-over{font-size:.8rem;font-weight:700;color:#B45309}
+.wish-act a.btn{text-decoration:none}
+.pick-go{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font-weight:800}
+.pick-go span,.pick-top .wish-ic{display:grid;place-items:center}.pick-go svg{width:20px;height:20px;color:var(--line)}
+.pick-slots{margin-top:-2px}
+.pick-box{display:flex;flex-direction:column;gap:10px;min-height:120px}
+.pick-wait{display:flex;align-items:center;gap:10px;color:var(--muted);margin:0}
+.pick-card{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:var(--r,24px);background:linear-gradient(150deg,color-mix(in oklab,var(--m,var(--line)) 22%,var(--surface)),var(--surface) 72%);box-shadow:0 0 0 1.5px color-mix(in oklab,var(--m,var(--line)) 45%,transparent),var(--lift)}
+.pick-top{display:flex;align-items:center;gap:12px}.pick-top small{color:var(--muted);font-weight:700}
+.pick-title{margin:2px 0 0;font-family:var(--fd,var(--f));font-size:1.45rem;line-height:1.1;letter-spacing:-.02em;overflow-wrap:anywhere}
+.pick-why{margin:0;font-size:.95rem}
+.pick-act a.btn{text-decoration:none}
+.wk-why{display:block;font-size:.84rem;color:var(--muted);margin-top:2px}
+.bud-slot:empty{display:none}
+.bud{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:18px;background:var(--surface);box-shadow:var(--lift)}
+.bud-off{flex-direction:row;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:.92rem}
+.bud-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bud-bar{display:block;height:8px;border-radius:9px;background:color-mix(in oklab,var(--line) 16%,transparent);overflow:hidden}
+.bud-bar u{display:block;height:100%;border-radius:9px;background:var(--line)}
+.bud.over .bud-bar u{background:#DC2626}.bud.over .bud-h strong{color:#DC2626}
+.bud small{color:var(--muted)}
+.pp-slots .pchip{text-transform:none}
+.pp-hint{display:block;margin-top:6px}
+.pp-manual.dim{opacity:.45}
+.pp-bud:empty{display:none}
+.inv-facts{margin:-4px 0 0;font-size:.9rem;color:var(--muted)}
+.inv-opts{display:flex;flex-direction:column;gap:8px}
+.inv-opt{display:flex;align-items:center;gap:12px;padding:10px;border-radius:18px;border:1.5px solid color-mix(in oklab,var(--m,var(--line)) 40%,transparent);background:color-mix(in oklab,var(--surface) 75%,transparent);font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.inv-opt:active{transform:scale(.98)}
+.sc-det:empty{display:none}
+.we-tags .pchip{text-transform:none}
+.we-open{align-self:flex-start;text-decoration:none}
 
 /* Barre d'onglets */
 .dock{display:none!important}
@@ -2109,7 +2146,7 @@ function openMonth(y,m,sel){
     el("div",{class:"month-nav"},el("button",{type:"button",class:"btn","aria-label":"Mois précédent",onclick:()=>openMonth(prev.getFullYear(),prev.getMonth())},"‹ "+prev.toLocaleDateString("fr-FR",{month:"long"})),
       el("button",{type:"button",class:"btn quiet",onclick:()=>openMonth()},"Aujourd'hui"),
       el("button",{type:"button",class:"btn","aria-label":"Mois suivant",onclick:()=>openMonth(next.getFullYear(),next.getMonth())},next.toLocaleDateString("fr-FR",{month:"long"})+" ›")),
-    monthBudget(y,m)?el("div",{class:"month-budget num"},"Budget des sorties ce mois-ci : "+monthBudget(y,m).toLocaleString("fr-FR")+" €"):null,
+    outingSpent(y,m)||budgetCap()?el("div",{class:"month-budget num"},"Budget des sorties ce mois-ci : "+outingSpent(y,m).toLocaleString("fr-FR")+" €"+(budgetCap()?" sur "+euro(budgetCap())+(budgetLeft(y,m)>=0?" · il reste "+euro(budgetLeft(y,m)):" · dépassé de "+euro(-budgetLeft(y,m))):"")):null,
     monthSpent(y,m).t?el("div",{class:"month-budget num"},"Courses ce mois-ci : "+euro(monthSpent(y,m).t)+" ("+monthSpent(y,m).n+" ticket"+(monthSpent(y,m).n>1?"s":"")+")"):null,
     grid,panel]));
   showDay(sel||(y===now.getFullYear()&&m===now.getMonth()?ymd(now):ymd(first)));
@@ -2560,6 +2597,8 @@ function notifPrefsSection(){
   const save=async()=>{const v={morning:mOn.checked?(mT.value||"07:30"):"",quiet:q.checked};
     try{notifCfg={...notifCfg,[myId]:v};await db.doc("config/notif").set({[myId]:v},{merge:true});syncPush(true);toast("Préférences enregistrées pour ton téléphone");}catch(_){toast("Enregistrement impossible.");}};
   mOn.onchange=save;mT.onchange=()=>{if(mOn.checked)save();};q.onchange=save;
+  const nd=el("input",{type:"checkbox",id:"np-n"});nd.checked=!(notifCfg&&notifCfg.nudgeOff);
+  nd.onchange=async()=>{try{notifCfg={...notifCfg,nudgeOff:!nd.checked};await db.doc("config/notif").set({nudgeOff:!nd.checked},{merge:true});syncPush(true);toast(nd.checked?"Petit rappel activé pour vous deux":"Petit rappel désactivé pour vous deux");}catch(_){toast("Enregistrement impossible.");}};
   const cats=el("div",{class:"np-cats"});
   const drawCats=()=>{cats.textContent="";
     for(const [cat,label] of Object.entries(CATS)){const cur=defRemOf(cat);
@@ -2572,74 +2611,382 @@ function notifPrefsSection(){
     el("div",{class:"field np-time"},el("label",{for:"np-mt"},"À quelle heure"),mT),
     el("label",{class:"rs-row",for:"np-q"},q,el("span",{class:"rs-txt"},el("strong",{},"Ne pas déranger la nuit"),el("span",{},"De 22 h à 7 h, les rappels et les nouveautés de "+on+" attendent 7 h. Les départs et les trajets en direct arrivent quand même."))),
     el("p",{class:"note"},"Ces deux réglages sont propres à ton téléphone. "+on+" règle les siens de son côté."),
+    el("label",{class:"rs-row",for:"np-n"},nd,el("span",{class:"rs-txt"},el("strong",{},"« Ça fait 3 semaines sans sortie à deux »"),el("span",{},"Un petit rappel le vendredi à 18 h 30 quand rien n'est prévu, avec une idée tirée de vos envies. Pour vous deux."))),
     el("div",{class:"lab"},"Rappels proposés pour un nouvel évènement, selon le type (pour vous deux)"),cats,
     el("p",{class:"note"},"Tu peux toujours les changer évènement par évènement, dans « Rappels »."));
   return box;
 }
 
 /* ---------- Nos envies ---------- */
+// Une envie : {title, by, hearts, status, place, link, price (par personne), tags, note, travelMin, when, proposal…}
 let wishes=new Map();
-function wishList(){return [...wishes.values()].sort((a,b)=>(!!a.planned-!!b.planned)||(Object.keys(b.hearts||{}).length-Object.keys(a.hearts||{}).length)||((b.createdAt||0)-(a.createdAt||0)));}
+const WISH_TAGS=[["beau","Quand il fait beau"],["pluie","Quand il pleut"],["soir","Le soir"],["jour","En journée"],["we","Le week-end"],["ete","En été"],["hiver","En hiver"]];
+// Vous en avez tous les deux envie : les deux ont mis un cœur
+function isMatch(w){const ms=memberIds();return ms.length>=2&&!!w&&ms.every(u=>w.hearts&&w.hearts[u]);}
+function wishOpen(w){return !!w&&!w.planned&&w.status!=="accepted";}
+function wishList(){return [...wishes.values()].sort((a,b)=>(!!a.planned-!!b.planned)||(isMatch(b)-isMatch(a))||(Object.keys(b.hearts||{}).length-Object.keys(a.hearts||{}).length)||((b.createdAt||0)-(a.createdAt||0)));}
 function nextWeekend(){const d=new Date();d.setHours(0,0,0,0);const wd=d.getDay();const sat=new Date(d);if(wd===0)sat.setDate(d.getDate()-1);else sat.setDate(d.getDate()+((6-wd+7)%7));const sun=new Date(sat);sun.setDate(sat.getDate()+1);return [ymd(sat),ymd(sun)];}
-function planWish(w,date){
-  const x=blankDraft();x.title=w.title;if(date)x.date=date;x.time="14:00";x.category="sortie";if(w.cost)x.cost=w.cost;
+const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,"");}catch(_){return "";}};
+// Le détail d'une envie en une ligne : « 25 min en voiture · 15 € par personne · quand il fait beau »
+function wishFacts(w){
+  const out=[];
+  if(+w.travelMin>0)out.push(fmtDur(+w.travelMin)+" en voiture");else if(w.place)out.push(shortAddr(w.place));
+  if(+w.price>0)out.push(euro(+w.price)+" par personne");else if(w.priceTxt)out.push(w.priceTxt);
+  if(w.when&&w.when.date)out.push("le "+new Date(w.when.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"})+(w.when.time?" à "+w.when.time:""));
+  const tg=(w.tags||[]).map(t=>(WISH_TAGS.find(x=>x[0]===t)||[])[1]).filter(Boolean);
+  if(tg.length)out.push(tg.join(", ").toLowerCase());
+  return out;
+}
+function planWish(w,date,time){
+  const x=blankDraft();x.title=w.title;if(date)x.date=date;x.time=time||"14:00";x.category="sortie";x.who="both";
+  if(w.place)x.location=w.place;
+  if(+w.price>0)x.cost=Math.round(w.price*2*100)/100;else if(w.cost)x.cost=w.cost;
+  if(w.link||w.note)x.notes=[w.note,w.link].filter(Boolean).join("\n");
   // l'envie n'est marquée « planifiée » qu'une fois l'évènement vraiment enregistré
   x.fromWish=w.id;
   closeSheet();openEditor(x,"Idée de "+firstName(w.by)+" : choisis le jour et l'heure.");
 }
 function openWishes(){closeSheet();setView("wishes");}
+// Le temps de trajet depuis la maison, calculé une fois quand le lieu est connu
+async function wishTravel(id,place){
+  if(!place||!homeAddr())return;
+  try{const r=await estimateTrip({...blankDraft(),location:place,date:ymd(nextDate(1)),time:"14:00",mode:"car"});
+    if(r&&r.ok)await db.doc("wishes/"+id).update({travelMin:Math.round(r.travelMin),travelFor:norm(place).slice(0,120)});}catch(_){}
+}
+// Une nouvelle envie : depuis « Nos envies », une phrase (« envie de… »), Siri ou un lien partagé
+async function addWish(o){
+  const t=String(o.title||"").replace(/\s+/g," ").trim().slice(0,80);if(!t)return null;
+  const id=db.collection("wishes").doc().id;
+  const body={title:t,by:myId,hearts:{[myId]:true},status:"open",createdAt:Date.now()};
+  if(o.place)body.place=String(o.place).slice(0,200);
+  if(o.link&&/^https?:\/\//.test(o.link))body.link=String(o.link).slice(0,500);
+  if(+o.price>0)body.price=Math.round(+o.price*100)/100;else if(o.priceTxt)body.priceTxt=String(o.priceTxt).slice(0,20);
+  if(Array.isArray(o.tags)&&o.tags.length)body.tags=o.tags.filter(x=>WISH_TAGS.some(y=>y[0]===x));
+  if(o.note)body.note=String(o.note).slice(0,200);
+  if(o.date&&/^\d{4}-\d{2}-\d{2}$/.test(o.date))body.when={date:o.date,time:/^\d\d:\d\d$/.test(o.time||"")?o.time:""};
+  try{await db.doc("wishes/"+id).set(body);}catch(_){toast("Idée non enregistrée. Vérifie ta connexion.");return null;}
+  pushOther("Nouvelle envie : "+t,firstName(myId)+" aimerait : « "+t+" ». Propose-lui un jour !","wish",null,"./?wishes=1");
+  if(body.place)wishTravel(id,body.place);
+  return id;
+}
+// « envie d'aller au zoo de Lunaret », « ajoute le bowling aux envies », « idée de sortie : escape game »,
+// « on devrait tester le resto coréen », « à tester : le bar à jeux » → une envie, pas un rendez-vous
+const WISH_LEAD=[
+  /^\s*(?:(?:j['’]ai|on a|j['’]aurais|on aurait)\s+)?(?:bien\s+|trop\s+|grave\s+|tellement\s+)?envie\s+(?:d['’]\s*|de\s+)(?:(?:aller|faire|tester|essayer|voir|visiter|manger|découvrir|decouvrir|refaire|retourner|boire|prendre)\s+)?/i,
+  /^\s*(?:ajoute|rajoute|mets|note)\s+(?:(?:à|a|dans)\s+(?:nos|les|mes)\s+envies|aux\s+envies)\s*:?\s*/i,
+  /^\s*(?:une\s+)?id[ée]e\s+de\s+sortie\s*:?\s*/i,
+  /^\s*on\s+(?:devrait|pourrait|doit)\s+(?:aller|faire|tester|essayer|voir|visiter|refaire|retourner)\s+/i,
+  /^\s*(?:à|a)\s+(?:tester|faire|voir|visiter|essayer)\s*:\s*/i,
+];
+const WISH_TAIL=/\s+(?:(?:à|a|dans)\s+(?:nos|les|mes)\s+envies|aux\s+envies)\s*[.!]?\s*$/i;
+function wishIntent(text,p){
+  let s=String(text||"").replace(/\s+/g," ").trim();if(!s||s.length>300)return null;
+  const tail=WISH_TAIL.test(s);let hit=tail;
+  if(tail)s=s.replace(WISH_TAIL,"").replace(/^\s*(?:ajoute|rajoute|mets|note)\s+/i,"");
+  for(const re of WISH_LEAD){const m=s.match(re);if(m){s=s.slice(m[0].length);hit=true;break;}}
+  if(!hit)return null;
+  // avec un jour et une heure, c'est plutôt un rendez-vous à préparer (sauf « aux envies », dit clairement)
+  const noWhen=!p||(p.assumed&&p.assumed.date&&p.assumed.time);
+  if(!noWhen&&!tail)return null;
+  const link=(s.match(/https?:\/\/[^\s<>"]+/)||[])[0]||"";
+  s=s.replace(link,"").replace(/^(?:(?:à|a)\s+la\s+|(?:à|a)\s+l['’]\s*|au\s+|aux\s+|(?:à|a)\s+|en\s+|dans\s+)/i,"")
+    .replace(/^(?:le|la|les|un|une|des|du|de\s+la|de\s+l['’]|l['’])\s*/i,"").replace(/[\s.!?,;:]+$/,"").trim();
+  if(!s&&!link)return null;
+  return {title:s?s.charAt(0).toUpperCase()+s.slice(1,80):"",link};
+}
+// Un titre de page sans le nom du site : « Le Petit Japon à Montpellier - Menu, avis… | TheFork » → « Le Petit Japon à Montpellier »
+function cleanPageTitle(t,site){t=String(t||"").replace(/\s+/g," ").trim();
+  const parts=t.split(/\s+[|·•–—-]\s+/);if(parts.length>1&&parts[0].length>=3)t=parts[0];
+  if(site&&norm(t).endsWith(norm(site))&&norm(t)!==norm(site))t=t.slice(0,t.length-site.length).replace(/[\s|·•–—:-]+$/,"");
+  return t.slice(0,80);}
+// Ce qu'un lien raconte (lu par le serveur Together) : nom, adresse, prix, date
+async function readPage(url){
+  try{await ensurePushToken();}catch(_){}
+  const r=await pushPost("/api/page",{url});
+  return r&&r.ok?r:null;
+}
+// Un lien ou un lieu partagé, sans date : une envie de sortie, ou un évènement à préparer ?
+function openSharedChoice(text){
+  const root=$("#sheet-root");root.textContent="";
+  const url=(String(text).match(/https?:\/\/[^\s<>"]+/)||[])[0]||"";
+  const rest=String(text).replace(url,"").replace(/\s+/g," ").trim();
+  // « Zoo de Lunaret, 50 avenue Agropolis, 34090 Montpellier » (lieu de Plans) → nom + adresse
+  let name=rest,place="";const m=rest.match(/^([^,]{2,80}),\s*(.*\d.*)$/);if(m){name=m[1].trim();place=m[2].trim();}
+  const mapsUrl=/maps\.apple|google\.[a-z.]+\/maps|goo\.gl/.test(url);
+  const info={place,link:url&&!mapsUrl?url:"",price:null,priceTxt:"",date:"",time:""};
+  const tIn=el("input",{type:"text",class:"pair-in",id:"sc-title",value:name||"",placeholder:"Le nom de la sortie","aria-label":"Nom de la sortie"});
+  const det=el("p",{class:"note sc-det"});
+  const drawDet=()=>{det.textContent=[info.place?shortAddr(info.place):"",+info.price>0?euro(+info.price)+" par personne":info.priceTxt,
+    info.date?"le "+new Date(info.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"})+(info.time?" à "+info.time:""):"",info.link?hostOf(info.link):""].filter(Boolean).join(" · ");};
+  drawDet();
+  const wishB=el("button",{type:"button",class:"btn primary"},"Ajouter à nos envies");
+  const evB=el("button",{type:"button",class:"btn"},"Préparer un évènement");
+  const lead=el("p",{class:"note"},"Sans date, c'est sûrement une envie de sortie : elle rejoint « Nos envies » et "+firstName(otherId()||myId)+" pourra proposer un jour.");
+  // une page avec une date (concert, spectacle) : c'est plutôt un évènement à préparer
+  const dated=()=>{lead.textContent="C'est daté : prépare l'évènement, ou garde-le dans vos envies pour plus tard.";
+    evB.className="btn primary";wishB.className="btn";const f=evB.parentNode;if(f){f.textContent="";f.append(wishB,evB);}};
+  wishB.onclick=async()=>{const t=tIn.value.trim();if(!t){tIn.focus();toast("Donne un nom à cette sortie.");return;}
+    wishB.disabled=true;const id=await addWish({...info,title:t});wishB.disabled=false;if(!id)return;
+    closeSheet();toast("Envie ajoutée : "+t);openWishes();};
+  evB.onclick=()=>{const t=[tIn.value.trim()||name,info.date?"le "+new Date(info.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})+(info.time?" à "+info.time.replace(":","h"):""):"",info.place,info.link].filter(Boolean).join(" ");
+    openQuickAdd(false,t);const go=$("#q-go")||el("button");prepareTexts([t],go,"Préparer l'évènement");};
+  root.append(sheetShell("Lien partagé",[
+    el("div",{class:"sheet-h"},el("h2",{},mapsUrl||place?"Un lieu à garder ?":"Un lien à garder ?"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    lead,
+    el("div",{class:"field"},el("label",{for:"sc-title"},"La sortie"),tIn),det,
+    el("div",{class:"sheet-foot"},evB,wishB)]));
+  setTimeout(()=>{if(!tIn.value)tIn.focus();},200);
+  if(info.link){det.textContent="Lecture du lien…";
+    readPage(info.link).then(r=>{if(!r){drawDet();if(!tIn.value)tIn.value=hostOf(info.link);return;}
+      const t=r.kind==="event"?(cleanPageTitle(r.title,r.site)||r.name):(r.name||cleanPageTitle(r.title,r.site));if(t&&(!tIn.value||tIn.value===hostOf(info.link)))tIn.value=t;
+      info.place=info.place||r.place||"";if(+r.price>0)info.price=+r.price;info.priceTxt=r.priceTxt||"";info.date=r.date||"";info.time=r.time||"";drawDet();
+      if(info.date&&info.date>=ymd(new Date()))dated();});}
+}
+// La fiche d'une envie : où, lien, prix, le bon moment
+function openWishEdit(w){
+  const root=$("#sheet-root");root.textContent="";
+  const tIn=el("input",{type:"text",id:"we-title",value:w.title||"",maxlength:"80"});
+  const loc=el("input",{type:"text",id:"we-place",value:w.place||"",placeholder:"Adresse ou nom du lieu (facultatif)"});
+  const link=el("input",{type:"url",id:"we-link",value:w.link||"",inputmode:"url",placeholder:"Site, menu, billets… (facultatif)"});
+  const price=el("input",{type:"number",id:"we-price",value:+w.price>0?String(w.price):"",min:"0",step:"1",inputmode:"decimal",placeholder:"0"});
+  const note=el("input",{type:"text",id:"we-note",value:w.note||"",placeholder:"Un mot (facultatif)",maxlength:"200"});
+  const tags=new Set(w.tags||[]),chips=el("div",{class:"pchips we-tags"});
+  const drawT=()=>{chips.textContent="";for(const [k,l] of WISH_TAGS)chips.append(el("button",{type:"button",class:"pchip"+(tags.has(k)?" on":""),"aria-pressed":String(tags.has(k)),onclick:()=>{tags.has(k)?tags.delete(k):tags.add(k);drawT();}},l));};drawT();
+  const save=el("button",{type:"button",class:"btn primary"},"Enregistrer");
+  save.onclick=async()=>{const t=tIn.value.trim().slice(0,80);if(!t){tIn.focus();toast("Donne un nom à cette envie.");return;}
+    save.disabled=true;const FV=firebase.firestore.FieldValue;
+    const pl=loc.value.trim().slice(0,200),lk=link.value.trim(),pr=parseFloat(String(price.value).replace(",","."));
+    const moved=norm(pl)!==norm(w.place||"");
+    const u={title:t,place:pl||FV.delete(),link:/^https?:\/\//.test(lk)?lk.slice(0,500):FV.delete(),price:pr>0?Math.round(pr*100)/100:FV.delete(),
+      tags:[...tags],note:note.value.trim().slice(0,200)||FV.delete(),updatedBy:myId,updatedAt:Date.now()};
+    if(moved)u.travelMin=FV.delete();
+    try{await db.doc("wishes/"+w.id).update(u);}catch(_){save.disabled=false;toast("Envie non enregistrée. Vérifie ta connexion.");return;}
+    if(pl&&moved)wishTravel(w.id,pl);
+    closeSheet();toast("Envie enregistrée");};
+  const f=(id,label,input)=>el("div",{class:"field"},el("label",{for:id},label),input);
+  root.append(sheetShell("Envie",[
+    el("div",{class:"sheet-h"},el("h2",{},"L'envie"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("p",{class:"note"},"Idée de "+firstName(w.by)+(isMatch(w)?" · vous en avez tous les deux envie":"")+(+w.travelMin>0?" · "+fmtDur(+w.travelMin)+" en voiture depuis la maison":"")),
+    f("we-title","La sortie",tIn),
+    el("div",{class:"field"},el("label",{for:"we-place"},"Où"),autocomplete(loc,()=>{}),placeChips(loc,false,()=>{})),
+    f("we-link","Lien",link),
+    f("we-price","Prix par personne (€)",price),
+    el("div",{class:"field"},el("span",{class:"lab"},"Le bon moment"),chips),
+    f("we-note","Un mot",note),
+    w.link?el("a",{class:"btn quiet we-open",href:w.link,target:"_blank",rel:"noopener"},"Ouvrir le lien ("+hostOf(w.link)+")"):null,
+    el("div",{class:"sheet-foot"},w.status==="accepted"?el("span"):el("button",{type:"button",class:"btn",onclick:()=>openPropose(w)},"Proposer une date"),save)]));
+}
+// Un cœur de plus : si l'autre en avait déjà mis un, c'est un « match »
+async function toggleHeart(w){
+  const mine=!!(w.hearts||{})[myId],o=otherId();
+  try{await db.doc("wishes/"+w.id).update({["hearts."+myId]:mine?firebase.firestore.FieldValue.delete():true,updatedBy:myId,updatedAt:Date.now()});}catch(_){toast("Impossible pour l'instant.");return;}
+  if(!mine&&o&&(w.hearts||{})[o]&&wishOpen(w)){
+    toast("C'est un match ! Vous avez tous les deux envie de « "+w.title+" »","Proposer",()=>openPropose(w));
+    pushOther("C'est un match !","Vous avez tous les deux envie de « "+w.title+" ». Proposez-vous un jour ?","wish-"+w.id,null,"./?wishes=1");
+  }
+}
 function renderWishesView(){
   const root=$("#view-wishes");if(!root)return;root.textContent="";
-  const list=el("div",{class:"wishes"}),alerts=el("div",{class:"wish-alerts"});
+  const list=el("div",{class:"wishes"}),alerts=el("div",{class:"wish-alerts"}),bud=el("div",{class:"bud-slot"});
   const draw=()=>{list.textContent="";const ws=wishList();
     if(!ws.length)list.append(el("p",{class:"note"},"Notez ici vos idées de sorties : le zoo de Beauval, un resto à tester, un concert… Mettez un cœur aux idées de l'autre, puis planifiez-les quand vous avez une date."));
-    for(const w of ws){const k=motifOf({title:w.title});const hs=w.hearts||{},mine=!!hs[myId],n=Object.keys(hs).length;
-      list.append(el("div",{class:"wish"+(w.planned?" planned":""),style:motifStyle(k)},
+    for(const w of ws){const k=motifOf({title:w.title});const hs=w.hearts||{},mine=!!hs[myId],n=Object.keys(hs).length,match=isMatch(w)&&wishOpen(w),facts=wishFacts(w),over=overBudget(w);
+      list.append(el("div",{class:"wish"+(w.planned?" planned":"")+(match?" match":""),style:motifStyle(k)},
         el("span",{class:"wish-ic",html:k?motifSvg(k):""}),
-        el("span",{class:"wish-t"},el("strong",{},w.title),el("small",{},"Idée de "+firstName(w.by)+(w.status==="accepted"?", validée":w.planned?", déjà planifiée":"")),
-          w.status==="proposed"&&w.proposal?el("span",{class:"wish-status"},firstName(w.proposal.by)+" propose "+propText(w.proposal)):w.status==="declined"?el("span",{class:"wish-status"},"Proposition refusée"):null),
-        el("button",{type:"button",class:"wish-heart"+(mine?" on":""),"aria-pressed":mine?"true":"false","aria-label":mine?"Retirer mon cœur":"Mettre un cœur",onclick:()=>db.doc("wishes/"+w.id).update({["hearts."+myId]:mine?firebase.firestore.FieldValue.delete():true}).catch(()=>toast("Impossible pour l'instant."))},
+        el("button",{type:"button",class:"wish-t","aria-label":"Voir et compléter « "+w.title+" »",onclick:()=>openWishEdit(w)},el("strong",{},w.title),el("small",{},"Idée de "+firstName(w.by)+(w.status==="accepted"?", validée":w.planned?", déjà planifiée":"")),
+          match?el("span",{class:"wish-match"},"Vous en avez tous les deux envie"):null,
+          facts.length?el("span",{class:"wish-facts"},facts.join(" · ")):null,
+          over&&wishOpen(w)?el("span",{class:"wish-over"},"Au-dessus du budget du mois"):null,
+          w.status==="proposed"&&w.proposal?el("span",{class:"wish-status"},proposalLine(w.proposal)):w.status==="declined"?el("span",{class:"wish-status"},"Proposition refusée"):null),
+        el("button",{type:"button",class:"wish-heart"+(mine?" on":""),"aria-pressed":mine?"true":"false","aria-label":mine?"Retirer mon cœur":"Mettre un cœur",onclick:()=>toggleHeart(w)},
           el("span",{html:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.4-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.3 0 2.4.6 3 1.6.6-1 1.7-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.8-7.5 10.2-7.5 10.2z"/></svg>'}),n?String(n):""),
         el("span",{class:"wish-act"},
-          wishTodo(w)==="answer"?(()=>{const b=el("button",{type:"button",class:"btn primary"},"Accepter");b.onclick=()=>acceptProposal(w,b);return b;})():null,
+          wishTodo(w)==="answer"&&!(Array.isArray(w.proposal&&w.proposal.options)&&w.proposal.options.length>1)?(()=>{const b=el("button",{type:"button",class:"btn primary"},"Accepter");b.onclick=()=>acceptProposal(w,b);return b;})():null,
           w.status==="accepted"?null:el("button",{type:"button",class:"btn"+(wishTodo(w)==="answer"?"":" primary"),onclick:()=>openPropose(w)},w.status==="proposed"&&w.proposal&&w.proposal.by===myId?"Changer ma proposition":wishTodo(w)==="answer"?"Autre date":"Proposer une date"),
           el("button",{type:"button",class:"btn quiet","aria-label":"Supprimer cette idée",onclick:async()=>{const {id,...body}=w;
             try{await db.doc("wishes/"+id).delete();toast("Idée « "+w.title+" » retirée","Annuler",()=>db.doc("wishes/"+id).set(body).catch(()=>toast("Impossible de la remettre.")));}catch(_){toast("Impossible pour l'instant.");}}},"Retirer"))));}
   };
-  const drawAll=()=>{alerts.textContent="";for(const [w,todo] of wishTodos())alerts.append(wishCard(w,todo));draw();};
+  const drawAll=()=>{alerts.textContent="";for(const [w,todo] of wishTodos())alerts.append(wishCard(w,todo));bud.textContent="";bud.append(budgetBar());draw();};
   openWishes.redraw=drawAll;
-  const inp=el("input",{type:"text",class:"pair-in",placeholder:"Une idée : zoo de Beauval, resto japonais…","aria-label":"Nouvelle idée"});
-  const add=async()=>{const t=inp.value.trim().slice(0,80);if(!t)return;inp.value="";
-    try{await db.doc("wishes/"+db.collection("wishes").doc().id).set({title:t,by:myId,hearts:{[myId]:true},status:"open",createdAt:Date.now()});pushOther("Nouvelle envie : "+t,firstName(myId)+" aimerait : « "+t+" ». Propose-lui un jour !","wish");toast("Envie partagée avec "+firstName(otherId()||myId));}catch(_){toast("Idée non enregistrée. Vérifie ta connexion.");}};
+  const inp=el("input",{type:"text",class:"pair-in",placeholder:"Une idée : zoo de Beauval, resto japonais, un lien…","aria-label":"Nouvelle idée"});
+  const add=async()=>{const v=inp.value.trim();if(!v)return;inp.value="";
+    const url=(v.match(/https?:\/\/[^\s<>"]+/)||[])[0]||"";
+    if(url&&!v.replace(url,"").trim()){openSharedChoice(v);return;}       // un lien seul : on lit la page d'abord
+    const wi=wishIntent(v,null);
+    if(await addWish({title:(wi&&wi.title)||v.replace(url,"").trim(),link:url}))toast("Envie partagée avec "+firstName(otherId()||myId));};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add();}});
   root.append(el("h2",{class:"view-h"},"Nos envies"),
     el("p",{class:"view-intro"},"Une idée de sortie ? Note-la : "+firstName(otherId()||myId)+" la reçoit et te propose un jour."),
-    el("div",{class:"brand-add"},inp,el("button",{type:"button",class:"btn primary",onclick:add},"Ajouter")),alerts,list);
+    el("div",{class:"brand-add"},inp,el("button",{type:"button",class:"btn primary",onclick:add},"Ajouter")),
+    el("button",{type:"button",class:"btn pick-go",onclick:()=>openPick()},el("span",{html:DICE_SVG}),"On fait quoi ?"),
+    bud,alerts,list);
   drawAll();
 }
+
+/* ---------- Budget des sorties : un plafond par mois ---------- */
+// config/budget : {cap} en euros, pour vous deux. Compté avec le budget noté sur les évènements du mois.
+let budgetCfg={};
+function budgetCap(){return +budgetCfg.cap>0?+budgetCfg.cap:0;}
+function outingSpent(y,m){let t=0;for(const e of events.values()){if(!e||!e.date)continue;const d=new Date(e.date+"T12:00:00");if(d.getFullYear()===y&&d.getMonth()===m)t+=+e.cost||0;}return Math.round(t*100)/100;}
+function budgetLeft(y,m){const cap=budgetCap();if(!cap)return null;const n=new Date();return Math.round((cap-outingSpent(y??n.getFullYear(),m??n.getMonth()))*100)/100;}
+// Pour vous deux, l'envie coûte plus que ce qui reste ce mois-ci
+function overBudget(w,y,m){const left=budgetLeft(y,m);return left!=null&&+w.price>0&&w.price*2>left;}
+function monthName(y,m){return new Date(y,m,15).toLocaleDateString("fr-FR",{month:"long"});}
+function budgetBar(){
+  const cap=budgetCap(),n=new Date(),y=n.getFullYear(),m=n.getMonth(),spent=outingSpent(y,m),mon=monthName(y,m);
+  if(!cap)return el("div",{class:"bud bud-off"},el("span",{},spent?"Sorties en "+mon+" : "+euro(spent):"Pas de budget fixé pour vos sorties"),el("button",{type:"button",class:"btn quiet",onclick:openBudget},"Fixer un plafond"));
+  const left=Math.round((cap-spent)*100)/100,pct=Math.min(100,Math.round(spent/cap*100));
+  return el("div",{class:"bud"+(left<0?" over":"")},
+    el("div",{class:"bud-h"},el("strong",{class:"num"},left>=0?"Il reste "+euro(left)+" en "+mon:"Budget dépassé de "+euro(-left)+" en "+mon),el("button",{type:"button",class:"btn quiet",onclick:openBudget},"Modifier")),
+    el("i",{class:"bud-bar"},el("u",{style:"width:"+pct+"%"})),
+    el("small",{class:"num"},euro(spent)+" sur "+euro(cap)+" pour vos sorties ce mois-ci"));
+}
+function openBudget(){
+  const root=$("#sheet-root");root.textContent="";
+  const cap=el("input",{type:"number",id:"bud-cap",min:"0",step:"10",inputmode:"decimal",value:budgetCap()||"",placeholder:"150"});
+  const save=async v=>{try{await db.doc("config/budget").set({cap:v,updatedBy:myId,updatedAt:Date.now()},{merge:true});budgetCfg={...budgetCfg,cap:v};closeSheet();
+      toast(v?"Plafond des sorties : "+euro(v)+" par mois":"Plus de plafond pour les sorties");if(openWishes.redraw)openWishes.redraw();scheduleRender();}catch(_){toast("Enregistrement impossible.");}};
+  root.append(sheetShell("Budget des sorties",[
+    el("div",{class:"sheet-h"},el("h2",{},"Budget des sorties"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("p",{class:"note"},"Un plafond par mois pour vos sorties à deux. Il est comparé au budget noté sur vos évènements (« Plus d'options », Budget), et les envies trop chères pour le reste du mois sont signalées."),
+    el("div",{class:"field"},el("label",{for:"bud-cap"},"Plafond par mois (€)"),cap),
+    el("div",{class:"sheet-foot"},budgetCap()?el("button",{type:"button",class:"btn quiet",onclick:()=>save(0)},"Pas de plafond"):el("span"),
+      el("button",{type:"button",class:"btn primary",onclick:()=>{const v=Math.round(parseFloat(String(cap.value).replace(",","."))||0);if(v<0){cap.focus();return;}save(v);}},"Enregistrer"))]));
+  setTimeout(()=>cap.focus(),150);
+}
+// Après l'enregistrement d'un évènement avec un budget : prévenir si le mois dépasse le plafond
+function budgetWarn(x){
+  if(!budgetCap()||!(+x.cost>0)||!x.date)return;
+  const d=new Date(x.date+"T12:00:00"),left=budgetLeft(d.getFullYear(),d.getMonth());
+  if(left!=null&&left<0)setTimeout(()=>toast("Budget des sorties dépassé de "+euro(-left)+" en "+monthName(d.getFullYear(),d.getMonth())+"."),1800);
+}
+
+/* ---------- « On fait quoi ? » : une envie qui colle à un moment libre ---------- */
+const DICE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>';
+// Les moments libres pour vous deux, dans l'ordre : ce soir, demain soir, samedi après-midi…
+function pickSlots(days){return freeSlots(days||8).flatMap(g=>g.free.map(x=>({...x,d:g.d}))).slice(0,12);}
+function slotText(s){const d=new Date(s.date+"T12:00:00"),[a]=dayParts(d);const day=/^(Aujourd'hui|Demain)$/.test(a)?a:d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"});
+  const lab=s.lab==="Soirée"?(a==="Aujourd'hui"?"ce soir":"le soir"):s.lab==="Matin"?"le matin":"l'après-midi";
+  return (a==="Aujourd'hui"&&s.lab==="Soirée"?"Ce soir":day.replace(/^./,c=>c.toUpperCase())+", "+lab)+" ("+s.from+"–"+s.to+")";}
+// Le classement : ce qui ne colle pas du tout au moment est écarté (pluie pour une sortie dehors, zoo le soir,
+// trop loin pour le temps libre, trop cher pour le mois, hors saison) ; le reste est trié, vos envies communes d'abord
+const DAY_MOTIFS=new Set(["zoo","parc","plage","fun","aqua","visite","neige"]);
+function rankIdeas(slot,wx){
+  const d=new Date(slot.date+"T12:00:00"),mins=(new Date(slot.date+"T"+slot.to+":00")-new Date(slot.date+"T"+slot.from+":00"))/60000;
+  const evening=slot.from>="18:00",we=d.getDay()===0||d.getDay()===6,mo=d.getMonth();
+  const wet=!!wx&&(wx.rain>=50||["rain","storm","snow"].includes(wx.kind)),nice=!!wx&&!wet&&["sun","part"].includes(wx.kind)&&wx.t>=12;
+  const left=budgetLeft(d.getFullYear(),mo),out=[];
+  for(const w of wishList()){
+    if(!wishOpen(w)||w.status==="proposed")continue;
+    const k=motifOf({title:w.title}),tags=new Set(w.tags||[]),why=[];let s=0;
+    const outdoor=tags.has("beau")||(OUTDOOR.has(k)&&!tags.has("pluie")),dayOnly=tags.has("jour")||(DAY_MOTIFS.has(k)&&!tags.has("soir"));
+    if(evening&&dayOnly)continue;
+    if(tags.has("we")&&!we)continue;
+    if(tags.has("ete")&&!(mo>=5&&mo<=8))continue;
+    if(tags.has("hiver")&&!(mo>=10||mo<=2))continue;
+    if(outdoor&&wet)continue;
+    const tm=+w.travelMin||0;if(tm&&2*tm+60>mins)continue;
+    if(+w.price>0&&left!=null&&w.price*2>left)continue;
+    if(isMatch(w)){s+=4;why.push("vous en avez tous les deux envie");}else s+=Object.keys(w.hearts||{}).length;
+    if(tags.has("soir")){if(evening){s+=2;why.push("parfait pour une soirée");}else s-=2;}
+    if(tags.has("we"))s+=1;
+    if(tags.has("jour"))s+=1;
+    if(outdoor&&nice){s+=2;why.push(wx.t+"°, "+WX_TXT[wx.kind].toLowerCase());}
+    if(tags.has("pluie")&&wet){s+=4;why.push("une bonne idée quand il pleut");}
+    if(tm){if(tm<=20)s+=1;why.push("à "+fmtDur(tm)+" de la maison");}
+    if(+w.price>0&&left!=null)why.push("environ "+euro(w.price*2)+" pour vous deux");
+    s+=Math.min(2,(Date.now()-(+w.createdAt||Date.now()))/(30*864e5));   // une envie qui attend depuis longtemps passe un peu devant
+    out.push({w,s,why,k});
+  }
+  return out.sort((a,b)=>b.s-a.s);
+}
+async function pickIdeas(slot){
+  let wx=null;try{wx=await weatherFor({id:"pick",date:slot.date,time:slot.from,location:""});}catch(_){}
+  return {wx,ideas:rankIdeas(slot,wx)};
+}
+function openPick(pre){
+  const root=$("#sheet-root");root.textContent="";
+  const slots=pickSlots(8);let slot=pre||slots[0]||null,res=null,i=0;
+  const chips=el("div",{class:"pchips pick-slots"}),box=el("div",{class:"pick-box"});
+  const drawChips=()=>{chips.textContent="";for(const s of slots.slice(0,8))chips.append(el("button",{type:"button",class:"pchip"+(slot&&s.date===slot.date&&s.from===slot.from?" on":""),onclick:()=>{slot=s;drawChips();run();}},slotText(s).replace(/ \(.*\)$/,"")));};
+  const drawBox=()=>{box.textContent="";
+    if(!slot){box.append(el("p",{class:"note"},"Pas de soirée ni de moment de week-end libre pour vous deux dans les prochains jours."));return;}
+    if(!res){box.append(el("p",{class:"pick-wait"},el("span",{class:"spinner"}),"Je regarde vos envies, la météo et le temps libre…"));return;}
+    const list=res.ideas;
+    if(!list.length){box.append(el("p",{class:"note"},wishList().some(wishOpen)?"Aucune de vos envies ne colle à ce moment-là (météo, distance, budget ou saison). Essayez un autre moment.":"Pas encore d'envie à proposer. Notez vos idées de sorties dans « Nos envies »."));return;}
+    const it=list[i%list.length],w=it.w;
+    box.append(el("article",{class:"pick-card",style:motifStyle(it.k)},
+      el("div",{class:"pick-top"},el("span",{class:"wish-ic",html:it.k?motifSvg(it.k):DICE_SVG}),el("div",{},el("small",{},slotText(slot)),el("h3",{class:"pick-title"},w.title))),
+      it.why.length?el("p",{class:"pick-why"},it.why.join(" · ").replace(/^./,c=>c.toUpperCase())+"."):el("p",{class:"pick-why"},"Idée de "+firstName(w.by)+"."),
+      list.length>1?el("small",{class:"note num"},"Idée "+(i%list.length+1)+" sur "+list.length):null,
+      el("div",{class:"pchips pick-act"},
+        el("button",{type:"button",class:"btn primary",onclick:()=>otherId()?openPropose(w,{date:slot.date,time:slot.from}):planWish(w,slot.date,slot.from)},otherId()?"Proposer à "+firstName(otherId()):"Planifier"),
+        list.length>1?el("button",{type:"button",class:"btn",onclick:()=>{i++;drawBox();}},"Une autre"):null,
+        w.link?el("a",{class:"btn quiet",href:w.link,target:"_blank",rel:"noopener"},"Voir le lien"):null)));
+  };
+  const run=async()=>{res=null;i=0;drawBox();if(!slot)return;const s=slot;const r=await pickIdeas(s);if(s!==slot)return;res=r;drawBox();};
+  root.append(sheetShell("On fait quoi ?",[
+    el("div",{class:"sheet-h"},el("h2",{},"On fait quoi ?"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("p",{class:"note"},"Une de vos envies, choisie pour ce moment : celles que vous voulez tous les deux d'abord, puis la météo, le temps libre, la distance et le budget."),
+    chips,box]));
+  drawChips();run();
+}
+// Le week-end qui vient : un moment libre pour vous deux, et l'envie qui colle le mieux
 function weekendCard(){
-  const [sat,sun]=nextWeekend();
-  const busy=[...events.values()].some(e=>(e.date===sat||e.date===sun)&&passWho(e));
-  if(busy)return null;
-  const today=ymd(new Date());if(sun<today)return null;
-  const w=wishList().find(x=>!x.planned);
-  const card=el("section",{class:"weekend"});
-  const d=new Date(sat+"T12:00:00");
-  card.append(el("div",{class:"wk-h"},el("strong",{},sat===today?"Ce week-end est libre":"Le week-end est libre"),el("small",{},"Samedi "+d.getDate()+" et dimanche "+new Date(sun+"T12:00:00").getDate())));
-  if(w){
-    const k=motifOf({title:w.title});
-    card.setAttribute("style",motifStyle(k));
-    card.append(el("div",{class:"wk-idea"},el("span",{class:"wish-ic",html:k?motifSvg(k):""}),el("span",{},"Et si vous faisiez : ",el("strong",{},w.title),"?")));
-    const wx=el("div",{class:"wk-wx"});
-    if(k&&OUTDOOR.has(k))weatherFor({id:"wk-"+w.id,date:sat,time:"14:00",title:w.title}).then(r=>{if(r)wx.textContent="Samedi après-midi : "+r.t+"°, "+WX_TXT[r.kind].toLowerCase()+(r.rain?", "+r.rain+" % de pluie":"")+". "+r.tip+".";});
-    card.append(wx,el("div",{class:"pchips"},el("button",{type:"button",class:"btn primary",onclick:()=>planWish(w,sat)},"Planifier samedi"),el("button",{type:"button",class:"btn",onclick:()=>planWish(w,sun)},"Dimanche"),el("button",{type:"button",class:"btn quiet",onclick:openWishes},"Autres idées")));
-  }else card.append(el("p",{class:"note"},"Notez vos idées de sorties dans « Nos envies » : l'app vous en proposera une quand le week-end est libre."),el("button",{type:"button",class:"btn",onclick:openWishes},"Nos envies"));
+  const [sat,sun]=nextWeekend(),today=ymd(new Date());if(sun<today)return null;
+  if(!wishList().some(wishOpen))return null;
+  const whole=![...events.values()].some(e=>(e.date===sat||e.date===sun)&&passWho(e));
+  const wd=new Date().getDay();
+  // un moment libre ce week-end (dès le mercredi), sinon rien
+  const slots=pickSlots(8).filter(s=>(s.date===sat||s.date===sun)&&s.lab!=="Matin");
+  if(!whole&&(!slots.length||(wd>=1&&wd<=2)))return null;
+  let hide="";try{hide=localStorage.getItem("a2.wkHide")||"";}catch(_){}
+  if(hide===sat)return null;
+  const slot=slots.find(s=>s.date===sat&&s.lab==="Après-midi")||slots[0]||{date:sat,from:"14:00",to:"18:30",lab:"Après-midi"};
+  const card=el("section",{class:"weekend"}),d=new Date(sat+"T12:00:00");
+  card.append(el("div",{class:"wk-h"},el("strong",{},whole?(sat===today?"Ce week-end est libre":"Le week-end est libre"):slotText(slot).replace(/ \(.*\)$/,"")+" est libre"),
+    el("small",{},whole?"Samedi "+d.getDate()+" et dimanche "+new Date(sun+"T12:00:00").getDate():"De "+slot.from+" à "+slot.to+", pour vous deux")));
+  const idea=el("div",{class:"wk-idea"}),wx=el("div",{class:"wk-wx"}),acts=el("div",{class:"pchips"});
+  let list=rankIdeas(slot,null),i=0;
+  const draw=()=>{const it=list.length?list[i%list.length]:null;idea.textContent="";acts.textContent="";
+    if(!it){idea.append(el("span",{},"Rien ne colle à ce moment-là. Une autre idée dans « Nos envies » ?"));acts.append(el("button",{type:"button",class:"btn",onclick:openWishes},"Nos envies"));return;}
+    const w=it.w;card.setAttribute("style",motifStyle(it.k));
+    idea.append(el("span",{class:"wish-ic",html:it.k?motifSvg(it.k):""}),el("span",{},"Et si vous faisiez : ",el("strong",{},w.title),"?",it.why.length?el("small",{class:"wk-why"},it.why.join(" · ")):null));
+    if(whole)acts.append(el("button",{type:"button",class:"btn primary",onclick:()=>planWish(w,sat)},"Planifier samedi"),el("button",{type:"button",class:"btn",onclick:()=>planWish(w,sun)},"Dimanche"));
+    else acts.append(el("button",{type:"button",class:"btn primary",onclick:()=>otherId()?openPropose(w,{date:slot.date,time:slot.from}):planWish(w,slot.date,slot.from)},otherId()?"Proposer à "+firstName(otherId()):"Planifier"));
+    if(list.length>1)acts.append(el("button",{type:"button",class:"btn",onclick:()=>{i++;draw();}},"Une autre"));
+    acts.append(el("button",{type:"button",class:"btn quiet",onclick:()=>{try{localStorage.setItem("a2.wkHide",sat);}catch(_){}card.remove();}},"Plus tard"));
+  };
+  draw();
+  pickIdeas(slot).then(r=>{if(!card.isConnected)return;
+    if(r.wx)wx.textContent=slotText(slot).replace(/ \(.*\)$/,"")+" : "+r.wx.t+"°, "+WX_TXT[r.wx.kind].toLowerCase()+(r.wx.rain?", "+r.wx.rain+" % de pluie":"")+".";
+    if(r.ideas.length&&(!list.length||r.ideas[0].w.id!==list[0].w.id||r.ideas.length!==list.length)){list=r.ideas;i=0;draw();}});
+  card.append(idea,wx,acts);
   return card;
 }
 function monthBudget(y,m){let t=0;for(const e of events.values()){const d=new Date(e.date+"T12:00:00");if(d.getFullYear()===y&&d.getMonth()===m&&passWho(e))t+=+e.cost||0;}return Math.round(t*100)/100;}
+// « Ça fait 3 semaines sans sortie à deux » : le vendredi à 18 h 30, si rien n'est prévu pour les 10 jours qui viennent
+const OUTING_MOTIFS=new Set(["amour","fun","zoo","aqua","plage","neige","parc","visite","jeux","table","ecran","scene","voyage","fete"]);
+function isOuting(e){if(!e||!e.date||(e.who&&e.who!=="both"))return false;return e.category==="sortie"||OUTING_MOTIFS.has(motifOf(e));}
+function outingNudge(evs,now){
+  if((notifCfg&&notifCfg.nudgeOff)||memberIds().length<2)return null;
+  const list=[...evs].filter(isOuting);
+  const past=list.filter(e=>startOf(e).getTime()<=now).sort((a,b)=>startOf(b)-startOf(a))[0];
+  if(!past)return null;
+  if(list.some(e=>{const t=startOf(e).getTime();return t>now&&t<now+10*864e5;}))return null;
+  const d=new Date(now);d.setHours(18,30,0,0);let add=(5-d.getDay()+7)%7;if(add===0&&d.getTime()<=now)add=7;d.setDate(d.getDate()+add);
+  const weeks=Math.floor((d.getTime()-startOf(past).getTime())/(7*864e5));
+  if(weeks<3)return null;
+  const idea=wishList().find(w=>wishOpen(w)&&w.status!=="proposed");
+  return {at:d.getTime(),title:"Ça fait "+weeks+" semaines sans sortie à deux",
+    body:idea?"Une idée pour ce week-end : « "+idea.title+" » ? Ouvrez « Nos envies » pour la proposer.":"Et si vous notiez quelques envies de sortie dans Together ?"};
+}
 
-/* ---------- Envies : proposer une sortie, accepter ou refuser ---------- */
+/* ---------- Envies : proposer une sortie (une ou plusieurs dates), accepter ou refuser ---------- */
 function propText(p){if(!p)return "";const d=new Date(p.date+"T12:00:00");return d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+" à "+p.time+(p.location?", "+shortAddr(p.location):"");}
+function optText(o){return new Date(o.date+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"})+" à "+o.time;}
+function propOptions(p){return p&&Array.isArray(p.options)&&p.options.length>1?p.options.filter(o=>o&&o.date&&o.time).slice(0,3):null;}
+function proposalLine(p){const o=propOptions(p);return firstName(p.by)+" propose "+(o?o.length+" dates : "+o.map(optText).join(", "):propText(p));}
 // Ce que chacun doit faire maintenant
 function wishTodo(w){
   if(w.status==="accepted"){return w.seen&&w.seen[myId]?null:(w.proposal&&w.proposal.by===myId?"accepted":null);}
@@ -2649,62 +2996,91 @@ function wishTodo(w){
   return null;
 }
 function wishTodos(){return wishList().map(w=>[w,wishTodo(w)]).filter(x=>x[1]);}
-function openPropose(w){
+// pre : {date,time} déjà choisi (« On fait quoi ? », carte du week-end)
+function openPropose(w,pre){
   const root=$("#sheet-root");root.textContent="";
-  const p=w.proposal||{};
-  const date=el("input",{id:"pp-date",type:"date",value:p.date||nextWeekend()[0]}),time=el("input",{id:"pp-time",type:"time",value:p.time||"14:00"});
+  const p=w.proposal||{},other=w.by===myId?(otherId()||w.by):w.by;
+  const date=el("input",{id:"pp-date",type:"date",value:(pre&&pre.date)||p.date||(w.when&&w.when.date)||nextWeekend()[0]}),time=el("input",{id:"pp-time",type:"time",value:(pre&&pre.time)||p.time||(w.when&&w.when.time)||"14:00"});
   const wc=whenChips(date,time);
-  const loc=el("input",{id:"pp-loc",type:"text",value:p.location||"",placeholder:"Où ? (facultatif)"});
+  const loc=el("input",{id:"pp-loc",type:"text",value:p.location||w.place||"",placeholder:"Où ? (facultatif)"});
   const note=el("input",{id:"pp-note",type:"text",class:"pair-in",placeholder:"Un petit mot (facultatif)",value:""});
+  // 2 ou 3 créneaux libres pour vous deux : l'autre choisit celui qui lui va
+  const slots=pickSlots(14).slice(0,8),chosen=[];
+  if(pre&&pre.date)chosen.push({date:pre.date,time:pre.time||"14:00"});
+  const slotBox=el("div",{class:"pchips pp-slots"}),hint=el("small",{class:"note pp-hint"});
+  const drawSlots=()=>{slotBox.textContent="";
+    for(const s of slots){const on=chosen.some(c=>c.date===s.date&&c.time===s.from);
+      slotBox.append(el("button",{type:"button",class:"pchip"+(on?" on":""),"aria-pressed":String(on),onclick:()=>{const i=chosen.findIndex(c=>c.date===s.date&&c.time===s.from);
+        if(i>=0)chosen.splice(i,1);else{if(chosen.length>=3){toast("Trois dates au plus.");return;}chosen.push({date:s.date,time:s.from});}drawSlots();}},slotText(s).replace(/ \(.*\)$/,"")+" · "+s.from));}
+    hint.textContent=chosen.length>1?firstName(other)+" choisira parmi ces "+chosen.length+" dates.":chosen.length===1?"Une date choisie. Ajoutes-en une ou deux pour laisser le choix.":"Touche 2 ou 3 créneaux : "+firstName(other)+" choisira celui qui lui va. Ou choisis une seule date plus bas.";
+    manual.classList.toggle("dim",chosen.length>0);};
+  const manual=el("div",{class:"pp-manual"},el("div",{class:"field"},el("span",{class:"lab"},"Quel jour"),wc.days),el("div",{class:"field"},el("span",{class:"lab"},"À quelle heure"),wc.hours),
+    el("div",{class:"grid2 when-exact"},el("div",{class:"field"},el("label",{for:"pp-date"},"Autre date"),date),el("div",{class:"field"},el("label",{for:"pp-time"},"Heure précise"),time)));
+  manual.addEventListener("click",e=>{if(chosen.length&&e.target.closest(".pchip")){chosen.length=0;drawSlots();}});
+  const budLine=el("p",{class:"note pp-bud"});
+  const drawBud=()=>{budLine.textContent="";if(!(+w.price>0))return;const dd=new Date((chosen[0]||{date:date.value}).date+"T12:00:00"),left=budgetLeft(dd.getFullYear(),dd.getMonth()),c=w.price*2;
+    budLine.textContent="Pour vous deux : environ "+euro(c)+(left==null?".":left-c>=0?" · il restera "+euro(left-c)+" en "+monthName(dd.getFullYear(),dd.getMonth())+".":" · ça dépasse le budget de "+monthName(dd.getFullYear(),dd.getMonth())+" de "+euro(c-left)+".");};
+  date.addEventListener("change",drawBud);
   const send=el("button",{type:"button",class:"btn primary"},"Envoyer la proposition");
   send.onclick=async()=>{
-    if(!date.value||!time.value){toast("Choisis le jour et l'heure.");return;}
+    const opts=chosen.length?chosen.slice(0,3):[{date:date.value,time:time.value}];
+    if(!opts[0].date||!opts[0].time){toast("Choisis le jour et l'heure.");return;}
     send.disabled=true;
-    try{await db.doc("wishes/"+w.id).update({status:"proposed",proposal:{by:myId,date:date.value,time:time.value,location:loc.value.trim(),note:note.value.trim().slice(0,140),at:Date.now()},updatedBy:myId,updatedAt:Date.now()});
-      pushOther(firstName(myId)+" te propose une sortie",w.title+", "+propText({date:date.value,time:time.value,location:loc.value.trim()})+(note.value.trim()?" : « "+note.value.trim()+" »":"")+".","wish-"+w.id);
+    const pr={by:myId,date:opts[0].date,time:opts[0].time,location:loc.value.trim(),note:note.value.trim().slice(0,140),at:Date.now(),...(opts.length>1?{options:opts}:{})};
+    try{await db.doc("wishes/"+w.id).update({status:"proposed",proposal:pr,updatedBy:myId,updatedAt:Date.now()});
+      pushOther(firstName(myId)+" te propose une sortie",w.title+(opts.length>1?" : "+opts.map(optText).join(", ")+" ? Choisis la date qui te va":", "+propText(pr))+(note.value.trim()?" : « "+note.value.trim()+" »":"")+".","wish-"+w.id,null,"./?wishes=1");
       closeSheet();toast("Proposition envoyée à "+firstName(otherId()||w.by));}
     catch(_){send.disabled=false;toast("Proposition non envoyée. Vérifie ta connexion.");}
   };
   root.append(sheetShell("Proposer une sortie",[
     el("div",{class:"sheet-h"},el("h2",{},"Proposer une sortie"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
-    el("div",{class:"notice"},el("strong",{},w.title),el("div",{},"Envie de "+firstName(w.by)+". Choisis quand, et "+firstName(w.by===myId?(otherId()||w.by):w.by)+" pourra accepter ou refuser.")),
-    el("div",{class:"field"},el("span",{class:"lab"},"Quel jour"),wc.days),
-    el("div",{class:"field"},el("span",{class:"lab"},"À quelle heure"),wc.hours),
-    el("div",{class:"grid2 when-exact"},el("div",{class:"field"},el("label",{for:"pp-date"},"Autre date"),date),el("div",{class:"field"},el("label",{for:"pp-time"},"Heure précise"),time)),
+    el("div",{class:"notice"},el("strong",{},w.title),el("div",{},"Envie de "+firstName(w.by)+". Choisis quand, et "+firstName(other)+" pourra accepter ou refuser.")),
+    slots.length?el("div",{class:"field"},el("span",{class:"lab"},otherId()?"Vos moments libres":"Tes moments libres"),slotBox,hint):null,
+    manual,
     el("div",{class:"field"},el("label",{for:"pp-loc"},"Où"),autocomplete(loc,()=>{}),placeChips(loc,false,()=>{})),
-    note,
+    note,budLine,
     el("div",{class:"sheet-foot"},el("span"),send)]));
+  drawSlots();drawBud();
 }
-async function acceptProposal(w,btn){
-  const p=w.proposal;if(!p)return;
+async function acceptProposal(w,btn,opt){
+  if(!w.proposal)return;
+  const p={...w.proposal,...(opt?{date:opt.date,time:opt.time}:{})};
   if(btn)btn.disabled=true;
   try{
     const d=blankDraft();
-    Object.assign(d,{title:w.title,date:p.date,time:p.time,location:p.location||"",category:"sortie",who:"both",notes:p.note||""});
+    Object.assign(d,{title:w.title,date:p.date,time:p.time,location:p.location||w.place||"",category:"sortie",who:"both",notes:[p.note,w.link].filter(Boolean).join("\n")});
     d.marginMin=DEF_MARGIN.sortie??5;d.durationMin=DEF_DUR.sortie||120;
+    if(+w.price>0)d.cost=Math.round(w.price*2*100)/100;
     if(d.location){try{const r=await estimateTrip(d);if(r.ok){d.travelMin=r.travelMin;d.routeGeo=cleanGeo(r.geo);d.travelNote=r.travelNote;}}catch(_){}}
     d.reminders=suggestReminders(d);
     const id=db.collection("events").doc().id;
     await db.doc("events/"+id).set(buildBody(d,{}));
-    await db.doc("wishes/"+w.id).update({status:"accepted",eventId:id,acceptedBy:myId,acceptedAt:Date.now(),planned:Date.now(),["seen."+myId]:Date.now(),updatedBy:myId,updatedAt:Date.now()});
-    pushOther("C'est validé !",firstName(myId)+" a accepté : "+w.title+", "+propText(p)+".","wish-"+w.id);
+    await db.doc("wishes/"+w.id).update({status:"accepted",proposal:{...w.proposal,date:p.date,time:p.time},eventId:id,acceptedBy:myId,acceptedAt:Date.now(),planned:Date.now(),["seen."+myId]:Date.now(),updatedBy:myId,updatedAt:Date.now()});
+    pushOther("C'est validé !",firstName(myId)+(opt?" a choisi : ":" a accepté : ")+w.title+", "+propText(p)+".","wish-"+w.id,null,"./?wishes=1");
     toast("C'est validé : « "+w.title+" » est dans votre agenda");
+    budgetWarn(d);
   }catch(_){if(btn)btn.disabled=false;toast("Impossible de valider. Vérifie ta connexion.");}
 }
 async function declineProposal(w){
-  try{await db.doc("wishes/"+w.id).update({status:"declined",declinedBy:myId,declinedAt:Date.now(),updatedBy:myId,updatedAt:Date.now()});pushOther(firstName(myId)+" a refusé ta proposition",w.title+" : propose une autre date ?","wish-"+w.id);toast("Proposition refusée. "+firstName(w.proposal&&w.proposal.by)+" peut en proposer une autre.");}catch(_){toast("Impossible pour l'instant.");}
+  try{await db.doc("wishes/"+w.id).update({status:"declined",declinedBy:myId,declinedAt:Date.now(),updatedBy:myId,updatedAt:Date.now()});pushOther(firstName(myId)+" a refusé ta proposition",w.title+" : propose une autre date ?","wish-"+w.id,null,"./?wishes=1");toast("Proposition refusée. "+firstName(w.proposal&&w.proposal.by)+" peut en proposer une autre.");}catch(_){toast("Impossible pour l'instant.");}
 }
+function calTile(dt){const d=new Date(dt+"T12:00:00");return el("span",{class:"inv-cal"},el("small",{},d.toLocaleDateString("fr-FR",{month:"short"}).replace(".","")),el("b",{class:"num"},String(d.getDate())));}
 function wishCard(w,todo){
-  const k=motifOf({title:w.title}),p=w.proposal||null;
+  const k=motifOf({title:w.title}),p=w.proposal||null,opts=propOptions(p);
   const from=todo==="propose"?w.by:todo==="answer"?p.by:todo==="declined"?w.declinedBy:w.acceptedBy;
-  const kicker={propose:"a une envie",answer:"te propose une sortie",declined:"a refusé ta proposition",accepted:"a accepté ta proposition"}[todo];
+  const kicker={propose:"a une envie",answer:opts?"te propose "+opts.length+" dates":"te propose une sortie",declined:"a refusé ta proposition",accepted:"a accepté ta proposition"}[todo];
   const card=el("article",{class:"invite inv-"+todo,style:motifStyle(k)});
   card.append(el("div",{class:"inv-top"},avatar(from,"inv-av"),el("span",{class:"inv-kick"},el("strong",{},firstName(from))," "+kicker)));
   card.append(el("div",{class:"inv-main"},el("span",{class:"inv-ic",html:k?motifSvg(k):""}),el("h3",{class:"inv-title"},w.title)));
-  if(p&&todo!=="propose"){
+  const facts=wishFacts(w);if(todo==="propose"&&facts.length)card.append(el("p",{class:"inv-facts"},facts.join(" · ")));
+  if(p&&todo==="answer"&&opts){
+    card.append(el("div",{class:"inv-opts"},...opts.map(o=>{const d=new Date(o.date+"T12:00:00");
+      const b=el("button",{type:"button",class:"inv-opt"},calTile(o.date),el("span",{class:"inv-wt"},el("strong",{},d.toLocaleDateString("fr-FR",{weekday:"long"}).replace(/^./,c=>c.toUpperCase())+" à "+o.time),el("span",{},p.location?shortAddr(p.location):"Choisir cette date")));
+      b.onclick=()=>acceptProposal(w,b,o);return b;})));
+    if(p.note)card.append(el("p",{class:"inv-note"},p.note));
+  }else if(p&&todo!=="propose"){
     const d=new Date(p.date+"T12:00:00");
-    card.append(el("div",{class:"inv-when"},
-      el("span",{class:"inv-cal"},el("small",{},d.toLocaleDateString("fr-FR",{month:"short"}).replace(".","")),el("b",{class:"num"},String(d.getDate()))),
+    card.append(el("div",{class:"inv-when"},calTile(p.date),
       el("span",{class:"inv-wt"},el("strong",{},d.toLocaleDateString("fr-FR",{weekday:"long"}).replace(/^./,c=>c.toUpperCase())+" à "+p.time),
         el("span",{},p.location?shortAddr(p.location):"Lieu libre"))));
     if(p.note&&todo==="answer")card.append(el("p",{class:"inv-note"},p.note));
@@ -2713,6 +3089,8 @@ function wishCard(w,todo){
   if(todo==="propose"){
     act.append(el("button",{type:"button",class:"btn primary inv-go",onclick:()=>openPropose(w)},"Proposer un jour"),
       el("button",{type:"button",class:"btn quiet",onclick:()=>db.doc("wishes/"+w.id).update({["later."+myId]:Date.now()}).catch(()=>{})},"Plus tard"));
+  }else if(todo==="answer"&&opts){
+    act.append(el("div",{class:"inv-sub"},el("button",{type:"button",class:"btn",onclick:()=>openPropose(w)},"Aucune ne me va"),el("button",{type:"button",class:"btn quiet inv-no",onclick:()=>declineProposal(w)},"Refuser")));
   }else if(todo==="answer"){
     const ok=el("button",{type:"button",class:"btn primary inv-go"},"Accepter");ok.onclick=()=>acceptProposal(w,ok);
     act.append(ok,el("div",{class:"inv-sub"},el("button",{type:"button",class:"btn",onclick:()=>openPropose(w)},"Autre date"),el("button",{type:"button",class:"btn quiet inv-no",onclick:()=>declineProposal(w)},"Refuser")));
@@ -2738,8 +3116,10 @@ function wishNotify(next){
     for(const w of next.values()){
       const o=wishPrev.get(w.id);if(w.updatedBy===myId||(w.by===myId&&!o&&!w.updatedBy))continue;
       if(!o&&w.by!==myId)toast(firstName(w.by)+" a une nouvelle envie : "+w.title,"Proposer",()=>openPropose(w));
+      else if(o&&!isMatch(o)&&isMatch(w)&&wishOpen(w))toast("C'est un match ! Vous avez tous les deux envie de « "+w.title+" »","Proposer",()=>openPropose(w));
       else if(o&&w.status!==o.status){
-        if(w.status==="proposed"&&w.proposal&&w.proposal.by!==myId)toast(firstName(w.proposal.by)+" propose : "+w.title+", "+propText(w.proposal),"Répondre",()=>openWishes());
+        if(w.status==="proposed"&&w.proposal&&w.proposal.by!==myId){const op=propOptions(w.proposal);
+          toast(op?firstName(w.proposal.by)+" propose "+op.length+" dates pour « "+w.title+" »":firstName(w.proposal.by)+" propose : "+w.title+", "+propText(w.proposal),"Répondre",()=>openWishes());}
         else if(w.status==="accepted"&&w.acceptedBy!==myId)toast(firstName(w.acceptedBy)+" a accepté : "+w.title);
         else if(w.status==="declined"&&w.declinedBy!==myId)toast(firstName(w.declinedBy)+" a refusé ta proposition pour "+w.title);
       }else if(o&&w.status==="proposed"&&w.proposal&&o.proposal&&w.proposal.at!==o.proposal.at&&w.proposal.by!==myId)toast(firstName(w.proposal.by)+" propose une autre date pour "+w.title);
@@ -2855,6 +3235,7 @@ function pushItems(){
       items.push({id:"mrn:"+uid.slice(0,6)+":"+key+":"+mt,to:[uid],at,tag:"mrn",urgent:1,
         title:"Aujourd'hui, "+d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"})+" : "+day.length+(day.length>1?" moments":" moment"),
         body:parts.join(" · ")+(day.length>6?" · et "+(day.length-6)+" autre"+(day.length>7?"s":""):"")});}}
+  {const nd=outingNudge(events.values(),now);if(nd&&nd.at>now+30000)items.push({id:"nudge:"+ymd(new Date(nd.at)),to:mem,at:nd.at,tag:"nudge",title:nd.title,body:nd.body});}
   // ne pas déranger (22 h à 7 h) : un rappel tombant la nuit attend 7 h, ou disparaît si le moment est déjà passé.
   // Les départs (« c'est l'heure de partir ») et le résumé du matin passent toujours.
   const out=[];
@@ -4398,6 +4779,7 @@ function openEditor(d,info){
     if(seriesMore.length&&!seriesScope){seriesBox.hidden=false;save.disabled=false;seriesBox.scrollIntoView({block:"nearest"});return;}
     if(seriesScope==="next"?await saveSeries(x,d,seriesMore):await saveEventDraft(x,d,isNew?repeat:"none")){
       if(d.fromWish)db.doc("wishes/"+d.fromWish).update({planned:Date.now()}).catch(()=>{});
+      budgetWarn(x);
       afterDraftSaved();
     }else save.disabled=false;
   };
@@ -5370,7 +5752,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="61";
+const APP_V="62";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -5682,13 +6064,19 @@ function sharedText(t){
   });
   return t.split("\n").map(l=>l.trim()).filter(Boolean).join("\n");
 }
-async function prepareText(text,b,label){
-  // « ajoute du lait et des œufs » : ça va dans la liste de courses, pas dans l'agenda
-  try{const p0=parseText(text,{places:[]});const s0=shopIntent(text,p0)||listLike(text);
+async function prepareText(text,b,label,opts){
+  // « envie d'aller au zoo » : une envie de sortie ; « ajoute du lait et des œufs » : la liste de courses, pas l'agenda
+  try{const p0=parseText(text,{places:[]});
+    const w0=wishIntent(text,p0);
+    if(w0){closeSheet();if(!w0.title&&w0.link){openSharedChoice(w0.link);return;}
+      const id=await addWish({title:w0.title,link:w0.link});if(id){toast("Envie ajoutée : "+w0.title);openWishes();}return;}
+    const s0=shopIntent(text,p0)||listLike(text);
     if(s0){const add=await addToShop(s0);if(add.length){closeSheet();toast("Ajouté à la liste : "+add.map(x=>x.t).join(", "));openShop();return;}}
     // une recette collée ou partagée (ou le lien de sa page) : ses ingrédients vont sur la liste
     const noWhen=!p0||(p0.assumed&&p0.assumed.date&&p0.assumed.time);
-    if(noWhen&&(looksLikeRecipe(text)||recipeUrlOf(text))){closeSheet();openShop(null,{recipe:text});return;}}catch(_){}
+    if(noWhen&&(looksLikeRecipe(text)||recipeUrlOf(text))){closeSheet();openShop(null,{recipe:text});return;}
+    // un lien (resto, concert…) ou un lieu partagé, sans date : une envie, ou un évènement ?
+    if(noWhen&&(/https?:\/\//.test(text)||(opts&&opts.shared))){closeSheet();openSharedChoice(text);return;}}catch(_){}
   return prepareTexts([text],b,label);
 }
 async function prepareTexts(texts,b,label){
@@ -5719,7 +6107,8 @@ async function openPendingAdd(aid){
     const texts=items.map(x=>sharedText(x.t)).filter(Boolean);if(!texts.length)return;
     openQuickAdd(false,texts.join("\n"));
     const go=$("#q-go")||el("button");
-    if(texts.length===1)await prepareText(texts[0],go,"Préparer l'évènement");
+    // un lieu de Plans ou de Google Maps, une fiche de lieu : sans date, on demande si c'est une envie
+    if(texts.length===1)await prepareText(texts[0],go,"Préparer l'évènement",{shared:/https?:\/\/|BEGIN:VCARD/i.test(items[0].t)});
     else await prepareTexts(texts,go,"Préparer l'évènement");
   }finally{addBusy=false;}
 }
@@ -6274,11 +6663,11 @@ function tripHero(n,t){
     el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.stale&&!here?" · dernière position "+agoShort(S.age):"")),b);
 }
 /* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
-let pendingLink=/[?&](trip|ev|add|shop)=/.test(location.search)?location.search:null;
+let pendingLink=/[?&](trip|ev|add|shop|wishes)=/.test(location.search)?location.search:null;
 function runPendingLink(){
   if(!pendingLink||firstSnap||!tripsReady)return;
   const q=pendingLink;pendingLink=null;
-  try{if(/[?&](trip|ev|add|shop)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
+  try{if(/[?&](trip|ev|add|shop|wishes)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
   setTimeout(()=>{if(!handleDeepLink(q))toast("Cet évènement n'existe plus.");},150);
 }
 function handleDeepLink(q){
@@ -6286,6 +6675,7 @@ function handleDeepLink(q){
   const tid=p.get("trip"),eid=p.get("ev"),aid=p.get("add");
   if(aid){openPendingAdd(aid);return true;}
   if(p.has("shop")){openShop();return true;}
+  if(p.has("wishes")){openWishes();return true;}
   if(tid&&(trips.has(tid)||events.has(tid))){openTrip(tid);return true;}
   if(eid&&events.has(eid)){const e=events.get(eid);if((canStartTrip(e)&&hasPickup(e))||tripFor(eid))openTrip(eid);else openEventCard(eid);return true;}
   return false;
@@ -6481,6 +6871,7 @@ function bootFromCache(){
   },()=>{});
   db.doc("config/shortcuts").onSnapshot(snap=>{scLinks=snap.exists?snap.data():{};},()=>{});
   db.doc("config/notif").onSnapshot(snap=>{notifCfg=snap.exists?snap.data():{};syncPush();},()=>{});
+  db.doc("config/budget").onSnapshot(snap=>{budgetCfg=snap.exists?snap.data():{};if(openWishes.redraw)openWishes.redraw();scheduleRender();},()=>{});
   db.collection("memories").onSnapshot(snap=>{
     memories=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     if(view==="mem")renderMemView();updateTabs();

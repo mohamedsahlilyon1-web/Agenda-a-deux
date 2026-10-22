@@ -53,8 +53,14 @@ jobs:
               R=$(curl -s -X POST -H "Content-Type: application/json" --max-time 20 -d "$(jq -nc --arg c "$id" --arg t "$TOK" --arg u "$ru" '{couple:$c,token:$t,url:$u}')" "$URL/api/recipe" | jq -c --arg h "$(echo "$ru" | cut -d/ -f3)" '{h:$h,ok:(.ok//false),n:((.ing//[])|length),name:((.name//"")|.[0:40]),first:((.ing//[])[0]//""|.[0:40])}' 2>/dev/null || echo '{"ok":"err"}')
               RP="$RP$R,"
             done
+            # lecture d'un lien partagé (envie de sortie) depuis le serveur (compteurs seulement)
+            PG=""
+            for pu in "https://fr.wikipedia.org/wiki/Zoo_de_Montpellier" "https://www.montpellier.fr/"; do
+              R=$(curl -s -X POST -H "Content-Type: application/json" --max-time 20 -d "$(jq -nc --arg c "$id" --arg t "$TOK" --arg u "$pu" '{couple:$c,token:$t,url:$u}')" "$URL/api/page" | jq -c --arg h "$(echo "$pu" | cut -d/ -f3)" '{h:$h,ok:(.ok//false),title:((.title//"")|.[0:50]),place:((.place//"")|.[0:30]),kind:(.kind//"")}' 2>/dev/null || echo '{"ok":"err"}')
+              PG="$PG$R,"
+            done
             [ $first = 1 ] || echo "," >> diag/result.json; first=0
-            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"recipe\":[${RP%,}],\"widgetApi\":{${W%,}}}" >> diag/result.json
+            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"recipe\":[${RP%,}],\"page\":[${PG%,}],\"widgetApi\":{${W%,}}}" >> diag/result.json
           done
           echo "]}" >> diag/result.json
           cat diag/result.json
