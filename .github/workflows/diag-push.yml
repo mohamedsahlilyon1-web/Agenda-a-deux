@@ -22,10 +22,11 @@ jobs:
           CAL_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/cal/zzzzzz/00000000000000000000000000000000/x.ics")
           ADD_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/add/zzzzzz/u/000000000000000000000000?t=x")
           CAR_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/car/zzzzzz/u/000000000000000000000000")
+          WIMG_PROBE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/wimg?c=zzzzzz&t=x&k=abcd")
           IDX=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/index")
           # vacances scolaires lues par le serveur (données publiques : noms et dates)
           VAC=$(curl -s --max-time 30 "$URL/api/vacances?z=C&fresh=1" | jq -c '{ok:(.ok//false),zone,stale,error,n:((.list//[])|length),first:((.list//[])[0]//null),next:((.list//[])[1]//null)}' 2>/dev/null || echo '{"ok":"err"}')
-          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"calProbe\":$CAL_PROBE,\"addProbe\":$ADD_PROBE,\"carProbe\":$CAR_PROBE,\"vacances\":$VAC,\"couples\":[" > diag/result.json
+          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"calProbe\":$CAL_PROBE,\"addProbe\":$ADD_PROBE,\"carProbe\":$CAR_PROBE,\"wimgProbe\":$WIMG_PROBE,\"vacances\":$VAC,\"couples\":[" > diag/result.json
           first=1
           for id in $(echo "$IDX" | jq -r '.[]?'); do
             V=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/c:$id")
@@ -46,7 +47,11 @@ jobs:
             S=$(jq -nc --argjson v "$V" --argjson sb "$SB" --argjson wd "$WD" --argjson dn "$DN" --argjson cal "$CAL" --argjson lg "$LG" --argjson ad "$AD" '{adds:($ad|length),seen:(($v.seen//{})|to_entries|map({u:(.key[0:4]),v:.value.v,agoMin:((now*1000-.value.at)/60000|floor)})),log:($lg|.[-15:]|map({agoMin:((now*1000-.at)/60000|floor),k,t,to,st,rs})),subs:($sb|length),subsPer:($sb|[.[]|length]),subsBy:($sb|to_entries|map({u:(.key[0:4]),n:(.value|length)})),sched:(($v.sched//[])|length),nextAt:(($v.sched//[])|map(.at)|min),done:($dn|length),wAt:($wd.at//0),widgets:(($wd.map//{})|[.[]|{items:((.items//[])|length),wishes,fb}]),cal:$cal}')
             W=""
             for u in $(echo "$SB" | jq -r 'keys[]'); do
-              C=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u" | jq -c '{items:((.data.items//[])|length),at}')
+              WJ=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u")
+              # les autres widgets (option 10) : seulement des nombres et des oui/non
+              C=$(echo "$WJ" | jq -c '{items:((.data.items//[])|length),at,shop:(.data.shop.n//null),cd:((.data.cd//[])|length),sv:(.data.sv!=null),svImg:((.data.sv.k//"")!=""),idea:((.data.idea.sl//"")!=""),live:(.data.live!=null),late:((.data.late//[])|length),fer:((.data.fer//{})|length),vac:((.data.vac//[])|length)}' 2>/dev/null || echo '{"err":1}')
+              K=$(echo "$WJ" | jq -r '.data.sv.k//""' 2>/dev/null)
+              if [ -n "$K" ]; then IM=$(curl -s -o /dev/null -w "%{http_code}:%{size_download}" "$URL/api/wimg?c=$id&t=$TOK&k=$K"); C=$(echo "$C" | jq -c --arg im "$IM" '. + {img:$im}'); fi
               W="$W\"${u:0:4}…\":$C,"
             done
             # lecture d'une page de recette depuis le serveur (compteurs seulement)
