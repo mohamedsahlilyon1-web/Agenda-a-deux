@@ -47,8 +47,14 @@ jobs:
               C=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u" | jq -c '{items:((.data.items//[])|length),at}')
               W="$W\"${u:0:4}…\":$C,"
             done
+            # lecture d'une page de recette depuis le serveur (compteurs seulement)
+            RP=""
+            for ru in "https://www.marmiton.org/recettes/recette_pate-a-crepes_12372.aspx" "https://meilleurduchef.com/fr/dossier/pate-a-crepe.html" "https://dubocalalassiette.fr/blog/crepe-au-sucre-marmiton/"; do
+              R=$(curl -s -X POST -H "Content-Type: application/json" --max-time 20 -d "$(jq -nc --arg c "$id" --arg t "$TOK" --arg u "$ru" '{couple:$c,token:$t,url:$u}')" "$URL/api/recipe" | jq -c --arg h "$(echo "$ru" | cut -d/ -f3)" '{h:$h,ok:(.ok//false),n:((.ing//[])|length),name:((.name//"")|.[0:40]),first:((.ing//[])[0]//""|.[0:40])}' 2>/dev/null || echo '{"ok":"err"}')
+              RP="$RP$R,"
+            done
             [ $first = 1 ] || echo "," >> diag/result.json; first=0
-            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"widgetApi\":{${W%,}}}" >> diag/result.json
+            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"recipe\":[${RP%,}],\"widgetApi\":{${W%,}}}" >> diag/result.json
           done
           echo "]}" >> diag/result.json
           cat diag/result.json

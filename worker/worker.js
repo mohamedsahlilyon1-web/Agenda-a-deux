@@ -132,9 +132,12 @@ function quietNow(p, now) {
 function mergeHeld(list) {
   if (list.length === 1) { const x = list[0]; return { title: x.title, body: x.body, tag: x.tag, url: x.url }; }
   const M = list.map((x) => x.meta || null), who = M[0] && M[0].who, same = !!who && M.every((m) => m && m.who === who);
-  const adds = M.filter((m) => m && m.k === "add").length;
+  const adds = M.filter((m) => m && m.k === "add").length, shops = M.filter((m) => m && m.k === "shop").length;
+  // que des ajouts à la liste de courses : « Hajjour a ajouté à la liste » / « Lait, Œufs, Pain »
+  if (same && shops === list.length) return { title: clean(who + " a ajouté à la liste", 120), body: clean([...new Set(M.map((m) => m.t).join(", ").split(", "))].join(", "), 300), tag: "shop", url: "./?shop=1" };
   const title = same ? (adds === list.length ? who + " a ajouté " + list.length + " évènements" : who + " a fait " + list.length + " changements") : list.length + " nouveautés dans Together";
   const body = list.map((x, i) => { const m = M[i]; if (!m || !m.t) return x.title;
+    if (m.k === "shop") return "liste : " + m.t;
     return m.k === "add" ? "« " + m.t + " »" + (m.when ? " " + m.when : "") : (m.k === "del" ? "supprimé « " : "modifié « ") + m.t + " »"; }).join(", ");
   return { title: clean(title, 120), body: clean(body, 300), tag: "ev", url: "./" };
 }
@@ -176,6 +179,36 @@ async function expandLinks(t) {
   return t;
 }
 const UID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+// Les pages de recettes (Marmiton, 750g…) publient leurs ingrédients en données « Recipe » (schema.org) :
+// on les lit pour l'app, qui ne peut pas ouvrir ces pages elle-même
+const RECIPE_URL = /(?:^|\.)(?:marmiton\.org|750g\.com|cuisineaz\.com|ptitchef\.com|chefsimon\.com|jow\.fr|hellofresh\.[a-z]+|allrecipes\.[a-z]+|bbcgoodfood\.com|ricardocuisine\.com|cuisineactuelle\.fr|journaldesfemmes\.fr|papillesetpupilles\.fr|cookomix\.com|cuisine-libre\.org|giallozafferano\.[a-z]+)$/i;
+const isRecipeUrl = (t) => { const m = String(t || "").match(/https?:\/\/[^\s<>"]+/); if (!m) return false; try { const u = new URL(m[0]); return RECIPE_URL.test(u.hostname.replace(/^www\./, "")) || /\/(?:recettes?|recipes?|recette-|recipe-)|recette[s_-]|_recette/i.test(u.pathname); } catch (_) { return false; } };
+const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rsquo: "’", lsquo: "‘", eacute: "é", egrave: "è", ecirc: "ê", agrave: "à", acirc: "â", ccedil: "ç", icirc: "î", iuml: "ï", ocirc: "ô", ucirc: "û", ugrave: "ù", euml: "ë", oelig: "œ", deg: "°", frac12: "½", frac14: "¼", frac34: "¾", hellip: "…" };
+const unent = (s) => String(s).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+\d*);/gi, (m, e) => { if (e[0] === "#") { const n = e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m; } const v = ENT[e.toLowerCase()]; return v === undefined ? m : v; });
+async function fetchRecipe(u) {
+  let html = "";
+  try {
+    const r = await fetch(u, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", "Accept": "text/html,application/xhtml+xml", "Accept-Language": "fr-FR,fr;q=0.9" }, ...(AbortSignal.timeout ? { signal: AbortSignal.timeout(7000) } : {}) });
+    if (!r.ok) return null;
+    html = (await r.text()).slice(0, 2500000);
+  } catch (_) { return null; }
+  const tidy = (x) => clean(unent(String(x == null ? "" : x).replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim(), 160);
+  const isRecipe = (o) => o && typeof o === "object" && [].concat(o["@type"] || []).some((t) => /recipe/i.test(String(t)));
+  const find = (o, d) => { if (!o || typeof o !== "object" || d > 6) return null; if (Array.isArray(o)) { for (const x of o) { const r = find(x, d + 1); if (r) return r; } return null; }
+    if (isRecipe(o)) return o; for (const k of ["@graph", "mainEntity", "mainEntityOfPage", "itemListElement", "item"]) if (o[k]) { const r = find(o[k], d + 1); if (r) return r; } return null; };
+  let i = 0, n = 0;
+  while ((i = html.indexOf("application/ld+json", i)) >= 0 && n++ < 20) {
+    const s0 = html.indexOf(">", i), e = s0 < 0 ? -1 : html.indexOf("</script>", s0); if (e < 0) break;
+    const raw = html.slice(s0 + 1, e).trim().replace(/^<!--|-->$/g, "").replace(/^\/\*<!\[CDATA\[\*\/|\/\*\]\]>\*\/$/g, ""); i = e;
+    let j; try { j = JSON.parse(raw); } catch (_) { continue; }
+    const rc = find(j, 0); if (!rc) continue;
+    const ing = [].concat(rc.recipeIngredient || rc.ingredients || []).map(tidy).filter(Boolean).slice(0, 60);
+    if (ing.length) return { name: tidy(rc.name).slice(0, 100), ing, y: tidy([].concat(rc.recipeYield || [])[0]).slice(0, 40) };
+  }
+  // microdonnées (pages plus anciennes) : itemprop="recipeIngredient"
+  const md = [...html.matchAll(/itemprop=["'](?:recipeIngredient|ingredients)["'][^>]*>([\s\S]{1,400}?)<\/(?:li|span|p|div)/gi)].map((m) => tidy(m[1])).filter(Boolean).slice(0, 60);
+  return md.length ? { name: "", ing: md, y: "" } : null;
+}
 // Ancien format (tout dans la fiche du couple) : on recopie chaque partie dans sa clé, une seule fois
 async function migrate(env, id, c) {
   if (!c || !(c.subs || c.widgets || c.done || c.widget)) return c;
@@ -237,8 +270,9 @@ export default {
       list.push({ id: aid, u: uid, t, at: Date.now() });
       await putAdds(env, id, list);
       const first = (t.split("\n").map((l) => l.replace(/https?:\/\/\S+/g, "").trim()).find(Boolean) || "Lieu partagé").slice(0, 70);
-      const subs = await getSubs(env, id, c);
-      const r = await sendTo(env, subs, [uid], { title: "À vérifier : " + first, body: "Touche pour voir la fiche et l'enregistrer.", tag: "add-" + aid, url: "./?add=" + aid });
+      const subs = await getSubs(env, id, c), recipe = isRecipeUrl(t) || (/^\s*(?:les\s+)?ingr[ée]dients?\b/im.test(t) && t.split("\n").length >= 3);
+      const r = await sendTo(env, subs, [uid], recipe ? { title: "Recette reçue" + (/https?:\/\//.test(first) || first === "Lieu partagé" ? "" : " : " + first.slice(0, 50)), body: "Touche pour choisir les ingrédients à mettre sur la liste de courses.", tag: "add-" + aid, url: "./?add=" + aid }
+        : { title: "À vérifier : " + first, body: "Touche pour voir la fiche et l'enregistrer.", tag: "add-" + aid, url: "./?add=" + aid });
       if (r.changed) await putSubs(env, id, subs);
       try { await logSends(env, id, "a", r.codes.map((x) => ({ ...x, tag: "add" }))); } catch (_) {}
       return txt(r.sent ? "C'est noté. Touche la notification de Together pour vérifier la fiche." : "C'est noté. Ouvre Together pour vérifier la fiche.");
@@ -319,7 +353,7 @@ export default {
     if (path === "/api/notify") {
       const to = (Array.isArray(b.to) ? b.to : [b.to]).map((x) => clean(x, 80)).filter(Boolean).slice(0, 2);
       if (b.hold) {
-        const m = b.meta && typeof b.meta === "object" ? { k: clean(b.meta.k, 8), who: clean(b.meta.who, 30), t: clean(b.meta.t, 60), when: clean(b.meta.when, 40) } : null;
+        const m = b.meta && typeof b.meta === "object" ? { k: clean(b.meta.k, 8), who: clean(b.meta.who, 30), t: clean(b.meta.t, b.meta.k === "shop" ? 120 : 60), when: clean(b.meta.when, 40) } : null;
         const H = (await env.KV.get("h:" + id, "json")) || [], now = Date.now();
         for (const u of to) H.push({ u, title: clean(b.title, 120), body: clean(b.body, 300), tag: clean(b.tag, 60), url: clean(b.url, 200), ...(m ? { meta: m } : {}), at: now });
         await env.KV.put("h:" + id, JSON.stringify(H.slice(-60)));
@@ -380,6 +414,13 @@ export default {
       const list = await getAdds(env, id), keep = list.filter((x) => !(x.u === uid && ids.has(x.id)));
       if (keep.length !== list.length) await putAdds(env, id, keep);
       return json(req, { ok: true, left: keep.filter((x) => x.u === uid).length });
+    }
+    if (path === "/api/recipe") {
+      let u = null; try { u = new URL(clean(b.url, 800)); } catch (_) {}
+      // une vraie page web seulement (pas d'adresse interne)
+      if (!u || !/^https?:$/.test(u.protocol) || !u.hostname.includes(".") || /^(?:localhost|[\d.]+|\[.*\])$/i.test(u.hostname) || /\.(?:local|internal|lan)$/i.test(u.hostname)) return json(req, { ok: false, error: "url" }, 400);
+      const r = await fetchRecipe(u.toString());
+      return json(req, r ? { ok: true, ...r } : { ok: false });
     }
     if (path === "/api/calstat") {
       const seen = (await env.KV.get("ks:" + id, "json")) || {}, K = await getCals(env, id);

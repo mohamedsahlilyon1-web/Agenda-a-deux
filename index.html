@@ -487,7 +487,7 @@ header{flex-wrap:wrap;row-gap:4px}
 .shop-pill.full{background:var(--m2);color:#fff}.shop-pill.full>span{color:#fff}.shop-pill.full .sp-bar{background:rgba(255,255,255,.35)}.shop-pill.full .sp-bar u{background:#fff}
 .hero-pill{margin-top:10px;justify-self:start;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;backdrop-filter:blur(6px)}.hero-pill>span{color:#fff}.hero-pill .sp-bar{background:rgba(255,255,255,.25)}.hero-pill .sp-bar u{background:var(--sun)}
 .shop-pill{max-width:100%;min-width:0}.shop-pill .sp-names{font-style:normal;font-weight:600;opacity:.88;min-width:0;flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
-.shop-pill .sp-bar{flex:none}.shop-pill-row .shop-pill{max-width:min(100%,420px)}
+.shop-pill .sp-bar{flex:none}.shop-pill b{white-space:nowrap}.shop-pill-row .shop-pill{max-width:min(100%,420px)}
 .shop-peek{display:flex;flex-wrap:wrap;gap:6px}.shop-peek span{--a:#94A3B8;font-size:.85rem;font-weight:700;padding:4px 10px 4px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--hair);display:inline-flex;align-items:center;gap:6px}
 .shop-peek span::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--a)}.shop-peek .more::before{display:none}
 .shop-open{align-self:flex-start;background:var(--m,var(--line));border-color:transparent}.shop-open svg{width:18px;height:18px}
@@ -499,10 +499,6 @@ header{flex-wrap:wrap;row-gap:4px}
 .sr-arc{transition:stroke-dasharray .5s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 5px color-mix(in oklab,var(--m) 55%,transparent))}
 .shop-tt h2{margin:0;font-family:var(--fd,inherit);font-size:1.45rem;line-height:1.1;letter-spacing:-.01em;overflow-wrap:anywhere}
 .shop-tt p{margin:3px 0 0;color:var(--muted);font-size:.88rem}.shop-tt .shop-count{color:var(--ink);font-weight:700}
-.shop-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}.shop-tabs::-webkit-scrollbar{display:none}
-.shop-tabs button{--t:var(--line);flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--hair);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font:inherit;font-weight:700;font-size:.86rem}
-.shop-tabs button span{display:grid;width:16px;height:16px;color:var(--t)}.shop-tabs button svg{width:16px;height:16px}
-.shop-tabs button.on{background:var(--ink);color:var(--bg);border-color:transparent}.shop-tabs button.on span{color:inherit}
 .shop-awake{margin:0;display:flex;align-items:center;gap:8px;font-size:.84rem;font-weight:700;color:var(--m)}.shop-awake i{width:8px;height:8px;border-radius:50%;background:var(--m);box-shadow:0 0 0 0 var(--m);animation:awake 1.8s infinite}
 @keyframes awake{70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
 .shop-addrow{display:grid;grid-template-columns:1fr auto auto;gap:8px;position:sticky;top:-10px;z-index:2;background:var(--bg);padding:6px 0}
@@ -531,6 +527,44 @@ header{flex-wrap:wrap;row-gap:4px}
 .shop-foot{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));background:var(--bg);padding:10px 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .shop-total{margin-right:auto;display:grid}.shop-total small{color:var(--muted);font-weight:600}.shop-total b{font-size:1.4rem;font-family:var(--fd,inherit)}
 .shop-foot .btn.primary{background:var(--m);border-color:transparent}
+.shop-due{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:18px;background:color-mix(in oklab,var(--m) 9%,var(--surface));border:1px solid color-mix(in oklab,var(--m) 24%,transparent)}
+.shop-due .lab{font-weight:800;color:var(--ink)}
+.due-row{display:flex;flex-wrap:wrap;gap:8px}
+.due-chip{--a:#94A3B8;display:inline-flex;align-items:stretch;border-radius:14px;background:var(--surface);border:1px solid var(--hair);overflow:hidden;max-width:100%}
+.due-add{border:0;background:none;font:inherit;color:var(--ink);text-align:left;padding:7px 2px 7px 11px;display:grid;gap:1px;min-width:0}
+.due-add b{font-size:.95rem;overflow-wrap:anywhere}.due-add b::before{content:"+ ";color:var(--a)}
+.due-add small{font-size:.75rem;color:var(--muted);font-weight:600}
+.due-x{border:0;background:none;color:var(--muted);font-size:1.15rem;width:34px;flex:none}
+.shop-tools{display:flex;gap:8px;margin-top:-6px}
+.shop-tool{display:inline-flex;align-items:center;gap:7px;border:1px dashed color-mix(in oklab,var(--m) 45%,var(--hair));background:none;color:var(--ink);border-radius:999px;padding:7px 13px;font:inherit;font-size:.86rem;font-weight:700}
+.shop-tool span{display:grid;width:17px;height:17px;color:var(--m)}.shop-tool svg{width:17px;height:17px}
+.shop-rc{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:18px;background:var(--surface);border:1.5px solid color-mix(in oklab,var(--m) 40%,var(--hair))}
+.shop-rc-h{display:flex;align-items:center;justify-content:space-between;gap:8px}.shop-rc-h b{overflow-wrap:anywhere}
+.shop-rc-in{width:100%;min-height:110px;box-sizing:border-box;border:1.5px solid var(--hair);border-radius:14px;padding:10px 12px;font:inherit;color:var(--ink);background:var(--bg);resize:vertical}
+.shop-rc-in:focus{outline:none;border-color:var(--m)}
+.shop-rc-err{margin:0;color:#B45309;font-weight:600;font-size:.9rem}
+.shop-rc-busy{margin:0;display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:600}
+.shop-rc-list{display:flex;flex-direction:column}
+.shop-rc-it{--a:#94A3B8;display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px dashed var(--hair);font-weight:700;flex-wrap:wrap}
+.shop-rc-it:last-child{border-bottom:0}
+.shop-rc-it input{width:22px;height:22px;accent-color:var(--m);flex:none;margin:0}
+.shop-rc-it span{overflow-wrap:anywhere}.shop-rc-it small{color:var(--muted);font-weight:700}
+.shop-rc-it em{margin-left:auto;font-style:normal;font-size:.78rem;color:var(--muted);font-weight:600}
+.shop-rc-it.off span{color:var(--muted);font-weight:500}
+.si-p{font-size:.8rem;font-weight:800;color:var(--muted)}
+.si-new{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:var(--m);padding:2px 7px;border-radius:999px}
+.shop-item.fresh{border-color:var(--m);box-shadow:0 0 0 2px color-mix(in oklab,var(--m) 28%,transparent)}
+.shop-end{flex:1 1 100%;display:grid;gap:6px}.shop-end b{font-size:1.05rem}.shop-end small{color:var(--muted);font-weight:600}
+.shop-amt{border:1.5px solid var(--hair);background:var(--surface);border-radius:14px;padding:12px 13px;font:inherit;font-size:1.05rem;color:var(--ink);min-width:0}
+.shop-amt:focus{outline:none;border-color:var(--m)}
+.shop-note{margin:2px 2px 0;color:var(--muted);font-size:.84rem}
+.shop-note button{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--m);text-decoration:underline;text-underline-offset:2px}
+.shop-acts{display:flex;flex-wrap:wrap;gap:8px}
+.run-card{background:color-mix(in oklab,#16A34A 13%,var(--surface));color:var(--ink);border:1px solid color-mix(in oklab,#16A34A 35%,transparent);padding-right:14px}
+.run-card .rc-ic{flex:none;width:40px;height:40px;border-radius:13px;background:#16A34A;color:#fff;display:grid;place-items:center}.run-card .rc-ic svg{width:22px;height:22px}
+.run-card .cal-txt span{color:var(--muted)}
+.run-card .btn.primary{background:#16A34A;border-color:transparent;color:#fff}
+#btn-shop.running{color:#16A34A;box-shadow:0 0 0 2px color-mix(in oklab,#16A34A 45%,transparent)}
 @keyframes siIn{from{opacity:0;transform:translateY(6px)}}
 #next{touch-action:manipulation;cursor:pointer;-webkit-user-select:none;user-select:none}
 .swipe.flash{animation:cardFlash 1.5s cubic-bezier(.2,.8,.2,1)}
@@ -1176,10 +1210,11 @@ async function render(){
   {const wb=$("#who-bar");wb.textContent="";const wf=whoFilterBar();
     wb.append(el("div",{class:"bar-row"},wf||el("span",{class:"bar-fill"}),el("button",{type:"button",class:"round bar-btn",id:"btn-search","aria-label":"Chercher dans l'agenda",title:"Chercher",html:LOUPE_SVG,onclick:()=>openSearch()})));
     wb.hidden=!wf&&!events.size;}
+  {const rc=shopRunCard();if(rc)list.append(rc);}
   {const pp=pushPromptCard();if(pp)list.append(pp);else{const ca=carPromptCard();if(ca)list.append(ca);}}
   if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
   syncPush();
-  autoMergeShop();shopBadge();
+  autoFinishShop();shopBadge();
   const pend=calPending();
   // Bandeau masquable : il ne revient que si un nouvel évènement est à ajouter
   const pendSig=pend.map(e=>e.id).sort().join(",");
@@ -1417,15 +1452,16 @@ function whoFilterBar(){
   return el("div",{class:"pchips who-filter",role:"group","aria-label":"Afficher"},...opts.map(([k,l])=>el("button",{type:"button",class:"pchip"+(whoFilter===k?" on":""),"aria-pressed":whoFilter===k?"true":"false",onclick:()=>{whoFilter=k;try{localStorage.setItem("a2.who",k);}catch(_){}render();}},l)));
 }
 
-/* ---------- Liste de courses partagée ---------- */
-/* ---------- Listes de courses et de shopping ---------- */
+/* ---------- Le panier : une seule liste de courses, partagée ---------- */
+// Tout ce qu'il faut acheter va dans la même liste (config/shop), quel que soit le magasin :
+// les évènements « Courses » ou « Shopping » ouvrent simplement cette liste.
 // Rayons dans l'ordre d'un magasin. Les mots sont comparés sans accents, au début des mots.
 const AISLES=[
-  {id:"fruits",n:"Fruits et légumes",c:"#16A34A",w:"pomme,poire,banane,orange,citron,fraise,framboise,myrtille,raisin,kiwi,ananas,mangue,avocat,tomate,salade,laitue,roquette,mache,carotte,oignon,ail,echalote,patate,pomme de terre,courgette,aubergine,poivron,concombre,champignon,brocoli,chou,epinard,haricot vert,poireau,persil,coriandre,menthe,basilic,ciboulette,legume,fruit,melon,pasteque,peche,nectarine,abricot,cerise,prune,clementine,mandarine,pamplemousse,radis,betterave,gingembre,citron vert,celeri,fenouil,potiron,courge,mais,petit pois,endive,artichaut,asperge,datte,figue,grenade"},
+  {id:"fruits",n:"Fruits et légumes",c:"#16A34A",w:"pomme,poire,banane,orange,citron,fraise,framboise,myrtille,raisin,kiwi,ananas,mangue,avocat,tomate,salade,laitue,roquette,mache,carotte,oignon,ail,echalote,patate,pomme de terre,courgette,aubergine,poivron,concombre,champignon,brocoli,chou,epinard,haricot vert,poireau,persil,coriandre,menthe,basilic,ciboulette,legume,fruit,melon,pasteque,peche,nectarine,abricot,cerise,prune,clementine,mandarine,pamplemousse,radis,betterave,gingembre,citron vert,celeri,fenouil,potiron,courge,mais,petit pois,endive,artichaut,asperge,datte,figue,grenade,thym,romarin,laurier,estragon,aneth,sauge,cerfeuil,bouquet garni,citronnelle,patate douce,navet,panais,topinambour,chou-fleur,chou fleur,blette,cresson,shiitake,lime"},
   {id:"pain",n:"Boulangerie",c:"#D97706",w:"pain,baguette,brioche,croissant,pain au chocolat,chocolatine,viennoiserie,pain de mie,biscotte,tortilla,wrap,pita,naan,galette,crepe,muffin"},
-  {id:"frais",n:"Crèmerie et frais",c:"#0EA5E9",w:"lait,beurre,oeuf,yaourt,yogourt,fromage,creme,emmental,gruyere,mozzarella,burrata,parmesan,feta,camembert,brie,comte,raclette,reblochon,chevre,skyr,petit suisse,fromage blanc,margarine,houmous,pate a tarte,pate feuilletee,pate brisee,gnocchi,ravioli frais,dessert,compote fraiche,mascarpone,ricotta,lait d'avoine,kefir"},
+  {id:"frais",n:"Crèmerie et frais",c:"#0EA5E9",w:"lait,beurre,oeuf,yaourt,yogourt,fromage,creme,emmental,gruyere,mozzarella,burrata,parmesan,feta,camembert,brie,comte,raclette,reblochon,chevre,skyr,petit suisse,fromage blanc,margarine,houmous,pate a tarte,pate feuilletee,pate brisee,pate sablee,pate a pizza,gnocchi,ravioli frais,dessert,compote fraiche,mascarpone,ricotta,lait d'avoine,kefir"},
   {id:"viande",n:"Viandes et poissons",c:"#DC2626",w:"poulet,boeuf,steak,viande,hache,dinde,porc,agneau,veau,merguez,saucisse,jambon,lardon,chorizo,salami,saucisson,bacon,saumon,poisson,crevette,cabillaud,colin,escalope,cordon bleu,nugget,cuisse,filet,cote,roti,brochette,kebab,thon frais,moules,calamar,surimi,blanc de poulet,knack"},
-  {id:"epicerie",n:"Épicerie",c:"#CA8A04",w:"pate,spaghetti,penne,tagliatelle,riz,farine,sucre,sel,poivre,huile,vinaigre,cafe,the,infusion,cereale,muesli,flocon,chocolat,biscuit,gateau,cookie,confiture,miel,nutella,pate a tartiner,conserve,thon,sardine,sauce,ketchup,mayonnaise,moutarde,epice,curry,paprika,cumin,lentille,pois chiche,haricot rouge,semoule,couscous,quinoa,boulgour,soupe,chips,bonbon,compote,levure,bouillon,olive,noix,amande,cacahuete,pistache,noisette,raisin sec,coulis,tomate concassee,concentre,lait de coco,cornichon,mais en boite,puree,croutons,chapelure,maizena,vanille,cacao,barre,gaufre,madeleine,pain d'epice,sirop d'erable"},
+  {id:"epicerie",n:"Épicerie",c:"#CA8A04",w:"pate,spaghetti,penne,tagliatelle,lasagne,cannelloni,macaroni,fusilli,nouille,vermicelle,coquillette,riz,farine,sucre,sel,poivre,huile,vinaigre,cafe,the,infusion,cereale,muesli,flocon,chocolat,biscuit,gateau,cookie,confiture,miel,nutella,pate a tartiner,conserve,thon,sardine,sauce,ketchup,mayonnaise,moutarde,epice,curry,paprika,cumin,origan,herbes de provence,muscade,cannelle,piment,curcuma,safran,clou de girofle,cardamome,quatre epices,ras el hanout,lentille,pois chiche,haricot rouge,semoule,couscous,quinoa,boulgour,polenta,soupe,chips,bonbon,compote,levure,bouillon,fond de veau,pesto,olive,noix,amande,cacahuete,pistache,noisette,raisin sec,coulis,tomate concassee,concentre,lait de coco,noix de coco,cornichon,mais en boite,puree,croutons,chapelure,maizena,vanille,cacao,barre,gaufre,madeleine,pain d'epice,sirop d'erable,cassonade,vergeoise,sesame,graines"},
   {id:"boissons",n:"Boissons",c:"#7C3AED",w:"eau,jus,soda,coca,cola,fanta,sprite,ice tea,biere,vin,champagne,cidre,sirop,limonade,perrier,san pellegrino,orangina,schweppes,energy,red bull,lait de soja,smoothie,boisson"},
   {id:"surgeles",n:"Surgelés",c:"#2563EB",w:"surgele,glace,pizza,frite,poisson pane,legumes surgeles,epinard surgele,sorbet,esquimau,cornet,glacon"},
   {id:"hygiene",n:"Hygiène et beauté",c:"#DB2777",w:"shampoing,shampooing,apres-shampoing,savon,gel douche,dentifrice,brosse a dent,fil dentaire,bain de bouche,deodorant,deo,rasoir,mousse a raser,coton,coton tige,mouchoir,papier toilette,pq,serviette hygienique,tampon,protege slip,creme hydratante,creme solaire,maquillage,demaquillant,vernis,couche,lingette,parfum,gel,laque,elastique,pansement,doliprane,paracetamol,vitamine"},
@@ -1443,21 +1479,28 @@ const SHOP_AISLES=[
   {id:"cadeau",n:"Cadeaux",c:"#E11D48",w:"cadeau,carte cadeau,jouet,livre,peluche,lego,puzzle,jeu"},
 ];
 const AISLE_OTHER={id:"autre",n:"Autres",c:"#94A3B8"};
+const ALL_AISLES=[...AISLES,...SHOP_AISLES],AISLE_IDS=[...ALL_AISLES.map(a=>a.id),"autre"],SHOP_AISLE_IDS=new Set(SHOP_AISLES.map(a=>a.id));
 const AISLE_RX=new Map();
 function aisleRx(a){if(!AISLE_RX.has(a.id))AISLE_RX.set(a.id,new RegExp("(^|[^a-z])("+a.w.split(",").map(x=>norm(x).replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/ /g,"[ -]")).sort((x,y)=>y.length-x.length).join("|")+")"));return AISLE_RX.get(a.id);}
-function aisleOf(t,kind){const n=norm(t).replace(/œ/g,"oe").replace(/æ/g,"ae"),L=kind==="shop"?SHOP_AISLES:AISLES;
-  // le plus long mot reconnu gagne (« lait de coco » va en épicerie, pas en crèmerie)
-  let best=null,len=0,pos=1e9;for(const a of L){const m=n.match(aisleRx(a));if(!m)continue;const at=m.index+m[1].length;
-    if(m[2].length>len||(m[2].length===len&&at<pos)){best=a;len=m[2].length;pos=at;}}
-  return best?best.id:"autre";}
-function aisleInfo(id,kind){return (kind==="shop"?SHOP_AISLES:AISLES).find(a=>a.id===id)||AISLE_OTHER;}
+// le plus long mot reconnu gagne (« lait de coco » va en épicerie, pas en crèmerie) ;
+// les rayons d'alimentation d'abord (« crème » en crèmerie), puis ceux du shopping (« pull » en vêtements)
+function aisleOf(t){const n=norm(t).replace(/œ/g,"oe").replace(/æ/g,"ae");
+  for(const L of [AISLES,SHOP_AISLES]){let best=null,len=0,pos=1e9;
+    for(const a of L){const m=n.match(aisleRx(a));if(!m)continue;const at=m.index+m[1].length;
+      if(m[2].length>len||(m[2].length===len&&at<pos)){best=a;len=m[2].length;pos=at;}}
+    if(best)return best.id;}
+  return "autre";}
+function aisleInfo(id){return ALL_AISLES.find(a=>a.id===id)||AISLE_OTHER;}
+const aisleIdOf=x=>AISLE_IDS.includes(x&&x.a)?x.a:"autre";
 function shopKind(ev){return ev&&motifOf(ev)==="shopping"?"shop":"food";}
 function isShopping(ev){const k=motifOf(ev);return k==="panier"||k==="shopping"||ev.category==="courses";}
-const shopPushAt={};
-function pushShop(title,body){const k=title;if(Date.now()-(shopPushAt[k]||0)<5*60000)return;shopPushAt[k]=Date.now();try{pushOther(title,body,"shop");}catch(_){}}
-const shopId=()=>Math.random().toString(36).slice(2,10);
+// Un article = une clé tirée de son nom (sans accents ni pluriel) : « Œufs » et « oeuf » ne font qu'un,
+// et deux ajouts au même moment sur les deux téléphones ne s'écrasent pas
+function itemKey(t){return norm(t).replace(/œ/g,"oe").replace(/æ/g,"ae").replace(/[^a-z0-9]+/g," ").trim().split(" ").map(w=>w.length>3?w.replace(/[sx]$/,""):w).join(" ");}
+function itemId(t){const s=itemKey(t);let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return "i"+(h>>>0).toString(36);}
+const qText=q=>q?(/^\d+$/.test(q)?"×"+q:q):"";
 // « 2 baguettes », « œufs x12 », « 1 kg de pommes », « pull 39,90 € » → {t,q,p}
-function parseShopItem(raw,kind){
+function parseShopItem(raw){
   let s=String(raw||"").replace(/\s+/g," ").trim().replace(/[.!?]+$/,"");if(!s)return null;
   let p=null,q="";
   const pm=s.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|euros?\b|eur\b)/i);if(pm){p=Math.round(parseFloat(pm[1].replace(",","."))*100)/100;s=s.replace(pm[0]," ").trim();}
@@ -1469,178 +1512,518 @@ function parseShopItem(raw,kind){
   s=s.replace(/^(?:(?:encore du|encore des|encore de la|quelques|de la|du|des|de|le|la|les|un|une)\s+|(?:de l|l|d)['’]\s*)/i,"").trim();
   if(!s||s.length<2)return null;
   s=s.charAt(0).toUpperCase()+s.slice(1);
-  return {id:shopId(),t:s.slice(0,60),q:q.slice(0,12),p,a:aisleOf(s,kind),done:false,by:myId,at:Date.now()};
+  return {id:itemId(s),t:s.slice(0,60),q:q.slice(0,12),p,a:aisleOf(s)};
 }
-function splitShop(text,kind){return String(text||"").replace(/(\d),(\d)/g,"$1.$2").split(/,|;|\n| et puis | puis | et (?=(?:du|de la|des|de l'|un|une|\d|[a-zà-ÿ]))/i).map(x=>parseShopItem(x,kind)).filter(Boolean);}
-function mergeShop(list,add){const out=list.map(x=>({...x}));
-  for(const it of add){const k=norm(it.t);const ex=out.find(x=>norm(x.t)===k);
-    if(ex&&!ex.done){if(it.q&&!ex.q)ex.q=it.q;if(it.p!=null&&ex.p==null)ex.p=it.p;continue;}
-    if(ex&&ex.done){Object.assign(ex,{done:false,by:it.by,at:it.at});continue;}
-    out.push(it);}
-  return out.slice(0,200);}
-function itemsOf(ev){return (Array.isArray(ev&&ev.items)?ev.items:[]).filter(x=>x&&x.t).map((x,i)=>({id:x.id||("i"+i),q:"",p:null,a:x.a||aisleOf(x.t,shopKind(ev)),...x}));}
+function splitShop(text){return String(text||"").replace(/(\d),(\d)/g,"$1.$2").split(/,|;|\n| et puis | puis | et (?=(?:du|de la|des|de l'|un|une|\d|[a-zà-ÿ]))/i).map(x=>parseShopItem(x)).filter(Boolean);}
 
-// La liste « À racheter » partagée (config/shop) et les articles achetés souvent
-let shopList={items:[],freq:{}},shopRefresh=null,shopMerging=false;
-function pendingItems(){return (shopList.items||[]).filter(x=>x&&x.t);}
-async function savePending(list){try{await db.doc("config/shop").set({items:list.slice(0,200),updatedBy:myId,updatedAt:Date.now()},{merge:true});}catch(_){toast("Liste non enregistrée. Vérifie ta connexion.");}}
-async function saveEvItems(ev,list,extra){try{await db.doc("events/"+ev.id).update({items:list.slice(0,200),updatedBy:myId,updatedAt:Date.now(),...(extra||{})});return true;}catch(_){toast("Liste non enregistrée. Vérifie ta connexion.");return false;}}
-// Les prochaines courses alimentaires (dans les 7 jours) reçoivent automatiquement la liste « À racheter »
-function nextGroceries(){const now=Date.now();return [...events.values()].filter(e=>isShopping(e)&&shopKind(e)==="food"&&!e.shopDone&&startOf(e).getTime()>now-3*3600000&&startOf(e).getTime()<now+7*864e5).sort((a,b)=>startOf(a)-startOf(b))[0]||null;}
-async function autoMergeShop(){
-  if(shopMerging||firstSnap||!myId)return;const pend=pendingItems();if(!pend.length)return;
-  const ev=nextGroceries();if(!ev)return;
-  shopMerging=true;
-  try{const ok=await saveEvItems(ev,mergeShop(itemsOf(ev),pend));
-    if(ok){await savePending([]);toast(pend.length+" article"+(pend.length>1?"s":"")+" ajouté"+(pend.length>1?"s":"")+" à « "+ev.title+" »");}}
-  finally{shopMerging=false;}
+// config/shop : {list:{<id>:article}, freq, order, run, spent}
+//   article : {t,q,p,a, by,at (ajouté par, quand), done, tb,ta (pris par, quand)}
+//   freq    : {<id>:{t,a,n,last,h:[dates d'achat],skip}}, pour « Souvent achetés » et « Il en manque ? »
+//   order   : les rayons dans l'ordre de votre magasin, appris pendant les courses
+//   run     : {by,at,until,ev} pendant que l'un de vous fait les courses
+//   spent   : [{at,amt,by,n,ev}], les tickets de caisse
+let shopList={list:{},freq:{},order:null,run:null,spent:[]},shopRaw=null,shopRefresh=null,shopFirst=true;
+function normShop(x){x=x||{};const o=v=>v&&typeof v==="object"&&!Array.isArray(v)?v:{};
+  return {list:o(x.list),freq:o(x.freq),order:Array.isArray(x.order)?x.order:null,run:x.run&&x.run.by?x.run:null,spent:Array.isArray(x.spent)?x.spent.filter(s=>s&&+s.amt>0):[],updatedBy:x.updatedBy||""};}
+function basket(){return Object.entries(shopList.list||{}).filter(([,x])=>x&&x.t).map(([id,x])=>({q:"",p:null,...x,id,a:x.a||aisleOf(x.t)})).sort((a,b)=>(+a.at||0)-(+b.at||0));}
+function toBuy(){return basket().filter(x=>!x.done);}
+function shopRun(){const r=shopList.run;return r&&r.by&&+r.until>Date.now()?r:null;}
+async function shopWrite(patch){try{await db.doc("config/shop").set({...patch,updatedBy:myId,updatedAt:Date.now()},{merge:true});return true;}catch(_){toast("Liste non enregistrée. Vérifie ta connexion.");return false;}}
+async function shopUpdate(u){try{await db.doc("config/shop").update({...u,updatedBy:myId,updatedAt:Date.now()});return true;}
+  catch(e){if(e&&e.code==="not-found")return true;toast("Liste non enregistrée. Vérifie ta connexion.");return false;}}
+// Ajouter : déjà sur la liste → on complète la quantité ; déjà pris → il revient dans la liste
+async function addItems(add,opts){
+  const L=shopList.list||{},patch={},now=Date.now(),fresh=[];
+  let i=0;
+  for(const it of add){if(!it||!it.t)continue;const id=itemId(it.t),ex=L[id];if(patch[id])continue;
+    if(ex&&ex.t&&!ex.done){const p={};if(it.q&&!ex.q)p.q=it.q;if(it.p!=null&&ex.p==null)p.p=it.p;if(Object.keys(p).length)patch[id]=p;continue;}
+    patch[id]={t:String(it.t).slice(0,60),q:String(it.q||"").slice(0,16),p:it.p!=null?+it.p:null,a:it.a||aisleOf(it.t),by:myId,at:now+(i++),done:false,tb:null,ta:null};fresh.push(patch[id]);}
+  if(Object.keys(patch).length&&!await shopWrite({list:patch}))return null;
+  if(fresh.length&&!(opts&&opts.quiet))shopTell(fresh);
+  return fresh;
 }
-// Où va un article qu'on ajoute « à la liste » : les prochaines courses, sinon « À racheter »
-function shopTarget(){return nextGroceries();}
-async function addToShop(text,ev){
-  const target=ev||shopTarget();const kind=target?shopKind(target):"food";
-  const add=splitShop(text,kind);if(!add.length)return [];
-  if(target){await saveEvItems(target,mergeShop(itemsOf(target),add));}
-  else await savePending(mergeShop(pendingItems(),add));
-  if(otherId())pushShop(target?"Liste : "+target.title:"À racheter",firstName(myId)+" a ajouté "+add.map(x=>x.t).join(", ").slice(0,110));
-  return add;
+async function addToShop(text){const add=splitShop(text);if(!add.length)return [];return (await addItems(add))?add:[];}
+// Prévenir l'autre : s'il ou elle est au magasin, tout de suite ; sinon le serveur regroupe les ajouts (une minute)
+function shopTell(items){
+  const o=otherId();if(!o||!items.length)return;
+  const names=items.map(x=>x.t).join(", ").slice(0,110),run=shopRun();
+  if(run&&run.by===o)pushTo([o],"À prendre aussi : "+names.slice(0,70),"Ajouté par "+firstName(myId)+" pendant tes courses.","shop-run-"+Date.now().toString(36),"./?shop=1");
+  else pushOther("Liste de courses",firstName(myId)+" a ajouté "+names,"shop",{k:"shop",t:names},"./?shop=1");
 }
-function bumpFreq(items){const f={...(shopList.freq||{})};
-  for(const it of items){const k=norm(it.t).slice(0,40);if(!k)continue;const o=f[k]||{t:it.t,a:it.a,n:0};f[k]={t:o.t,a:it.a||o.a,n:(o.n||0)+1,last:Date.now()};}
-  const keep=Object.entries(f).sort((a,b)=>(b[1].n-a[1].n)||(b[1].last-a[1].last)).slice(0,120);
-  try{db.doc("config/shop").set({freq:Object.fromEntries(keep)},{merge:true});}catch(_){}}
+function takeItem(it,on){return shopWrite({list:{[it.id]:{done:!!on,tb:on?myId:null,ta:on?Date.now():null}}});}
+function removeItem(it){return shopUpdate({["list."+it.id]:firebase.firestore.FieldValue.delete()});}
+function nextShopEv(){const now=Date.now();return [...events.values()].filter(e=>isShopping(e)&&!e.shopDone&&startOf(e).getTime()>now-6*3600000&&startOf(e).getTime()<now+7*864e5).sort((a,b)=>startOf(a)-startOf(b))[0]||null;}
+function todayShopEv(){const e=nextShopEv();return e&&ymd(startOf(e))===ymd(new Date())?e:null;}
+// « Je pars faire les courses » : l'autre est prévenu·e et peut encore ajouter ce qui manque
+async function startShopRun(evId){
+  const now=Date.now(),o=otherId(),ev=evId&&events.get(evId)?evId:((todayShopEv()||{}).id||null);
+  if(!await shopWrite({run:{by:myId,at:now,until:now+3*3600000,ev:ev||null}}))return false;
+  if(o&&!inQuiet(o,now))pushTo([o],firstName(myId)+" part faire les courses","Il manque quelque chose ? Ajoute-le à la liste : ça lui arrive tout de suite.","shop-run","./?shop=1");
+  toast(o?"C'est parti. Ce que "+firstName(o)+" ajoute t'arrivera tout de suite.":"C'est parti : l'écran reste allumé.");
+  return true;
+}
+// Ce qu'on achète d'habitude, et tous les combien
+function freqPatch(taken){
+  const F=shopList.freq||{},out={};
+  for(const x of taken){const id=itemId(x.t),o=out[id]||F[id]||{},ta=+x.ta||Date.now();
+    const h=(Array.isArray(o.h)?o.h:[]).filter(v=>+v>0).map(Number);
+    if(!h.length||ta-h[h.length-1]>12*3600000)h.push(ta);
+    out[id]={t:x.t,a:aisleIdOf(x),n:(+o.n||0)+1,last:ta,h:h.slice(-8),skip:null};}
+  return out;}
+// L'ordre des rayons de votre magasin, appris d'après l'ordre où l'on coche : au moins 4 articles, 3 rayons
+// et quelques minutes (tout cocher d'un coup à la maison n'apprend rien)
+function shopOrder(){const o=(Array.isArray(shopList.order)?shopList.order:[]).filter(id=>AISLE_IDS.includes(id));return [...new Set([...o,...AISLE_IDS])];}
+function learnOrder(taken){
+  const by={};for(const x of taken)if(x.tb&&+x.ta)(by[x.tb]=by[x.tb]||[]).push(x);
+  const t=(Object.values(by).sort((a,b)=>b.length-a.length)[0]||[]).sort((a,b)=>a.ta-b.ta);
+  if(t.length<4||t[t.length-1].ta-t[0].ta<3*60000)return null;
+  const pos={};t.forEach((x,i)=>{const a=aisleIdOf(x);(pos[a]=pos[a]||[]).push(i);});
+  const seen=Object.keys(pos);if(seen.length<3)return null;
+  const med=l=>{const s=[...l].sort((p,q)=>p-q);return s[(s.length-1)>>1];};
+  const run=[...seen].sort((a,b)=>med(pos[a])-med(pos[b]));
+  const cur=shopOrder(),slots=[];cur.forEach((id,i)=>{if(pos[id])slots.push(i);});
+  const out=[...cur];slots.forEach((s,j)=>{out[s]=run[j];});
+  return out.join()===cur.join()?null:out;}
+// « J'ai fini les courses » : ce qui est pris quitte la liste, le reste y reste pour la prochaine fois
+async function finishShop(amt,evId,opts){
+  const quiet=!!(opts&&opts.quiet),all=basket(),taken=all.filter(x=>x.done),left=all.filter(x=>!x.done),now=Date.now();
+  amt=Math.round((+amt||0)*100)/100;
+  const FV=firebase.firestore.FieldValue,u={run:null};
+  for(const x of taken)u["list."+x.id]=FV.delete();
+  for(const [k,v] of Object.entries(freqPatch(taken)))u["freq."+k]=v;
+  const ord=learnOrder(taken);if(ord)u.order=ord;
+  if(amt>0)u.spent=FV.arrayUnion({at:now,amt,by:myId,n:taken.length,...(evId?{ev:evId}:{})});
+  if(!await shopUpdate(u))return null;
+  const ev=evId&&events.get(evId);
+  if(ev&&!quiet){try{await db.doc("events/"+ev.id).update({shopDone:true,...(amt>0?{paid:amt}:{}),updatedBy:myId,updatedAt:now});}catch(_){}}
+  if(!quiet&&otherId()&&taken.length)pushOther("Courses terminées",firstName(myId)+" a fini les courses : "+taken.length+" article"+(taken.length>1?"s":"")+" pris"+(amt>0?", "+euro(amt):"")+(left.length?". "+left.length+" reste"+(left.length>1?"nt":"")+" sur la liste.":"."),"shop",null,"./?shop=1");
+  return {taken,left,ord};
+}
+// Des articles pris, mais personne n'a touché « J'ai fini » : six heures après, on termine sans rien demander
+let autoFinAt=0;
+function autoFinishShop(){
+  if(firstSnap||!myId||shopRun()||Date.now()-autoFinAt<60000)return;
+  const taken=basket().filter(x=>x.done);if(!taken.length)return;
+  if(taken.some(x=>+x.ta&&Date.now()-x.ta<6*3600000))return;
+  autoFinAt=Date.now();finishShop(0,null,{quiet:true});
+}
+// Avant le panier unique : la liste « À racheter » et une liste par évènement. Tout rejoint le panier.
+let shopMig=false,shopMigAgain=false;
+async function migrateShop(raw){
+  if(shopMig){shopMigAgain=true;return;}
+  if(firstSnap||!myId||!coupleId||!raw)return;
+  const hasLegacy=Array.isArray(raw.items),legacy=hasLegacy?raw.items.filter(x=>x&&x.t&&!x.done):[];
+  const evs=[...events.values()].filter(e=>isShopping(e)&&!e.shopDone&&Array.isArray(e.items)&&e.items.some(x=>x&&x.t&&!x.done));
+  const rekey=!!(raw.freq&&typeof raw.freq==="object"&&raw.mig!==2);
+  if(!hasLegacy&&!evs.length&&!rekey)return;
+  shopMig=true;
+  try{
+    const L=shopList.list||{},u={},now=Date.now(),FV=firebase.firestore.FieldValue;
+    for(const x of [...legacy,...evs.flatMap(e=>e.items.filter(y=>y&&y.t&&!y.done))]){const id=itemId(x.t);if((L[id]&&L[id].t&&!L[id].done)||u["list."+id])continue;
+      u["list."+id]={t:String(x.t).slice(0,60),q:String(x.q||"").slice(0,16),p:x.p!=null&&isFinite(+x.p)?+x.p:null,a:aisleOf(x.t),by:x.by||myId,at:+x.at||now,done:false,tb:null,ta:null};}
+    if(hasLegacy)u.items=FV.delete();
+    if(rekey){const F={};for(const f of Object.values(raw.freq))if(f&&f.t){const id=itemId(f.t),o=F[id];
+        F[id]=o?{...o,n:(+o.n||0)+(+f.n||0),last:Math.max(+o.last||0,+f.last||0)}:{t:f.t,a:f.a||aisleOf(f.t),n:+f.n||0,last:+f.last||0,h:Array.isArray(f.h)?f.h:[]};}
+      u.freq=F;u.mig=2;}
+    if(Object.keys(u).length){if(Object.keys(raw).length)await db.doc("config/shop").update(u);
+      else{const list={};for(const [k,v] of Object.entries(u))if(k.startsWith("list."))list[k.slice(5)]=v;await db.doc("config/shop").set({list,mig:2},{merge:true});}}
+    for(const e of evs)await db.doc("events/"+e.id).update({items:FV.delete()});
+  }catch(_){}finally{shopMig=false;if(shopMigAgain){shopMigAgain=false;setTimeout(()=>migrateShop(shopRaw),80);}}
+}
+// Ce que l'autre vient de faire dans la liste, en clair
+function shopNews(prev,cur,snap){
+  if(shopFirst){shopFirst=false;return;}
+  if(!myId||(snap&&snap.metadata&&snap.metadata.hasPendingWrites))return;
+  const who=cur.updatedBy;if(!who||who===myId)return;
+  const name=firstName(who),A=prev.list||{},B=cur.list||{};
+  const live=x=>x&&x.t&&!x.done;
+  const added=Object.entries(B).filter(([id,x])=>live(x)&&!live(A[id])).map(([,x])=>x.t);
+  const took=Object.entries(B).filter(([id,x])=>x&&x.t&&x.done&&live(A[id])).map(([,x])=>x.t);
+  const r=cur.run&&+cur.run.until>Date.now()?cur.run:null,r0=prev.run;
+  const few=l=>"« "+l.slice(0,3).join(", ")+" »"+(l.length>3?" et "+(l.length-3)+" autre"+(l.length>4?"s":""):"");
+  if(r&&r.by===who&&!(r0&&r0.at===r.at)){toast(name+" part faire les courses");return;}
+  if(r0&&r0.by===who&&+r0.until>Date.now()&&!cur.run&&Object.keys(B).length<Object.keys(A).length){toast(name+" a fini les courses");return;}
+  if(took.length){toast(name+" a pris "+few(took));return;}
+  if(!added.length)return;
+  const run=shopRun();
+  if(run&&run.by===myId){
+    if(shopRefresh)toast("À prendre aussi : "+added.slice(0,3).join(", ")+" (ajouté par "+name+")");
+    else inNote("À prendre aussi : "+added.slice(0,3).join(", "),"Ajouté par "+name+". Touche pour ouvrir la liste.",()=>openShop(),12000);
+    try{if(navigator.vibrate)navigator.vibrate([60,40,60]);}catch(_){}
+  }else toast(name+" a ajouté "+few(added)+" à la liste");
+}
+// « Il en manque ? » : ce que vous achetez régulièrement et qui n'a pas été racheté depuis un moment
+function purchaseLog(){
+  const M=new Map(),put=(t,ts,a)=>{if(!t||!(+ts>0))return;const k=itemId(t);let o=M.get(k);if(!o){o={t,a:a||aisleOf(t),h:[]};M.set(k,o);}o.h.push(+ts);};
+  for(const f of Object.values(shopList.freq||{}))if(f&&f.t){const h=Array.isArray(f.h)?f.h:[];if(h.length)h.forEach(ts=>put(f.t,ts,f.a));else put(f.t,f.last,f.a);}
+  // les listes des courses passées (avant le panier unique) comptent aussi
+  for(const e of events.values())if(isShopping(e)&&Array.isArray(e.items))for(const x of e.items)if(x&&x.t&&x.done)put(x.t,+x.ta||+x.at||startOf(e).getTime(),x.a);
+  for(const o of M.values()){const s=o.h.sort((a,b)=>a-b),d=[];for(const ts of s)if(!d.length||ts-d[d.length-1]>12*3600000)d.push(ts);o.h=d;}
+  return M;}
+function everyText(iv){const d=iv/864e5;return d<2.5?"tous les 2 jours":d<5?"tous les 3 ou 4 jours":d<10?"chaque semaine":d<18?"toutes les 2 semaines":d<26?"toutes les 3 semaines":d<45?"chaque mois":"tous les 2 mois";}
+function dueItems(){
+  const now=Date.now(),have=new Set(basket().map(x=>x.id)),F=shopList.freq||{},out=[];
+  for(const [k,o] of purchaseLog()){
+    if(have.has(k)||o.h.length<2||SHOP_AISLE_IDS.has(o.a))continue;
+    const d=[];for(let i=1;i<o.h.length;i++)d.push(o.h[i]-o.h[i-1]);d.sort((a,b)=>a-b);
+    const iv=d[(d.length-1)>>1];if(iv<1.5*864e5||iv>62*864e5)continue;
+    const last=o.h[o.h.length-1],since=now-last,skip=+(F[k]&&F[k].skip)||0;
+    if(skip>last&&now-skip<iv*0.6)continue;            // « pas besoin » : on n'en reparle pas tout de suite
+    if(since>=iv*0.9&&since<iv*4)out.push({id:k,t:o.t,a:o.a,iv,r:since/iv});}
+  return out.sort((a,b)=>b.r-a.r).slice(0,4);}
 const SHOP_STARTERS=["Lait","Pain","Œufs","Beurre","Bananes","Pâtes","Tomates","Papier toilette","Eau","Café"];
-function shopSuggestions(cur,kind){
-  if(kind==="shop")return [];
-  const have=new Set(cur.filter(x=>!x.done).map(x=>norm(x.t)));
-  const f=Object.values(shopList.freq||{}).filter(x=>x&&x.t).sort((a,b)=>(b.n-a.n)||((b.last||0)-(a.last||0))).map(x=>x.t);
-  const out=[];for(const t of [...f,...SHOP_STARTERS]){if(!have.has(norm(t))&&!out.some(o=>norm(o)===norm(t)))out.push(t);if(out.length>=8)break;}
+function shopSuggestions(skip){
+  const have=new Set([...basket().map(x=>x.id),...(skip||[])]);
+  const f=Object.values(shopList.freq||{}).filter(x=>x&&x.t&&(+x.n||0)>0&&!SHOP_AISLE_IDS.has(x.a||aisleOf(x.t))).sort((a,b)=>(b.n-a.n)||((b.last||0)-(a.last||0))).map(x=>x.t);
+  const out=[];for(const t of [...f,...SHOP_STARTERS]){const id=itemId(t);if(!have.has(id)&&!out.some(o=>itemId(o)===id))out.push(t);if(out.length>=8)break;}
   return out;}
 // « ajoute du lait et des œufs », « il faut racheter du PQ », « mets des pâtes sur la liste »
 function shopIntent(text,p){
   const n=norm(text);
   const lead=/^(ajoute|rajoute|mets|note|ecris|il faut (re)?acheter|il faut racheter|il faudrait (re)?acheter|on n'a plus( de| d')?|y a plus( de| d')?|il n'y a plus( de| d')?|plus de|acheter|achete|racheter|rachete|penser a acheter|pense a acheter)\b/;
-  const listy=/\b(a|sur|dans) (la|ma|notre) liste\b|\bliste de courses\b|\bliste\b|\ba racheter\b|\baux courses\b|\bpour les courses\b/;
+  const listy=/\b(a|sur|dans) (la|ma|notre) liste\b|\bliste de courses\b|\bliste\b|\ba racheter\b|\baux courses\b|\bpour les courses\b|\bau panier\b|\bdans le panier\b/;
   const noWhen=!p||(p.assumed&&p.assumed.date&&p.assumed.time);
   if(!(lead.test(n)&&(listy.test(n)||noWhen)))return null;
   let s=String(text).replace(/^\s*(ajoute|rajoute|mets|note|écris|ecris|il faut (re)?acheter|il faut racheter|il faudrait (re)?acheter|on n'a plus|on n’a plus|y a plus|il n'y a plus|il n’y a plus|plus|acheter|achète|achete|racheter|rachète|rachete|pense[rz]? à acheter|pense[rz]? a acheter)\s*/i,"");
-  s=s.replace(/\s*(à|a|sur|dans|pour)\s+(la|ma|notre|les)\s+(liste( de courses| des courses| de shopping)?|courses)\s*$/i,"").replace(/\s*(à racheter|aux courses)\s*$/i,"");
-  const items=splitShop(s,"food");
+  s=s.replace(/\s*(à|a|sur|dans|pour|au)\s+(la|ma|notre|les|le)\s+(liste( de courses| des courses| de shopping)?|courses|panier)\s*$/i,"").replace(/\s*(à racheter|aux courses)\s*$/i,"");
+  const items=splitShop(s);
   if(!items.length)return null;
   // sans mot « liste », il faut au moins un produit reconnu, pour ne pas confondre avec un rendez-vous
   if(!listy.test(n)&&!items.some(x=>x.a!=="autre"))return null;
   return s;
 }
+// Les tickets de caisse du mois
+function monthSpent(y,m){let t=0,n=0;for(const s of shopList.spent||[]){const d=new Date(+s.at);if(d.getFullYear()===y&&d.getMonth()===m){t+=+s.amt||0;n++;}}return {t:Math.round(t*100)/100,n};}
+// « Envoyer la liste » : un texte prêt à coller dans un message, rangé par rayon
+function shopText(){
+  const left=toBuy();if(!left.length)return "";
+  const groups=new Map();for(const x of left){const a=aisleIdOf(x);if(!groups.has(a))groups.set(a,[]);groups.get(a).push(x);}
+  const out=["Liste de courses ("+left.length+")"];
+  for(const id of shopOrder()){const g=groups.get(id);if(!g)continue;out.push("",aisleInfo(id).n);for(const x of g)out.push("• "+x.t+(x.q?" ("+qText(x.q)+")":""));}
+  return out.join("\n");}
+async function sendShopList(){
+  const t=shopText();if(!t){toast("La liste est vide.");return;}
+  if(navigator.share){try{await navigator.share({text:t});return;}catch(e){if(e&&e.name==="AbortError")return;}}
+  try{await navigator.clipboard.writeText(t);toast("Liste copiée : colle-la dans un message.");}catch(_){toast("Copie impossible sur ce téléphone.");}
+}
 
-// Petit badge sur les cartes : panier + « 3/8 »
+/* ---------- Une recette collée (ou le lien de sa page) : ses ingrédients sur la liste ---------- */
+const RC_FRAC=[["½",".5","1/2"],["¼",".25","1/4"],["¾",".75","3/4"],["⅓",".33","1/3"],["⅔",".67","2/3"],["⅛",".125","1/8"]];
+const RC_NUMW={une:1,un:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,douze:12};
+// au magasin, « 2 c. à soupe d'huile » ou « 1 gousse d'ail » ne disent pas combien acheter : on garde le produit seul
+const RC_SPOON="c\\.?\\s?(?:à|a)\\.?\\s?(?:s|c|soupe|caf[ée])\\.?|cuill?(?:[eè]re)?s?\\.?(?:\\s(?:à|a)\\s(?:soupe|caf[ée]))?|c[àa]s|c[àa]c|cs|cc";
+const RC_KITCHEN="pinc[ée]es?|gousses?|brins?|branches?|feuilles?|zestes?|noix|noisettes?|poign[ée]es?|pointes?|doses?|verres?|tasses?|bols?|rondelles?|morceaux|morceau|carr[ée]s?|tiges?|bouquets?|bottes?|t[êe]tes?|bouts?|soup[çc]ons?|filets?|traits?|gouttes?";
+const RC_UNIT="kg|kilos?|grammes?|gr|g|mg|litres?|l|cl|dl|ml|sachets?|paquets?|bo[iî]tes?|pots?|briques?|bouteilles?|barquettes?|tranches?|cubes?|tablettes?|plaquettes?|rouleaux|rouleau|pi[eè]ces?|boules?|blocs?|packs?|bocaux|bocal|conserves?|bo[iî]tes? de conserve";
+const RC_NUM=/^(?:(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?(?:\s*(?:-|à|a|ou)\s*\d+(?:[.,]\d+)?)?)\s*|(une|un|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|douze|quelques|plusieurs)\s+)/i;
+const RC_U=new RegExp("^(?:("+RC_UNIT+")|("+RC_SPOON+")|("+RC_KITCHEN+"))(?=[\\s.,;)]|$|d['’])\\.?\\s*","i");
+const RC_HEAD=/^\s*(?:les\s+)?ingr[ée]dients?\b/i;
+const RC_STOP=/^\s*(?:pr[ée]paration|[ée]tapes?|instructions?|r[ée]alisation|m[ée]thode|d[ée]roul[ée]|ustensiles?|mat[ée]riel|la recette|recette\s*:|comment (?:faire|pr[ée]parer)|[ée]tape\s*\d|bon app[ée]tit|astuces?|conseils?|nos conseils|notes?\s*:|cuisson\s*:?\s*$)/i;
+const RC_STEP=/^(?:\d+\s*[.)-]\s*)?(?:pr[ée]chauff|fai(?:re|tes)\s|m[ée]lang|ajout|vers|coup|[ée]minc|[ée]pluch|lav|cui(?:re|sez|t)|laiss|met(?:s|tre|tez)?\s|enfourn|serv|incorpor|fouett|batt|r[ée]part|dispos|[ée]tal|beurr(?:er|ez)|sal(?:er|ez)|poivr(?:er|ez)|chauff|port(?:er|ez)|[ée]goutt|retir|r[ée]serv|dans (?:un|une|le|la)\s|pendant|une fois|quand|lorsque|d[ée]coup|p[ée]tr|fa[çc]onn|abaiss|roul(?:er|ez)|pli(?:er|ez)|piqu(?:er|ez)|garni(?:r|ssez)|napp|parsem|arros|d[ée]moul|r[ée]frig|congel|sortir|sortez|placer|placez|recouvr|couvr|remu|tourn|faire revenir|faites revenir|rincer|rincez|assaisonn|go[uû]ter|go[uû]tez|d[ée]guster|d[ée]gustez|bon app)/i;
+const RC_SUB=/^(?:pour\s+(?:la|le|les|l['’]|un|une|des)\s*\S+(?:\s+\S+)?|garnitures?|sauces?|p[âa]tes?|marinades?|d[ée]cor(?:ation)?s?|gla[çc]ages?|cr[èe]mes?|dressage|accompagnements?|vinaigrettes?|farces?|bases?|biscuits?|ganaches?|toppings?|streusel|crumble|appareil|chantilly|caramel|sirop|coulis|fond|montage|finition)\s*:?\s*$/i;
+const RC_SERV=/^(?:pour\s+)?\d+(?:\s*(?:à|-)\s*\d+)?\s*(?:personnes?|parts?|portions?|pers\.?|couverts?|verrines?|cookies?|muffins?)\b|^(?:portions?|parts?|quantit[ée]s?|nombre de personnes)\b/i;
+const RC_DESC=/^(?:finement|grossi[eè]rement|tr[eè]s|bien|[ée]minc|hach|coup|taill|r[âa]p|pel[ée]|fondu|ramolli|mou(?:\s|$)|molle|battu|[ée]cras|press|[ée]goutt|rinc|cuit|cru(?:e|es|s)?(?:\s|$)|ti[eè]de|froid|chaud|en\s|[àa]\s|selon|au\s|aux\s|facultati|optionnel|pour\s|sans\s|environ|soit\s|bio(?:\s|$)|de pr[ée]f[ée]rence|si\s|type\s|taille|gros(?:se)?s?\s|petite?s?\s|moyen|m[uû]r|lav[ée]|[ée]pluch|d[ée]noyaut|[ée]queut|zest[ée]|surgel|frais(?:\s|$)|fra[iî]che|en conserve|non trait|de saison|de bonne|qualit|voire\s|plus\s|\d+\s*%|qs|q\.s|ramen|d[ée]coup|d[ée]tach|[ée]gren|press[ée]|sec(?:s|he|hes)?(?:\s|$)|moulu|entier|entiers|enti[eè]re)/i;
+const RC_STAPLE=/^(?:sel|gros sel|sel fin|fleur de sel|sel de guerande|poivre|poivre noir|poivre blanc|poivre du moulin|eau|eau froide|eau chaude|eau tiede|eau bouillante|glacons?|huile|huile d'olive|huile neutre|huile de tournesol|huile vegetale|huile de colza|huile de friture)$/;
+const RC_MEAT=/\b(?:viande|boeuf|bœuf|steak|porc|veau|agneau|poulet|dinde|chair|jambon)\b/i;
+function rcCap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+function rcNumTxt(n){n=String(n||"").trim().toLowerCase();if(!n)return "";if(n in RC_NUMW)return RC_NUMW[n]>1?String(RC_NUMW[n]):"";if(/^(quelques|plusieurs)$/.test(n))return "";n=n.replace(/\s+/g," ").replace(/\./g,",");return n==="1"?"":n;}
+function rcUnitTxt(u){u=String(u||"").toLowerCase().replace(/\.$/,"");if(/^(grammes?|gr)$/.test(u))return "g";if(/^kilos?$/.test(u))return "kg";if(/^litres?$/.test(u))return "l";return u;}
+// le nom du produit, sans ce qui décrit la préparation (« 1 oignon émincé » → « Oignon »)
+function rcName(s){
+  s=String(s||"").replace(/\([^)]*\)?/g," ").replace(/\[[^\]]*\]/g," ").replace(/\s*\+.*$/,"").replace(/\s+/g," ").trim();
+  s=s.replace(/^(?:de\s+|d['’]\s*|des\s+|du\s+|la\s+|le\s+|les\s+|l['’]\s*)+/i,"");
+  // « 1 boîte de 400 g de tomates » : la deuxième quantité ne sert à rien
+  s=s.replace(/^\d+(?:[.,]\d+)?\s*(?:kg|g|gr|cl|ml|l|dl)\.?\s+(?:de\s+|d['’]\s*)/i,"");
+  // le jus ou le zeste d'un citron, les jaunes d'œufs : on achète le citron, les œufs
+  s=s.replace(/^(?:jus|z[eè]stes?|z[eê]ste|blancs?|jaunes?)\s+(?:de\s+|d['’]\s*)(?:(?:\d+|une|un|deux|trois|quatre)\s+)?(?=(?:œufs?|oeufs?|citrons?|oranges?|pamplemousses?|limes?|clementines?|clémentines?|mandarines?)\b)/i,"");
+  if(!RC_MEAT.test(s))s=s.replace(/\s+(?:finement\s+|grossi[eè]rement\s+)?(?:hach[ée]e?s?|[ée]minc[ée]e?s?)(?=[\s,.;:]|$).*$/i,"");
+  s=s.replace(/\s+(?:finement\s+|grossi[eè]rement\s+|tr[eè]s\s+|bien\s+)?(?:fondue?s?|ramollie?s?|molle?s?|mou|battue?s?|[ée]cras[ée]e?s?|[ée]goutt[ée]e?s?|rinc[ée]e?s?|ti[eè]des?|froide?s?|chaude?s?|coup[ée]e?s?|taill[ée]e?s?|d[ée]coup[ée]e?s?|en (?:d[ée]s|morceaux|rondelles|lamelles|cubes|tranches|quartiers|b[âa]tonnets|julienne|brunoise|fines?|petits|deux|quatre|pur[ée]e|copeaux|poudre fine)|[àa] temp[ée]rature ambiante|selon (?:vos |votre |le |les )?go[uû]ts?|au go[uû]t|facultati(?:f|fs|ve|ves)|optionnel(?:le)?s?|pour (?:la|le|les|l['’]|servir|d[ée]corer|beurrer|graisser|fariner|le moule|la plaque).*|bien m[uû]re?s?|m[uû]re?s?|press[ée]e?s?|lav[ée]e?s?|[ée]queut[ée]e?s?|d[ée]noyaut[ée]e?s?|[ée]pluch[ée]e?s?|non trait[ée]e?s?|de bonne qualit[ée]|de saison|bio)(?=[\s,.;:]|$).*$/i,"");
+  // « 2 gros oignons » → oignons (mais « petits pois », « gros sel » restent)
+  s=s.replace(/^(?:gros(?:ses?)?|petite?s?|moyen(?:ne)?s?|grande?s?|beaux|belles?|bonne?s?)\s+(?!pois\b|suisses?\b|sel\b|pains?\b|beurres?\b|sal[ée]s?\b|lu\b|fours?\b|[ée]peautre\b)/i,"");
+  s=s.replace(/^(?:de\s+|d['’]\s*|des\s+|du\s+)/i,"").replace(/\s+(?:de|d['’]|du|des|à|a|et|ou|en|au)\s*$/i,"").replace(/[\s.:;,*]+$/,"").replace(/^[\s.:;,*-]+/,"").trim();
+  return s;
+}
+// Une partie de ligne (« 200 g de farine ») → {t:"Farine", q:"200 g"}
+function rcPart(p){
+  let s=String(p||"").replace(/^[\s•·\-–—*▢☐□▪◦○●✓✔→>+]+/,"").replace(/\s+/g," ").trim();
+  if(!s||!/[a-zà-ÿœ]/i.test(s))return null;
+  let n="",u="",unit="",kitchen=false,m;
+  // « Farine : 200 g », « Farine 200 g »
+  if((m=s.match(/^([^:\d]{2,40}?)\s*(?::|\s[-–—])\s*(\d[\d.,/]*)\s*([a-zàâçéèêëîïôûù.]*)\s*$/i))){s=m[1];n=m[2];u=m[3];}
+  else if((m=s.match(/^(.{2,40}?)\s+(\d[\d.,]*)\s*(kg|g|gr|grammes?|l|cl|ml|dl|litres?)\.?$/i))){s=m[1];n=m[2];u=m[3];}
+  else{
+    s=s.replace(/^(?:le |la |les |l['’])?(?:jus|z[eè]stes?|z[eê]ste)\s+(?:de\s+|d['’]\s*)(?:(?:\d+|une|un|deux|trois|quatre)\s+)?/i,"");
+    if((m=s.match(/^(?:un peu|quelques gouttes|un soup[çc]on|un nuage|une larme)\s+(?=de\s|d['’])/i))){kitchen=true;s=s.slice(m[0].length);}
+    if((m=s.match(RC_NUM))){n=m[1]||m[2]||"";s=s.slice(m[0].length);
+      const um=s.match(RC_U);
+      if(um){const rest=s.slice(um[0].length);
+        if(um[1]){unit=um[1];s=rest;}
+        else if(um[2]){kitchen=true;s=rest;}
+        // « 1 bouquet garni » : sans « de », ce n'était pas une mesure
+        else if(/^(?:de\s|d['’]|des\s|du\s)/i.test(rest)){kitchen=true;s=rest;}}}
+  }
+  const t=rcName(s);
+  if(!t||t.length<2||!/[a-zà-ÿœ]/i.test(t)||t.length>48||t.split(" ").length>7)return null;
+  let q="";
+  if(!kitchen){const nt=rcNumTxt(n),ut=/^pi[eè]ces?$/i.test(u||unit)?"":rcUnitTxt(u||unit);q=nt&&ut?nt+" "+ut:(ut&&!nt&&/^\d/.test(n)?n+" "+ut:nt);
+    if(!nt&&ut&&n==="1")q="1 "+ut;}
+  return {t:rcCap(t),q:q.slice(0,16)};
+}
+// Une ligne peut contenir plusieurs ingrédients : « sel, poivre », « sel et poivre »
+function rcLine(line){
+  let s=String(line||"");
+  for(const [k,v,f] of RC_FRAC)s=s.replace(new RegExp("(\\d)\\s*"+k,"g"),(x,d)=>String(+d+ +v)).replace(new RegExp(k,"g")," "+f+" ");
+  s=s.replace(/\([^)]*\)?/g," ").replace(/(\d),(\d)/g,"$1.$2");
+  const parts=[];
+  for(let seg of s.split(/\s*[;,]\s*/)){
+    seg=seg.trim();if(!seg)continue;
+    if(parts.length&&RC_DESC.test(seg))continue;          // « 1 oignon, émincé »
+    seg=seg.split(/\s+ou\s+/i)[0];                         // « beurre ou margarine »
+    const et=seg.match(/^(.+?)\s+et\s+(.+)$/i);
+    if(et){const L=et[1].split(" ").length,R=et[2].split(" ").length;
+      if((L<=3&&R<=3&&!RC_DESC.test(et[2]))||RC_NUM.test(et[2])){parts.push(et[1],et[2]);continue;}}
+    parts.push(seg);
+  }
+  return parts.map(rcPart).filter(Boolean);
+}
+function rcLines(text){return String(text||"").replace(/\r/g,"").replace(/[  ]/g," ").split("\n").map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean);}
+// Le texte ressemble-t-il à une recette ? (titre « Ingrédients », ou plusieurs « 200 g de… » de produits connus)
+function looksLikeRecipe(text){
+  const L=rcLines(text);if(L.some(l=>RC_HEAD.test(l))&&L.length>=3)return true;
+  if(/\b\d{1,2}\s*h(?:\s*\d{2})?\b|\b\d{1,2}:\d{2}\b/i.test(text))return false;   // des heures : plutôt un programme
+  const its=(L.length<=2?L.join(", ").replace(/^[^:,]{0,60}:/,"").split(/[,;]/):L).map(l=>l.replace(/^[\s•·\-–—*▢☐□▪◦○●]+/,"").trim()).filter(Boolean);
+  if(its.length<3)return false;
+  const q=its.filter(l=>RC_NUM.test(l)&&l.length<70).length;
+  const food=its.filter(l=>{const r=rcLine(l)[0];return r&&aisleOf(r.t)!=="autre";}).length;
+  return q>=2&&q>=its.length*0.4&&food>=Math.max(2,its.length*0.5);
+}
+// Sûrement une recette : son lien, ou un texte avec un titre « Ingrédients »
+function strongRecipe(t){const L=rcLines(t);return !!recipeUrlOf(t)||(L.length>=3&&L.some(l=>RC_HEAD.test(l)));}
+// Une liste de produits collée (« lait, pain, œufs » ou une ligne par produit) : directement dans le panier
+function listLike(text){
+  const L=rcLines(text);if(/\b\d{1,2}\s*h(?:\s*\d{2})?\b|\b\d{1,2}:\d{2}\b|https?:/i.test(text))return null;
+  const its=(L.length===1?L[0].split(/\s*[,;]\s*/):L).map(l=>l.replace(/^[\s•·\-–—*▢☐□▪◦○●✓]+/,"").trim()).filter(Boolean);
+  if(its.length<(L.length===1?3:2)||its.some(l=>l.split(" ").length>5))return null;
+  const known=its.filter(l=>{const r=rcLine(l)[0];return r&&aisleOf(r.t)!=="autre";}).length;
+  return known>=its.length*0.7?its.join(", "):null;
+}
+const RECIPE_HOST=/(?:^|\.)(?:marmiton\.org|750g\.com|cuisineaz\.com|ptitchef\.com|chefsimon\.com|jow\.fr|hellofresh\.(?:fr|com|be|ch)|allrecipes\.(?:com|fr)|bbcgoodfood\.com|ricardocuisine\.com|papillesetpupilles\.fr|cookomix\.com|cuisine-libre\.org|giallozafferano\.(?:it|fr)|cuisineactuelle\.fr|odelices\.ouest-france\.fr|recettes\.qc\.ca|lesfoodies\.com|meilleurduchef\.com|atelierdeschefs\.fr|regal\.fr|journaldesfemmes\.fr|undejeunerdesoleil\.com|chefclub\.tv|quitoque\.fr|ricette\.giallozafferano\.it)$/i;
+// Le lien d'une page de recette (pas un lien Plans ou Google Maps)
+function recipeUrlOf(text){
+  const m=String(text||"").match(/https?:\/\/[^\s<>"]+/);if(!m)return "";
+  let u;try{u=new URL(m[0]);}catch(_){return "";}
+  const h=u.hostname.replace(/^www\./,"");
+  if(/(^|\.)maps\.apple\.com$|^maps\.apple$|google\.[a-z.]+$|goo\.gl$|waze\.com$/.test(h)&&!/recette|recipe/i.test(u.pathname))return "";
+  return RECIPE_HOST.test(h)||/\/(?:recettes?|recipes?|recette-|recipe-)|recette[s_-]|_recette|\/cuisine\/.+/i.test(u.pathname)?m[0]:"";
+}
+// Les ingrédients d'une recette collée ; « list » : une ligne = un ingrédient (lu sur la page de la recette)
+function recipeIngredients(text,list){
+  const L=rcLines(text);
+  let lines=L,section=!!list;
+  if(!list){
+    const h=L.findIndex(l=>RC_HEAD.test(l));
+    if(h>=0){section=true;const after=L[h].replace(RC_HEAD,"").replace(/^[^:]*:\s*/,"").trim();
+      lines=[];if(after&&/[,;]/.test(after))lines.push(after);
+      for(const l of L.slice(h+1)){if(RC_STOP.test(l))break;lines.push(l);}}
+    else if(L.length<=2){const j=L.join(", ");lines=[j.includes(":")&&/[,;]/.test(j.split(":").slice(1).join(":"))?j.split(":").slice(1).join(":"):j];section=true;}
+  }
+  const out=[],seen=new Set();
+  for(let l of lines){
+    l=l.replace(/^[\s•·\-–—*▢☐□▪◦○●✓✔→>]+/,"").trim();
+    if(!l||RC_SUB.test(l)||RC_SERV.test(l)||/:\s*$/.test(l)||/^\d+\s*$/.test(l))continue;
+    if((RC_STEP.test(l)&&l.length>25&&!RC_NUM.test(l))||l.length>(section?120:70)||/[.!?]\s+[A-ZÀ-Ý]/.test(l))continue;
+    // sans titre « Ingrédients », seules les lignes courtes ou avec une quantité comptent
+    if(!section&&!RC_NUM.test(l)&&l.split(" ").length>4)continue;
+    for(const it of rcLine(l)){const k=itemId(it.t);if(seen.has(k))continue;seen.add(k);
+      out.push({...it,a:aisleOf(it.t),staple:RC_STAPLE.test(norm(it.t).replace(/œ/g,"oe"))});}
+  }
+  return out.slice(0,40);
+}
+// Le nom de la recette : la première ligne, si elle ressemble à un titre (et n'est pas elle-même un ingrédient)
+function recipeTitle(text,items){const l=(rcLines(text)[0]||"").replace(/^[\s•·\-–—*▢☐□▪◦○●]+/,"");
+  return l.length>2&&l.length<60&&!RC_HEAD.test(l)&&!RC_NUM.test(l)&&!/https?:|[!?]/.test(l)&&!/:$/.test(l)&&!(items||[]).some(x=>itemId(x.t)===itemId(l))?l:"";}
+
+// Petit badge sur les cartes : panier + « 5 à prendre »
 const CART_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.3 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>';
 const BAG_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20.5z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></svg>';
+const BOOK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 11.5h5"/></svg>';
+const TICK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+// les articles d'un shopping (vêtements…) d'abord, quand on ouvre la liste depuis un shopping
+function shopFirstIds(ev){return ev&&shopKind(ev)==="shop"?new Set(SHOP_AISLES.map(a=>a.id)):null;}
 function shopPill(ev,cls){
-  const it=itemsOf(ev),d=it.filter(x=>x.done).length;
-  const label=it.length?d+"/"+it.length:"Liste";
-  return el("button",{type:"button",class:"shop-pill"+(cls?" "+cls:"")+(it.length&&d===it.length?" full":""),"aria-label":"Ouvrir la liste ("+(it.length?d+" sur "+it.length:"vide")+")",
-    onclick:e=>{e.stopPropagation();openShop(ev.id);}},el("span",{html:shopKind(ev)==="shop"?BAG_SVG:CART_SVG}),el("b",{class:"num"},label),
-    it.length?el("i",{class:"sp-bar"},el("u",{style:"width:"+Math.round(d/it.length*100)+"%"})):null,
-    // les articles qui restent à prendre, à la suite du compteur
-    it.length?el("em",{class:"sp-names"},d===it.length?"Tout est dans le panier":it.filter(x=>!x.done).slice(0,8).map(x=>x.t+(x.q&&/^\d+$/.test(x.q)?" ×"+x.q:"")).join(" · ")):el("em",{class:"sp-names"},"Préparer la liste"));
+  const open=e=>{e.stopPropagation();openShop(ev.id);};
+  if(ev.shopDone){const left=toBuy().length;
+    return el("button",{type:"button",class:"shop-pill full"+(cls?" "+cls:""),"aria-label":"Courses faites. Ouvrir la liste",onclick:open},el("span",{html:TICK_SVG}),el("b",{},"Courses faites"),
+      el("em",{class:"sp-names num"},+ev.paid>0?euro(+ev.paid):(left?left+" sur la liste pour la prochaine fois":"")));}
+  const all=basket(),left=all.filter(x=>!x.done),d=all.length-left.length,pre=shopFirstIds(ev),run=shopRun();
+  const names=(pre?[...left.filter(x=>pre.has(x.a)),...left.filter(x=>!pre.has(x.a))]:left).slice(0,8).map(x=>x.t+(x.q&&/^\d+$/.test(x.q)?" ×"+x.q:"")).join(" · ");
+  return el("button",{type:"button",class:"shop-pill"+(cls?" "+cls:""),"aria-label":"Ouvrir la liste de courses ("+(left.length?left.length+" à prendre":"vide")+")",onclick:open},
+    el("span",{html:shopKind(ev)==="shop"?BAG_SVG:CART_SVG}),el("b",{class:"num"},left.length?left.length+" à prendre":"Liste"),
+    run&&all.length?el("i",{class:"sp-bar"},el("u",{style:"width:"+Math.round(d/all.length*100)+"%"})):null,
+    el("em",{class:"sp-names"},left.length?names:"Préparer la liste"));
 }
 // Aperçu dans la carte ouverte
 function shopBlock(ev){
-  const items=itemsOf(ev),done=items.filter(x=>x.done).length,kind=shopKind(ev);
-  const box=el("div",{class:"shop"});
-  const left=items.filter(x=>!x.done);
-  box.append(el("div",{class:"shop-h"},el("span",{class:"lab"},kind==="shop"?"Liste de shopping":"Liste de courses"),el("span",{class:"note num"},items.length?done+" sur "+items.length+" dans le panier":"Vide pour l'instant")));
-  if(left.length)box.append(el("div",{class:"shop-peek"},...left.slice(0,6).map(x=>el("span",{style:"--a:"+aisleInfo(x.a,kind).c},x.t+(x.q?" ×"+x.q.replace(/^(\d+)$/,"$1"):""))),left.length>6?el("span",{class:"more"},"+"+(left.length-6)):null));
-  box.append(el("button",{type:"button",class:"btn primary shop-open",onclick:()=>openShop(ev.id),html:(kind==="shop"?BAG_SVG:CART_SVG)+"<span>"+(items.length?"Ouvrir la liste":"Préparer la liste")+"</span>"}));
-  return box;
+  const left=toBuy(),box=el("div",{class:"shop"}),run=shopRun();
+  box.append(el("div",{class:"shop-h"},el("span",{class:"lab"},"Liste de courses"),el("span",{class:"note num"},ev.shopDone?"Courses faites"+(+ev.paid>0?" · "+euro(+ev.paid):""):(left.length?left.length+" article"+(left.length>1?"s":"")+" à prendre":"Vide pour l'instant"))));
+  if(left.length&&!ev.shopDone)box.append(el("div",{class:"shop-peek"},...left.slice(0,6).map(x=>el("span",{style:"--a:"+aisleInfo(aisleIdOf(x)).c},x.t+(x.q?" "+qText(x.q):""))),left.length>6?el("span",{class:"more"},"+"+(left.length-6)):null));
+  const row=el("div",{class:"shop-acts"},el("button",{type:"button",class:"btn primary shop-open",onclick:()=>openShop(ev.id),html:CART_SVG+"<span>"+(left.length?"Ouvrir la liste":"Préparer la liste")+"</span>"}));
+  if(!ev.shopDone&&!run&&left.length&&Math.abs(startOf(ev)-Date.now())<12*3600000)
+    row.append(el("button",{type:"button",class:"btn",onclick:async()=>{if(await startShopRun(ev.id))openShop(ev.id);}},"Je pars faire les courses"));
+  box.append(row);return box;
+}
+// Sur l'accueil, pendant les courses : pour celle ou celui qui fait les courses, et pour l'autre
+function shopRunCard(){
+  const r=shopRun();if(!r||!myId)return null;
+  const n=toBuy().length,mine=r.by===myId;
+  return el("div",{class:"cal-banner run-card"},el("span",{class:"rc-ic",html:CART_SVG}),
+    el("div",{class:"cal-txt"},el("strong",{},mine?"Tu fais les courses":firstName(r.by)+" fait les courses"),
+      el("span",{},mine?(n?n+" article"+(n>1?"s":"")+" à prendre":"Tout est dans le caddie"):"Il manque quelque chose ? Ce que tu ajoutes lui arrive tout de suite.")),
+    el("button",{type:"button",class:"btn primary",onclick:()=>openShop(r.ev&&events.get(r.ev)?r.ev:null,{focus:!mine})},mine?"Ouvrir la liste":"Ajouter"));
 }
 let wakeLock=null;
 async function keepAwake(on){try{if(on&&navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>{wakeLock=null;});}else if(!on&&wakeLock){await wakeLock.release();wakeLock=null;}}catch(_){wakeLock=null;}}
 const euro=v=>(Math.round(v*100)/100).toLocaleString("fr-FR",{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2})+" €";
 
-// La grande liste : « À racheter » ou la liste d'un évènement (mode magasin)
-function openShop(evId){
+// La liste (une seule), en mode magasin pendant les courses
+function openShop(evId,opts){
+  opts=opts||{};
   const root=$("#sheet-root");root.textContent="";
-  let sel=evId||null;
-  const seenIds=new Set();
-  const sheetBody=el("div",{class:"shop-sheet"}),topBox=el("div",{class:"shop-dyn"}),botBox=el("div",{class:"shop-dyn"});
+  if(evId&&!events.get(evId))evId=null;
+  let ending=false,rc=null;const seen=new Set();
+  const sheetBody=el("div",{class:"shop-sheet"}),topBox=el("div",{class:"shop-dyn"}),rcBox=el("div",{class:"shop-dyn"}),botBox=el("div",{class:"shop-dyn"}),footBox=el("div",{class:"sheet-foot shop-foot"});
   const input=el("input",{type:"text",class:"shop-in",placeholder:"Lait, 2 baguettes, œufs x12…","aria-label":"Ajouter des articles",enterkeyhint:"done",autocomplete:"off"});
   const micBtn=el("button",{type:"button",class:"shop-mic",html:MIC_SVG,"aria-label":"Dicter des articles"});
   const micHelp=el("div",{class:"mic-help",hidden:true});
-  const addNow=async()=>{const v=input.value.trim();if(!v)return;input.value="";const ev=sel?events.get(sel):null;
-    const add=splitShop(v,ev?shopKind(ev):"food");if(!add.length)return;
-    if(ev)await saveEvItems(ev,mergeShop(itemsOf(ev),add));else await savePending(mergeShop(pendingItems(),add));
-    if(otherId())pushShop(ev?"Liste : "+ev.title:"À racheter",firstName(myId)+" a ajouté "+add.map(x=>x.t).join(", ").slice(0,110));
-    input.focus();};
+  const amt=el("input",{type:"text",inputmode:"decimal",class:"shop-amt",placeholder:"Montant du ticket (facultatif)","aria-label":"Montant du ticket de caisse",autocomplete:"off"});
+  const linked=()=>{const r=shopRun(),id=evId||(r&&r.ev)||(todayShopEv()||{}).id;return id&&events.get(id)?id:null;};
+  const addNow=async()=>{const v=input.value.trim();if(!v)return;input.value="";
+    if(strongRecipe(v)){readRecipe(v);return;}
+    const add=splitShop(v);if(!add.length)return;await addItems(add);input.focus();};
   input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addNow();}});
+  // une recette (ou son lien) collée dans la saisie : on lit ses ingrédients ; une liste de produits : directement dans la liste
+  input.addEventListener("paste",e=>{const t=(e.clipboardData&&e.clipboardData.getData("text"))||"";if(!t)return;
+    if(strongRecipe(t)){e.preventDefault();readRecipe(t);return;}
+    const l=rcLines(t).length>1?listLike(t):null;if(l){e.preventDefault();addItems(splitShop(l));return;}
+    if(looksLikeRecipe(t)){e.preventDefault();readRecipe(t);}});
   micBtn.onclick=()=>startVoice(input,micBtn,micHelp,()=>{const t=input.value;const s=shopIntent(t,null)||t;input.value=s;addNow();});
   const addRow=el("div",{class:"shop-addrow"},input,micBtn,el("button",{type:"button",class:"btn primary shop-plus","aria-label":"Ajouter",onclick:addNow},"+"));
+  const tools=el("div",{class:"shop-tools"},el("button",{type:"button",class:"shop-tool",onclick:()=>pasteRecipe()},el("span",{html:BOOK_SVG}),"Ajouter une recette"));
+  // ---- la recette : texte collé, ou lien lu par le serveur Together
+  async function pasteRecipe(){let t="";
+    try{if(navigator.clipboard&&navigator.clipboard.readText)t=(await navigator.clipboard.readText())||"";}catch(_){}
+    if(t&&(looksLikeRecipe(t)||recipeUrlOf(t)||/^\s*https?:\/\/\S+\s*$/.test(t)))readRecipe(t);else{rc={state:"in",text:""};drawRc();}}
+  async function readRecipe(text){
+    text=String(text||"").trim();if(!text)return;
+    const url=recipeUrlOf(text)||(/^\s*https?:\/\/\S+\s*$/.test(text)?text:"");
+    let name="",items;
+    if(url&&text.replace(url,"").trim().length<80){
+      rc={state:"busy"};drawRc();
+      try{await ensurePushToken();}catch(_){}
+      const r=await pushPost("/api/recipe",{url});
+      if(!(r&&r.ok&&Array.isArray(r.ing)&&r.ing.length)){rc={state:"in",text:"",msg:"Je n'arrive pas à lire cette page. Copie la liste des ingrédients et colle-la ici."};drawRc();return;}
+      name=String(r.name||"").slice(0,80);items=recipeIngredients(r.ing.map(String).join("\n"),true);
+    }else items=recipeIngredients(text);
+    if(!items.length){rc={state:"in",text,msg:"Je ne trouve pas d'ingrédients dans ce texte."};drawRc();return;}
+    const have=new Set(toBuy().map(x=>x.id));
+    rc={state:"res",name:name||recipeTitle(text,items),items:items.map(x=>{const had=have.has(itemId(x.t));return {...x,had,on:!x.staple&&!had};})};
+    drawRc();
+  }
+  function drawRc(){
+    rcBox.textContent="";if(!rc)return;
+    const box=el("div",{class:"shop-rc"}),close=()=>{rc=null;drawRc();};
+    if(rc.state==="busy"){box.append(el("p",{class:"shop-rc-busy"},el("span",{class:"spinner"}),"Lecture de la recette…"));rcBox.append(box);return;}
+    if(rc.state==="in"){
+      const ta=el("textarea",{class:"shop-rc-in",rows:"5",placeholder:"Colle ici la recette, ou le lien de sa page (Marmiton, 750g…)","aria-label":"Recette à lire"});ta.value=rc.text||"";
+      box.append(el("div",{class:"shop-rc-h"},el("b",{},"Les ingrédients d'une recette"),el("button",{type:"button",class:"btn quiet",onclick:close},"Annuler")),
+        rc.msg?el("p",{class:"shop-rc-err"},rc.msg):null,ta,
+        el("button",{type:"button",class:"btn primary",onclick:()=>{const v=ta.value.trim();if(v)readRecipe(v);else ta.focus();}},"Lire les ingrédients"));
+      rcBox.append(box);setTimeout(()=>{try{ta.focus();}catch(_){}},60);return;}
+    // le résultat : le sel, le poivre et ce qui est déjà sur la liste sont décochés
+    const addB=el("button",{type:"button",class:"btn primary"});
+    const upd=()=>{const k=rc.items.filter(x=>x.on).length;addB.textContent=k?"Ajouter "+k+" article"+(k>1?"s":""):"Rien à ajouter";addB.disabled=!k;};
+    const list=el("div",{class:"shop-rc-list"});
+    for(const x of rc.items){const cb=el("input",{type:"checkbox"});cb.checked=x.on;
+      const lab=el("label",{class:"shop-rc-it"+(x.on?"":" off"),style:"--a:"+aisleInfo(x.a).c},cb,el("span",{},x.t),x.q?el("small",{class:"num"},qText(x.q)):null,x.had?el("em",{},"déjà sur la liste"):x.staple?el("em",{},"déjà à la maison ?"):null);
+      cb.onchange=()=>{x.on=cb.checked;lab.classList.toggle("off",!x.on);upd();};list.append(lab);}
+    addB.onclick=async()=>{const sel=rc.items.filter(x=>x.on);if(!sel.length)return;addB.disabled=true;
+      const r=await addItems(sel.map(x=>({t:x.t,q:x.q,p:null,a:x.a})));addB.disabled=false;if(!r)return;
+      toast(sel.length+" ingrédient"+(sel.length>1?"s":"")+" ajouté"+(sel.length>1?"s":"")+" à la liste");rc=null;drawRc();};
+    upd();
+    box.append(el("div",{class:"shop-rc-h"},el("b",{},(rc.name?rc.name+" : ":"")+rc.items.length+" ingrédient"+(rc.items.length>1?"s":"")),el("button",{type:"button",class:"btn quiet",onclick:close},"Annuler")),list,addB);
+    rcBox.append(box);try{box.scrollIntoView({block:"nearest"});}catch(_){}
+  }
+  // ---- la liste
+  const row=(it,a,run,mine)=>{
+    const fresh=!!(run&&mine&&!it.done&&it.by&&it.by!==myId&&+it.at>+run.at);   // ajouté par l'autre pendant les courses
+    const who=it.done?(it.tb&&it.tb!==myId?it.tb:""):(it.by&&it.by!==myId?it.by:"");
+    const r=el("div",{class:"shop-item"+(it.done?" done":"")+(seen.has(it.id)?"":" new")+(fresh?" fresh":""),style:"--a:"+a.c},
+      el("button",{type:"button",class:"si-check","aria-pressed":String(!!it.done),"aria-label":(it.done?"Remettre ":"Prendre ")+it.t,onclick:()=>{r.classList.toggle("done");takeItem(it,!it.done);}},el("i",{html:TICK_SVG})),
+      el("span",{class:"si-t"},it.t,it.q?el("small",{class:"si-q num"},qText(it.q)):null,it.p!=null?el("small",{class:"si-p num"},euro(+it.p)):null,fresh?el("small",{class:"si-new"},"Nouveau"):null),
+      who&&otherId()?el("span",{class:"si-by",title:(it.done?"Pris par ":"Ajouté par ")+firstName(who)},firstName(who).slice(0,1)):null,
+      el("button",{type:"button",class:"si-x","aria-label":"Retirer "+it.t,onclick:()=>{r.remove();removeItem(it);}},"×"));
+    seen.add(it.id);return r;};
+  function drawFoot(items,done,left,run,mine){
+    if(ending&&footBox.dataset.mode==="end"){const i=footBox.querySelector(".shop-end b");if(i)i.textContent=done.length?done.length+" article"+(done.length>1?"s":"")+" pris":"Rien de pris";return;}
+    footBox.textContent="";footBox.dataset.mode=ending?"end":"";
+    if(ending){
+      const tot=done.reduce((s,x)=>s+(+x.p||0),0);if(tot>0&&!amt.value)amt.value=(Math.round(tot*100)/100).toFixed(2).replace(".",",");
+      const fin=el("button",{type:"button",class:"btn primary"},"Terminer");
+      fin.onclick=async()=>{fin.disabled=true;const v=parseFloat(String(amt.value).replace(",",".").replace(/[^\d.]/g,""));
+        const r=await finishShop(isFinite(v)&&v>0?v:0,linked());fin.disabled=false;if(!r)return;
+        keepAwake(false);closeSheet();
+        toast("Courses terminées"+(r.left.length?" · "+r.left.length+" article"+(r.left.length>1?"s":"")+" reste"+(r.left.length>1?"nt":"")+" sur la liste":"")+(r.ord?" · ordre des rayons mis à jour":""));};
+      footBox.append(el("div",{class:"shop-end"},el("b",{},done.length?done.length+" article"+(done.length>1?"s":"")+" pris":"Rien de pris"),
+          left.length?el("small",{},left.length+(left.length>1?" resteront":" restera")+" sur la liste pour la prochaine fois."):null,amt),
+        el("button",{type:"button",class:"btn quiet",onclick:()=>{ending=false;draw();}},"Retour"),fin);
+      return;}
+    if(mine||done.length)footBox.append(el("button",{type:"button",class:"btn quiet",onclick:sendShopList},"Envoyer"),
+      el("button",{type:"button",class:"btn primary",onclick:()=>{ending=true;draw();setTimeout(()=>{try{amt.focus();}catch(_){}},60);}},"J'ai fini les courses"));
+    else if(left.length){footBox.append(el("button",{type:"button",class:"btn quiet",onclick:sendShopList},"Envoyer la liste"));
+      if(!run)footBox.append(el("button",{type:"button",class:"btn primary",onclick:async()=>{if(await startShopRun(evId))draw();}},"Je pars faire les courses"));}
+  }
   function draw(){
-    const ev=sel?events.get(sel):null;if(sel&&!ev){sel=null;}
-    const kind=ev?shopKind(ev):"food";
-    const items=ev?itemsOf(ev):pendingItems().map(x=>({id:x.id||shopId(),a:x.a||aisleOf(x.t,"food"),...x}));
-    const done=items.filter(x=>x.done),left=items.filter(x=>!x.done);
-    const save=list=>ev?saveEvItems(ev,list):savePending(list);
-    const today=ev&&ymd(startOf(ev))===ymd(new Date());
-    keepAwake(!!ev&&today);
+    const ev=evId?events.get(evId):null,run=shopRun(),mine=!!(run&&run.by===myId);
+    const items=basket(),done=items.filter(x=>x.done),left=items.filter(x=>!x.done);
+    keepAwake(mine||!!(share&&!share.local));
     topBox.textContent="";botBox.textContent="";
     // tête : anneau de progression + titre
     const pct=items.length?done.length/items.length:0,R=26,C=2*Math.PI*R;
-    const k=ev?motifOf(ev):"panier";const col=k&&MOTIFS[k]?MOTIFS[k].c:"#16A34A";
-    sheetBody.style.setProperty("--m",col);
-    const others=[...events.values()].filter(e=>isShopping(e)&&startOf(e).getTime()>Date.now()-6*3600000).sort((a,b)=>startOf(a)-startOf(b)).slice(0,6);
-    const tabs=el("div",{class:"shop-tabs",role:"tablist"},
-      el("button",{type:"button",role:"tab",class:!ev?"on":"","aria-selected":String(!ev),onclick:()=>{sel=null;draw();}},"À racheter"+(pendingItems().length?" · "+pendingItems().length:"")),
-      ...others.map(e=>el("button",{type:"button",role:"tab",class:ev&&ev.id===e.id?"on":"","aria-selected":String(!!(ev&&ev.id===e.id)),style:"--t:"+(MOTIFS[motifOf(e)]||{c:"#16A34A"}).c,onclick:()=>{sel=e.id;draw();}},
-        el("span",{html:shopKind(e)==="shop"?BAG_SVG:CART_SVG}),e.title.length>18?e.title.slice(0,17)+"…":e.title)));
-    const sub=ev?(startOf(ev).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+" à "+ev.time.replace(":","h")+(ev.location?" · "+shortAddr(ev.location):"")).replace(/^./,c=>c.toUpperCase())
-      :(nextGroceries()?"":"Notez au fil de la semaine : tout ira dans les prochaines courses.");
+    const soon=ev||nextShopEv();
+    const when=e=>(startOf(e).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+(isAllDay(e)?"":" à "+String(e.time||"").replace(":","h"))+(e.location?" · "+shortAddr(e.location):"")).replace(/^./,c=>c.toUpperCase());
+    const sub=soon?(ev?ev.title+" · "+when(ev):"Prochaines courses : "+when(soon).replace(/^./,c=>c.toLowerCase())):"";
     topBox.append(el("div",{class:"shop-top"},
-      el("div",{class:"shop-ring",html:`<svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="${R}" fill="none" stroke="currentColor" stroke-opacity=".14" stroke-width="6"/><circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--m)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(pct*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 32 32)" class="sr-arc"/></svg><span>${items.length?Math.round(pct*100)+"%":(kind==="shop"?BAG_SVG:CART_SVG)}</span>`}),
-      el("div",{class:"shop-tt"},el("h2",{},ev?ev.title:"À racheter"),sub?el("p",{},sub):null,
-        el("p",{class:"shop-count num"},items.length?(left.length?left.length+" à prendre":"Tout est dans le panier")+(done.length?" · "+done.length+" pris":""):"Liste vide")),
-      el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
-      tabs);
-    if(ev&&today)topBox.append(el("p",{class:"shop-awake"},el("i"),"Mode magasin : l'écran reste allumé"));
-    const sug=shopSuggestions(items,kind);
-    if(sug.length)botBox.append(el("div",{class:"shop-sug"},el("span",{class:"lab"},"Souvent achetés"),...sug.map(t=>el("button",{type:"button",class:"pchip",onclick:async()=>{const it=parseShopItem(t,kind);if(it)await save(mergeShop(items,[it]));}},"+ "+t))));
-    // articles à prendre, groupés par rayon
-    const list=el("div",{class:"shop-groups"});
-    const L=kind==="shop"?SHOP_AISLES:AISLES;
-    const groups=[...L,AISLE_OTHER].map(a=>({a,its:left.filter(x=>(x.a||"autre")===a.id||(a===AISLE_OTHER&&!L.some(z=>z.id===x.a)))})).filter(g=>g.its.length);
-    const toggle=async(it,on)=>{const l=items.map(x=>x.id===it.id?{...x,done:on,by:myId,at:Date.now()}:x);await save(l);
-      if(on){bumpFreq([it]);if(ev&&l.length&&l.every(x=>x.done)){try{pushOther("Courses terminées","Tout est dans le panier : "+l.length+" article"+(l.length>1?"s":"")+" pour « "+ev.title+" ».","shop");}catch(_){}toast("Tout est dans le panier !");}}};
-    const row=(it,a)=>{const by=it.by&&it.by!==myId&&otherId()?firstName(it.by).slice(0,1):"";
-      const r=el("div",{class:"shop-item"+(it.done?" done":"")+(seenIds.has(it.id)?"":" new"),style:"--a:"+a.c},
-        el("button",{type:"button",class:"si-check","aria-pressed":String(!!it.done),"aria-label":(it.done?"Remettre ":"Prendre ")+it.t,onclick:()=>{r.classList.toggle("done");toggle(it,!it.done);}},el("i",{html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'})),
-        el("span",{class:"si-t"},it.t,it.q?el("small",{class:"si-q num"},/^\d+$/.test(it.q)?"×"+it.q:it.q):null),
-        kind==="shop"?el("button",{type:"button",class:"si-price num"+(it.p==null?" empty":""),onclick:async()=>{const v=prompt("Prix de « "+it.t+" » (en €) :",it.p!=null?String(it.p).replace(".",","):"");if(v==null)return;const n=parseFloat(String(v).replace(",",".").replace(/[^\d.]/g,""));await save(items.map(x=>x.id===it.id?{...x,p:isNaN(n)?null:Math.round(n*100)/100}:x));}},it.p!=null?euro(it.p):"Prix"):null,
-        by?el("span",{class:"si-by",title:"Ajouté ou pris par "+firstName(it.by)},by):null,
-        el("button",{type:"button",class:"si-x","aria-label":"Retirer "+it.t,onclick:()=>save(items.filter(x=>x.id!==it.id))},"×"));
-      seenIds.add(it.id);return r;};
-    for(const g of groups){list.append(el("h4",{class:"shop-aisle",style:"--a:"+g.a.c},el("i"),g.a.n,el("span",{class:"num"},String(g.its.length))));for(const it of g.its)list.append(row(it,g.a));}
-    if(!items.length)list.append(el("div",{class:"shop-empty",html:(kind==="shop"?BAG_SVG:CART_SVG)+"<p>"+(ev?"Ajoute ce qu'il faut prendre, ou dicte-le au micro.":"Rien à racheter pour l'instant.")+"</p>"}));
+      el("div",{class:"shop-ring",html:`<svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="${R}" fill="none" stroke="currentColor" stroke-opacity=".14" stroke-width="6"/><circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--m)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(pct*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 32 32)" class="sr-arc"/></svg><span>${done.length?Math.round(pct*100)+"%":CART_SVG}</span>`}),
+      el("div",{class:"shop-tt"},el("h2",{},"Liste de courses"),sub?el("p",{},sub):null,
+        el("p",{class:"shop-count num"},items.length?(left.length?left.length+" à prendre":"Tout est dans le caddie")+(done.length?" · "+done.length+" dans le caddie":""):"Liste vide")),
+      el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")));
+    if(run)topBox.append(el("p",{class:"shop-awake"},el("i"),mine?"Mode magasin : l'écran reste allumé"+(otherId()?". Ce que "+firstName(otherId())+" ajoute arrive tout de suite.":"."):firstName(run.by)+" est au magasin : ce que tu ajoutes lui arrive tout de suite."));
+    // « Il en manque ? »
+    const due=dueItems();
+    if(due.length)topBox.append(el("div",{class:"shop-due"},el("span",{class:"lab"},"Il en manque ?"),el("div",{class:"due-row"},...due.map(d=>el("span",{class:"due-chip",style:"--a:"+aisleInfo(d.a).c},
+      el("button",{type:"button",class:"due-add","aria-label":"Ajouter "+d.t,onclick:()=>addItems([{t:d.t,q:"",p:null,a:d.a}])},el("b",{},d.t+" ?"),el("small",{},"D'habitude "+everyText(d.iv))),
+      el("button",{type:"button",class:"due-x","aria-label":"Pas besoin de "+d.t,onclick:()=>shopWrite({freq:{[d.id]:{t:d.t,skip:Date.now()}}})},"×"))))));
+    const sug=shopSuggestions(due.map(d=>d.id));
+    if(sug.length)botBox.append(el("div",{class:"shop-sug"},el("span",{class:"lab"},"Souvent achetés"),...sug.map(t=>el("button",{type:"button",class:"pchip",onclick:()=>{const it=parseShopItem(t);if(it)addItems([it]);}},"+ "+t))));
+    // articles à prendre, groupés par rayon, dans l'ordre de votre magasin
+    const list=el("div",{class:"shop-groups"}),pre=shopFirstIds(ev),ord=shopOrder();
+    const order=pre?[...ord.filter(id=>pre.has(id)),...ord.filter(id=>!pre.has(id))]:ord;
+    for(const id of order){const its=left.filter(x=>aisleIdOf(x)===id);if(!its.length)continue;const a=aisleInfo(id);
+      list.append(el("h4",{class:"shop-aisle",style:"--a:"+a.c},el("i"),a.n,el("span",{class:"num"},String(its.length))));for(const it of its)list.append(row(it,a,run,mine));}
+    if(!items.length)list.append(el("div",{class:"shop-empty",html:CART_SVG+"<p>La liste est vide. Ajoute ce qu'il faut acheter, dicte-le au micro, ou ajoute les ingrédients d'une recette.</p>"}));
     botBox.append(list);
-    if(done.length){const det=el("details",{class:"shop-done",open:left.length===0},el("summary",{},"Dans le panier ("+done.length+")"),
-      ...done.map(it=>row(it,aisleInfo(it.a,kind))),
-      el("button",{type:"button",class:"btn quiet",onclick:()=>save(left)},"Vider le panier"));botBox.append(det);}
-    // pied : total (shopping), terminer les courses
-    const foot=el("div",{class:"sheet-foot shop-foot"});
-    if(kind==="shop"&&ev){const tot=items.reduce((s,x)=>s+(x.p||0),0),bought=done.reduce((s,x)=>s+(x.p||0),0);
-      foot.append(el("div",{class:"shop-total"},el("small",{},"Total"+(done.length&&done.length<items.length?" (pris : "+euro(bought)+")":"")),el("b",{class:"num"},euro(tot))),
-        el("button",{type:"button",class:"btn quiet",disabled:!tot,onclick:async()=>{try{await db.doc("events/"+ev.id).update({cost:Math.round(tot*100)/100,updatedBy:myId,updatedAt:Date.now()});toast("Budget de la sortie : "+euro(tot));}catch(_){toast("Budget non enregistré.");}}},"Mettre au budget"));}
-    if(ev&&items.length){foot.append(el("button",{type:"button",class:"btn primary",onclick:async()=>{
-        const miss=items.filter(x=>!x.done);
-        if(miss.length&&confirm(miss.length+" article"+(miss.length>1?"s":"")+" pas trouvé"+(miss.length>1?"s":"")+". Les remettre dans « À racheter » pour la prochaine fois ?")){
-          await saveEvItems(ev,items.filter(x=>x.done),{shopDone:true});await savePending(mergeShop(pendingItems(),miss.map(x=>({...x,id:shopId(),done:false}))));}
-        else await saveEvItems(ev,items,{shopDone:true});
-        keepAwake(false);closeSheet();toast(kind==="shop"?"Shopping terminé":"Courses terminées");}},kind==="shop"?"Terminer le shopping":"Terminer les courses"));}
-    if(foot.childNodes.length)botBox.append(foot);
+    if(done.length)botBox.append(el("details",{class:"shop-done",open:left.length===0||mine},el("summary",{},"Dans le caddie ("+done.length+")"),
+      ...done.sort((x,y)=>(+y.ta||0)-(+x.ta||0)).map(it=>row(it,aisleInfo(aisleIdOf(it)),run,mine))));
+    const now=new Date(),ms=monthSpent(now.getFullYear(),now.getMonth());
+    if(ms.t)botBox.append(el("p",{class:"shop-note num"},"Ce mois-ci : "+euro(ms.t)+" de courses ("+ms.n+" ticket"+(ms.n>1?"s":"")+")."));
+    if(shopList.order&&shopList.order.length)botBox.append(el("p",{class:"shop-note"},"Rayons dans l'ordre de votre magasin, appris pendant vos courses. ",el("button",{type:"button",onclick:()=>shopWrite({order:null})},"Revenir à l'ordre habituel")));
+    drawFoot(items,done,left,run,mine);
   }
-  sheetBody.append(topBox,addRow,micHelp,botBox);
+  sheetBody.append(topBox,addRow,tools,micHelp,rcBox,botBox,footBox);
   shopRefresh=draw;draw();
   root.append(sheetShell("Liste de courses",[sheetBody]));
   const sh=root.querySelector(".sheet");if(sh)sh.classList.add("sheet-tall");
+  if(opts.recipe)readRecipe(opts.recipe);
+  if(opts.focus)setTimeout(()=>{try{input.focus();}catch(_){}},250);
 }
 
 /* ---------- Météo des sorties en extérieur (Open-Meteo, gratuit) ---------- */
@@ -1727,6 +2110,7 @@ function openMonth(y,m,sel){
       el("button",{type:"button",class:"btn quiet",onclick:()=>openMonth()},"Aujourd'hui"),
       el("button",{type:"button",class:"btn","aria-label":"Mois suivant",onclick:()=>openMonth(next.getFullYear(),next.getMonth())},next.toLocaleDateString("fr-FR",{month:"long"})+" ›")),
     monthBudget(y,m)?el("div",{class:"month-budget num"},"Budget des sorties ce mois-ci : "+monthBudget(y,m).toLocaleString("fr-FR")+" €"):null,
+    monthSpent(y,m).t?el("div",{class:"month-budget num"},"Courses ce mois-ci : "+euro(monthSpent(y,m).t)+" ("+monthSpent(y,m).n+" ticket"+(monthSpent(y,m).n>1?"s":"")+")"):null,
     grid,panel]));
   showDay(sel||(y===now.getFullYear()&&m===now.getMonth()?ymd(now):ymd(first)));
 }
@@ -2399,7 +2783,7 @@ function pushTo(uids,title,body,tag,url,extra){
 }
 // ce que fait l'un, l'autre le reçoit : le serveur attend une minute pour regrouper plusieurs ajouts d'affilée,
 // et garde tout jusqu'à 7 h si l'autre a choisi « Ne pas déranger la nuit »
-function pushOther(title,body,tag,meta){const o=otherId();if(o)pushTo([o],title,body,tag,undefined,{hold:true,...(meta?{meta:{...meta,who:firstName(myId)}}:{})});}
+function pushOther(title,body,tag,meta,url){const o=otherId();if(o)pushTo([o],title,body,tag,url,{hold:true,...(meta?{meta:{...meta,who:firstName(myId)}}:{})});}
 // « Hajjour a avancé « Resto » à 19:30 (au lieu de 20:00) » plutôt que « Modifié : Resto »
 function changeText(o,x){
   const me=firstName(myId),t="« "+(x.title||"l'évènement")+" »",out=[];
@@ -2822,6 +3206,7 @@ function stop(ev,who){
   const tags=el("div",{class:"tags more-info"});
   if(ov)tags.append(el("span",{class:"tag warn"},"⚠ "+ovTxt));
   if((+ev.cost||0)>0) tags.append(el("span",{class:"tag cost num"},"Budget "+(+ev.cost).toLocaleString("fr-FR")+" €"));
+  if(ev.shopDone&&(+ev.paid||0)>0) tags.append(el("span",{class:"tag cost num"},"Ticket "+euro(+ev.paid)));
   for(const r of liveReminders(ev)){const past=remWhen(ev,r).getTime()<Date.now();tags.append(el("span",{class:"tag num"+(presetOf(r)==="leave"?" alarm":"")+(past?" past":"")},remChip(ev,r)));}
   const added=ev.calendarAdded||{};
   if(myId&&added[myId]) tags.append(added[myId]>=ev.updatedAt?el("span",{class:"tag ok"},"Dans ton agenda"):el("span",{class:"tag stale"},"Modifié depuis ton ajout à l'agenda"));
@@ -4654,8 +5039,8 @@ function inboxItems(){
   return parseImport(inboxText).filter(it=>{const t=startOf(it).getTime();return t>=from.getTime()&&t<to.getTime();});
 }
 function shopBadge(){
-  const b=$("#btn-shop");if(!b)return;const ev=nextGroceries();
-  const n=pendingItems().length+(ev?itemsOf(ev).filter(x=>!x.done).length:0);
+  const b=$("#btn-shop");if(!b)return;b.classList.toggle("running",!!shopRun());
+  const n=toBuy().length;
   let dot=b.querySelector(".imp-dot");
   if(!n){if(dot)dot.remove();return;}
   if(!dot){dot=el("span",{class:"imp-dot shop-dot"});b.append(dot);}
@@ -4985,7 +5370,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="60";
+const APP_V="61";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -5022,7 +5407,7 @@ async function openEventCard(id){
 {let lastTap=0;$("#next").addEventListener("click",e=>{
   if(e.target.closest("button,a,input"))return;
   const t=Date.now();if(t-lastTap<380){lastTap=0;e.preventDefault();openFromHero();}else lastTap=t;});}
-$("#btn-shop").onclick=()=>openShop((nextGroceries()||{}).id||null);
+$("#btn-shop").onclick=()=>openShop();
 $("#fab").onclick=()=>openQuickAdd(false);
 $("#btn-mem").onclick=()=>openJournal();
 $("#tab-agenda").onclick=()=>setView("agenda");$("#tab-wishes").onclick=()=>setView("wishes");$("#tab-mem").onclick=()=>setView("mem");
@@ -5299,8 +5684,11 @@ function sharedText(t){
 }
 async function prepareText(text,b,label){
   // « ajoute du lait et des œufs » : ça va dans la liste de courses, pas dans l'agenda
-  try{const p0=parseText(text,{places:[]});const s0=shopIntent(text,p0);
-    if(s0){const add=await addToShop(s0);if(add.length){closeSheet();const t=shopTarget();toast("Ajouté à la liste : "+add.map(x=>x.t).join(", "));openShop(t?t.id:null);return;}}}catch(_){}
+  try{const p0=parseText(text,{places:[]});const s0=shopIntent(text,p0)||listLike(text);
+    if(s0){const add=await addToShop(s0);if(add.length){closeSheet();toast("Ajouté à la liste : "+add.map(x=>x.t).join(", "));openShop();return;}}
+    // une recette collée ou partagée (ou le lien de sa page) : ses ingrédients vont sur la liste
+    const noWhen=!p0||(p0.assumed&&p0.assumed.date&&p0.assumed.time);
+    if(noWhen&&(looksLikeRecipe(text)||recipeUrlOf(text))){closeSheet();openShop(null,{recipe:text});return;}}catch(_){}
   return prepareTexts([text],b,label);
 }
 async function prepareTexts(texts,b,label){
@@ -5886,17 +6274,18 @@ function tripHero(n,t){
     el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.stale&&!here?" · dernière position "+agoShort(S.age):"")),b);
 }
 /* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
-let pendingLink=/[?&](trip|ev|add)=/.test(location.search)?location.search:null;
+let pendingLink=/[?&](trip|ev|add|shop)=/.test(location.search)?location.search:null;
 function runPendingLink(){
   if(!pendingLink||firstSnap||!tripsReady)return;
   const q=pendingLink;pendingLink=null;
-  try{if(/[?&](trip|ev|add)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
+  try{if(/[?&](trip|ev|add|shop)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
   setTimeout(()=>{if(!handleDeepLink(q))toast("Cet évènement n'existe plus.");},150);
 }
 function handleDeepLink(q){
   let p;try{p=new URLSearchParams(String(q||"").replace(/^[^?]*\?/,""));}catch(_){return false;}
   const tid=p.get("trip"),eid=p.get("ev"),aid=p.get("add");
   if(aid){openPendingAdd(aid);return true;}
+  if(p.has("shop")){openShop();return true;}
   if(tid&&(trips.has(tid)||events.has(tid))){openTrip(tid);return true;}
   if(eid&&events.has(eid)){const e=events.get(eid);if((canStartTrip(e)&&hasPickup(e))||tripFor(eid))openTrip(eid);else openEventCard(eid);return true;}
   return false;
@@ -6053,7 +6442,7 @@ function bootFromCache(){
     wishes=new Map((b.wi||[]).map(w=>[w.id,w]));
     places=new Map((b.pl||[]).map(x=>[x.id,x]));
     memories=new Map((b.mem||[]).map(x=>[x.id,x]));
-    if(b.sh&&Array.isArray(b.sh.items))shopList=b.sh;
+    if(b.sh&&b.sh.list&&typeof b.sh.list==="object")shopList=normShop(b.sh);
     booted=true;render();
     return true;
   }catch(_){return false;}
@@ -6105,7 +6494,9 @@ function bootFromCache(){
   db.doc("config/templates").onSnapshot(snap=>{templates=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:null;if(templatesRefresh)templatesRefresh();},()=>{});
   db.doc("config/brands").onSnapshot(snap=>{brands=snap.exists&&Array.isArray(snap.data().list)?snap.data().list:[];refreshBrandUI();},()=>{});
   startInbox();
-  db.doc("config/shop").onSnapshot(snap=>{const x=snap.exists?snap.data():{};shopList={items:Array.isArray(x.items)?x.items:[],freq:x.freq&&typeof x.freq==="object"?x.freq:{}};scheduleRender();if(shopRefresh)shopRefresh();},()=>{});
+  db.doc("config/shop").onSnapshot(snap=>{const x=snap.exists?snap.data():{};const prev=shopList;shopRaw=x;shopList=normShop(x);
+    try{shopNews(prev,shopList,snap);}catch(_){}
+    migrateShop(x);scheduleRender();if(shopRefresh)shopRefresh();},()=>{});
   db.doc("config/home").onSnapshot(snap=>{if(snap.exists){const x=snap.data();settings={home:x.home||"",mode:x.mode||"car"};}},()=>{});
   db.collection("trips").onSnapshot(onTripsSnap,()=>{tripsReady=true;});
   db.collection("events").orderBy("startTs").onSnapshot(snap=>{
@@ -6118,11 +6509,8 @@ function bootFromCache(){
           const who=(couple&&couple.names&&couple.names[x.updatedBy])||"L'autre";
           if(!prev) toast(who+" a ajouté « "+x.title+" »");
           else if(prev.updatedAt!==x.updatedAt){
-            const a=itemsOf(prev),b2=itemsOf(x),was=new Map(a.map(i=>[norm(i.t),i]));
-            const took=b2.filter(i=>i.done&&!(was.get(norm(i.t))||{}).done&&was.has(norm(i.t))),added=b2.filter(i=>!was.has(norm(i.t)));
-            if(took.length) toast(who+" a pris « "+took.map(i=>i.t).slice(0,3).join(", ")+" »"+(took.length>3?" et "+(took.length-3)+" autres":""));
-            else if(added.length) toast(who+" a ajouté « "+added.map(i=>i.t).slice(0,3).join(", ")+" » à la liste");
-            else if(JSON.stringify(a)===JSON.stringify(b2)) toast(who+" a modifié « "+x.title+" »");
+            if(x.shopDone&&!prev.shopDone) toast(who+" a fini les courses");
+            else toast(who+" a modifié « "+x.title+" »");
           }
         }
       }
@@ -6131,6 +6519,7 @@ function bootFromCache(){
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
     if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);}
     if(shopRefresh)shopRefresh();
+    migrateShop(shopRaw);
     saveBoot();
     scheduleRender();
   },()=>notice("La synchronisation s'est interrompue. Vérifie ta connexion puis rouvre l'app."));
