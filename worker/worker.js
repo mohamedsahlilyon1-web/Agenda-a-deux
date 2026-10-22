@@ -487,7 +487,27 @@ export default {
       const c = id && await getCouple(env, id);
       if (!c || !t || c.token !== t) return json(req, { error: "unknown" }, 404);
       const u = clean(url.searchParams.get("u"), 80), W = await getWidgets(env, id, c);
-      return json(req, { at: W.at || 0, data: (W.map[u] || Object.values(W.map)[0]) || null });
+      const data = (W.map[u] || Object.values(W.map)[0]) || null;
+      // « Dis Siri, je suis en retard » : le retard annoncé par l'autre (depuis moins de 3 h) arrive tout de suite dans le widget
+      if (data) {
+        const now = Date.now(), ids = Array.isArray(data.ids) ? data.ids : [], names = Array.isArray(data.names) ? data.names : [];
+        const lt = ((await env.KV.get("lt:" + id, "json")) || []).filter((x) => x && x.u !== u && now - (+x.at || 0) < 3 * 3600000)
+          .map((x) => ({ e: clean(x.e, 40), u: clean(x.u, 80), n: clean(names[ids.indexOf(x.u)], 30), m: +x.m || 0, at: +x.at || 0, s: +x.s || 0, t: clean(x.t, 60) }));
+        if (lt.length) return json(req, { at: W.at || 0, data: { ...data, late: lt.slice(-3) } });
+      }
+      return json(req, { at: W.at || 0, data });
+    }
+    // la photo du widget « Souvenir » (envoyée par l'app quand elle change)
+    if (path === "/api/wimg" && req.method === "GET") {
+      const id = clean(url.searchParams.get("c"), 60), t = clean(url.searchParams.get("t"), 80), k = clean(url.searchParams.get("k"), 40);
+      const c = id && await getCouple(env, id);
+      if (!c || !t || c.token !== t || !/^[a-z0-9]{4,40}$/.test(k)) return json(req, { error: "unknown" }, 404);
+      const d = await env.KV.get("wi:" + id + ":" + k);
+      const m = d && /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(d);
+      if (!m) return json(req, { error: "image" }, 404);
+      const bin = atob(m[1]), u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return new Response(u8, { headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=86400", ...cors(req) } });
     }
     if (req.method !== "POST") return json(req, { ok: true, service: "Together" });
     if (!ORIGIN_OK(req.headers.get("Origin"))) return json(req, { error: "origin" }, 403);
@@ -548,6 +568,12 @@ export default {
         }
       }
       if (wChanged) { W.at = now; await putWidgets(env, id, W); }
+      // la photo du widget « Souvenir » : seulement quand elle change, gardée 9 jours
+      if (b.wimg && typeof b.wimg === "object") {
+        const k = clean(b.wimg.k, 40), d = typeof b.wimg.d === "string" ? b.wimg.d : "";
+        if (/^[a-z0-9]{4,40}$/.test(k) && d.length < 600000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(d))
+          await env.KV.put("wi:" + id + ":" + k, d, { expirationTtl: 9 * 86400 });
+      }
       // calendriers .ics de chacun (envoyés seulement quand ils changent)
       if (b.cals && typeof b.cals === "object") {
         const K = await getCals(env, id); let kChanged = false;

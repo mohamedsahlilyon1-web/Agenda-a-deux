@@ -1040,6 +1040,48 @@ body.film-on{overflow:hidden}
 .car-sc details summary{cursor:pointer;font-weight:700;color:var(--line)}
 .car-try{font-size:.88rem;margin:0;padding:8px 10px;border-radius:12px;background:color-mix(in oklab,var(--line) 8%,var(--surface))}
 .car-try:empty{display:none}
+/* option 10 : galerie des widgets, compte à rebours */
+.tag.cd{background:color-mix(in oklab,var(--sun) 24%,var(--surface));color:var(--ink);font-weight:700}
+.links .btn.on{background:color-mix(in oklab,var(--line) 14%,var(--surface));color:var(--line)}
+.wg-list{display:flex;flex-direction:column;gap:14px;margin-top:10px}
+.wg-card{background:var(--surface);border-radius:22px;padding:14px;box-shadow:var(--lift);display:flex;flex-direction:column;gap:8px;min-width:0;scroll-margin-top:12px}
+.wg-card .note{margin:0}
+.wg-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.wg-h strong{font-size:1.08rem}
+.wg-p{font:800 .88rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;background:color-mix(in oklab,var(--line) 12%,var(--surface));color:var(--line);padding:6px 10px;border-radius:999px;white-space:nowrap}
+.wg-p.none{font:700 .8rem/1 -apple-system,system-ui,sans-serif;color:var(--muted);background:var(--bg)}
+.wg-row{display:flex;gap:12px;align-items:flex-end;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -14px;padding:4px 14px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.wg-row::-webkit-scrollbar{display:none}
+.wg-fig{margin:0;flex:none;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px}
+.wg-fig figcaption{font-size:.74rem;font-weight:800;color:var(--muted);letter-spacing:.02em}
+.wg-fig .wg-img{display:block;border-radius:22px;box-shadow:0 16px 30px -20px rgba(0,0,0,.6)}
+.wg-small .wg-img,.wg-small .wg-ph{width:150px;height:150px}
+.wg-medium .wg-img,.wg-medium .wg-ph{width:min(300px,74vw);height:auto}.wg-large .wg-img,.wg-large .wg-ph{width:min(250px,64vw);height:auto}
+.wg-medium .wg-ph{aspect-ratio:364/170}.wg-large .wg-ph{aspect-ratio:364/382}
+.wg-ph{border-radius:22px;background:color-mix(in oklab,var(--line) 10%,var(--surface));animation:wgPulse 1.3s ease-in-out infinite}
+.wg-ph.wg-off,.wg-off{animation:none;display:grid;place-items:center;color:var(--muted);font-size:.8rem;text-align:center;padding:8px}
+@keyframes wgPulse{50%{opacity:.5}}
+.wg-car .wg-txt{width:min(300px,74vw);aspect-ratio:364/170;border-radius:22px;overflow:hidden;box-shadow:0 16px 30px -20px rgba(0,0,0,.6)}
+.wg-lockbg{width:min(300px,74vw);border-radius:26px;padding:14px 12px 16px;display:flex;flex-direction:column;align-items:center;gap:4px;color:#fff;box-sizing:border-box;
+  background:radial-gradient(120% 80% at 15% 0%,#4b4fb0,transparent 60%),radial-gradient(110% 90% at 100% 100%,#a23a6b,transparent 62%),#14142b;box-shadow:0 16px 30px -20px rgba(0,0,0,.6)}
+.wg-clock{font:700 56px/1 ui-rounded,-apple-system,system-ui,sans-serif;letter-spacing:-.02em;opacity:.94;margin:2px 0 8px}
+.wg-lockrow{display:flex;gap:10px;align-items:center;justify-content:center;width:100%}
+.wg-phl{width:70%;height:16px;border-radius:8px}.wg-phc{width:62px;height:62px;border-radius:50%}.wg-phr{width:150px;height:62px;border-radius:16px}
+.wg-lockbg .wg-ph{background:rgba(255,255,255,.14)}
+.wg-txt{color:#fff;display:flex;flex-direction:column;min-width:0;box-sizing:border-box}
+.wg-st{display:flex;min-width:0;flex:1 1 auto}
+.wg-t{min-width:0;line-height:1.18}
+.wg-1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wg-n{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.wg-sp{display:block}
+.wg-sym{font-size:12px;line-height:1}
+.wg-accessoryInline{max-width:92%;opacity:.9;padding:0!important;overflow:hidden}
+.wg-accessoryInline .wg-t{font:600 13px/1.2 -apple-system,system-ui,sans-serif!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wg-accessoryCircular{width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.14);padding:0!important;align-items:center;justify-content:center;overflow:hidden;flex:none}
+.wg-accessoryCircular canvas{width:62px!important;height:62px}
+.wg-accessoryRectangular{width:150px;height:62px;overflow:hidden;justify-content:center;padding:0 4px!important;flex:none}
+.wg-accessoryRectangular .wg-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wg-how summary{cursor:pointer;font-weight:800;color:var(--line);margin:4px 0}
 .film-styles{position:absolute;top:calc(36px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;gap:6px;justify-content:center;pointer-events:none}
 .film-st{pointer-events:auto;border:none;border-radius:999px;padding:7px 15px;font-weight:800;font-size:.86rem;background:rgba(255,255,255,.16);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .film-st.on{background:#fff;color:#111}
@@ -3603,7 +3645,7 @@ function carPlaySection(){
     el("div",{class:"lab"},"1. Le widget Together sur l'écran de la voiture"),
     el("p",{class:"note"},"Avec iOS 26, CarPlay affiche les widgets de l'iPhone. Celui de Together montre le prochain départ en grand, le temps restant qui se met à jour tout seul, et qui récupérer en chemin. Un toucher lance l'itinéraire."),
     el("ol",{class:"sc-steps"},
-      el("li",{},"Installe d'abord le widget Together sur l'iPhone (« Widget sur l'écran d'accueil », plus haut), si ce n'est pas déjà fait."),
+      el("li",{},"Installe d'abord le widget Together sur l'iPhone (« Widgets », plus haut), si ce n'est pas déjà fait."),
       el("li",{},"Réglages de l'iPhone, Général, CarPlay : choisis ta voiture, puis Widgets, et ajoute Scriptable."),
       el("li",{},"Règle ce widget : Script Together, et écris voiture dans Paramètre (ou voiture waze pour que le toucher ouvre Waze). Il prend alors sa version pour la voiture : l'étape du moment (partir, chez "+on+", arrivée), l'heure en grand, le temps restant, et l'évènement suivant."),
       el("li",{},"Le widget Calendrier d'Apple est un autre widget : tu peux le laisser ou le retirer, Together a maintenant le sien.")),
@@ -4338,6 +4380,110 @@ function widgetTheme(){
   return {h:v("--hero")||"#1E1A5E",p:v("--line")||"#4338CA",s:v("--sun")||"#FFB547",f:SKIN_W[sk]?sk:"encre",
     b:v("--bg")||"#EDEEF5",u:v("--surface")||"#FFFFFF",i:v("--ink")||"#16163A",m:v("--muted")||"#606181",l:v("--hair")||"#DCDDEA"};
 }
+/* ---------- Les autres widgets : courses, compte à rebours, souvenir, « On fait quoi ? », trajet en direct ---------- */
+// Courses : la liste dans l'ordre de votre magasin, rayon par rayon (24 articles au plus)
+function wShop(){
+  const L=toBuy(),order=shopOrder(),by={};
+  for(const x of L){const a=aisleIdOf(x);(by[a]=by[a]||[]).push(x);}
+  const A=[];let left=24;
+  for(const id of order){const its=by[id];if(!its||!its.length)continue;const a=ALL_AISLES.find(z=>z.id===id)||AISLE_OTHER;
+    const show=its.slice(0,Math.max(0,left));left-=show.length;
+    A.push({n:a.n,c:a.c,k:its.length,i:show.map(x=>({t:String(x.t).slice(0,40),q:String(x.q||"").slice(0,16)}))});}
+  const r=shopRun();
+  return {n:L.length,run:r?{by:firstName(r.by).slice(0,20),me:r.by===myId?1:0}:null,a:A};
+}
+// Compte à rebours : d'abord ceux que vous avez lancés (« Compte à rebours » sur l'évènement), puis les grands moments
+// (voyage, concert, fête, parc, montagne), puis le prochain long week-end et les prochaines vacances scolaires
+const CD_BIG=new Set(["voyage","scene","fete","fun","neige"]);
+const LW_DE={"Jour de l'an":"du Nouvel An","Lundi de Pâques":"de Pâques","Fête du Travail":"du 1er mai","Victoire 1945":"du 8 mai","Ascension":"de l'Ascension",
+  "Lundi de Pentecôte":"de la Pentecôte","Fête nationale":"du 14 juillet","Assomption":"du 15 août","Toussaint":"de la Toussaint","Armistice":"du 11 novembre","Noël":"de Noël"};
+function cdBig(e){return CD_BIG.has(motifOf(e))||/week-?end|vacances|sejour|anniversaire|mariage|festival/.test(norm(e.title||""));}
+// encore à venir (une journée entière compte jusqu'au soir ; un rendez-vous, jusqu'à son heure)
+function cdAble(e){if(!e||e.busy||!e.date)return false;const dd=dayDiff(ymd(new Date()),e.date);if(dd<0||dd>400)return false;return isAllDay(e)||startOf(e).getTime()>Date.now()-3600000;}
+function cdDays(e){return dayDiff(ymd(new Date()),e.date);}
+function cdList(uid){
+  uid=uid||myId;const today=ymd(new Date()),out=[];
+  for(const e of events.values()){
+    if(!cdAble(e))continue;const w=whoOf(e);if(w!=="both"&&w!==uid)continue;
+    const dd=cdDays(e),pin=!!e.countdown;if(!pin&&!(cdBig(e)&&dd>=1&&dd<=200))continue;
+    const k=motifOf(e);
+    out.push({id:e.id,t:String(e.title||"Évènement").slice(0,48),s:startOf(e).getTime(),a:isAllDay(e)?1:0,m:k||"",c:k?MOTIFS[k].c:"#6D5DF6",
+      l:e.location?String(shortAddr(e.location)).slice(0,30):"",k:"ev",pin:pin?1:0,f:+e.countdownAt||+e.createdAt||0});
+  }
+  const lw=longWeekends(today,120).find(x=>x.from>today);
+  if(lw)out.push({id:"lw-"+lw.ferie,t:(lw.pont?"Pont ":"Long week-end ")+(LW_DE[lw.name]||"("+lw.name+")"),s:new Date(lw.from+"T00:00:00").getTime(),a:1,m:"",c:"#F59E0B",l:"",k:"lw",pin:0,n:lw.days,p:lw.pont?1:0,f:0});
+  const v=vacData().find(x=>x.a>today&&dayDiff(today,x.a)<=120);
+  if(v)out.push({id:"vac-"+v.a,t:String(v.n).slice(0,48),s:new Date(v.a+"T00:00:00").getTime(),a:1,m:"",c:"#0891B2",l:"",k:"vac",pin:0,n:dayDiff(v.a,v.b),f:0});
+  const rank=x=>x.pin?0:x.k==="ev"?1:2;
+  return out.sort((p,q)=>rank(p)-rank(q)||p.s-q.s).slice(0,6);
+}
+function cdTag(e){const d=cdDays(e);return (d>=2?"J-"+d:d===1?"Demain":"Aujourd'hui")+" · compte à rebours";}
+async function toggleCountdown(ev){
+  const on=!ev.countdown,d=cdDays(ev);
+  try{await db.doc("events/"+ev.id).update(on?{countdown:true,countdownAt:Date.now()}:{countdown:false});}catch(_){toast("Non enregistré. Vérifie ta connexion.");return;}
+  if(on)toast((d>=2?"J-"+d:d===1?"C'est demain":"C'est aujourd'hui")+" : « "+(ev.title||"l'évènement")+" » est sur le widget Compte à rebours","Le widget",()=>openWidgets("cd"));
+  else toast("Retiré du compte à rebours");
+}
+// Souvenir : « Il y a un an » ce jour-là, sinon une de vos sorties préférées (la même toute la journée, chez vous deux)
+let wImg={id:"",k:"",d:""};
+function memLove(m){const v=Object.values(ratingsOf(m)).map(r=>+r.love||0).filter(Boolean);return v.length?v.reduce((a,b)=>a+b,0)/v.length:0;}
+function wSouv(){
+  const L0=annivList();let m=null,y=0,fav=0;
+  if(L0.length){m=L0[0].m;y=L0[0].years;}
+  else{const pics=memList().filter(x=>x.cover||x.photo);if(!pics.length)return null;
+    const top=pics.filter(x=>memLove(x)>=4),P=(top.length>=3?top:pics).slice().sort((a,b)=>String(a.eventId||a.id).localeCompare(String(b.eventId||b.id)));
+    m=P[parseInt(hashStr("sv"+ymd(new Date())).slice(0,6),36)%P.length];fav=memLove(m)>=4?1:0;}
+  const id=m.eventId||m.id,R=seenRatings(m),word=Object.entries(R).find(([,r])=>r&&r.note),k=MOTIFS[m.motif]?m.motif:"";
+  if(m.cover||m.photo||m.mediaCount)wImgWant(m);
+  return {id,t:String(m.title||"Notre sortie").slice(0,48),d:m.date||"",y,f:fav,love:avgLove(m)||0,q:word?String(word[1].note).slice(0,140):"",qn:word?firstName(word[0]).slice(0,20):"",
+    m:k,c:k?MOTIFS[k].c:"#E11D48",k:wImg.id===id&&wImg.k?wImg.k:"",n:+m.mediaCount||0};
+}
+// La photo du widget : la première du souvenir, en 960 px (le serveur la garde ; elle ne part qu'une fois)
+function wImgWant(m){const id=m.eventId||m.id;if(wImg.id===id||wImgWant.busy===id)return;wImgWant.busy=id;
+  (async()=>{let src="";
+    try{let q=db.collection("memories/"+id+"/media").orderBy("at");if(typeof q.limit==="function")q=q.limit(1);const s=await q.get(),x=s.docs[0]&&s.docs[0].data();
+      if(x)src=x.type==="anim"?(x.frames||[])[Math.floor(((x.frames||[]).length-1)/2)]:x.data;}catch(_){}
+    if(!src)src=m.cover||m.photo||"";
+    const d=src?await wPhoto(src):"";
+    wImgWant.busy="";if(!d)return;
+    wImg={id,d,k:"s"+hashStr(d).replace(/[^a-z0-9]/g,"").slice(0,22)};syncPush();})();}
+function wPhoto(src){return new Promise(res=>{const i=new Image();i.onload=()=>{try{const sc=Math.min(1,960/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=Math.max(1,Math.round(i.width*sc));c.height=Math.max(1,Math.round(i.height*sc));
+    const g=c.getContext("2d");try{g.imageSmoothingQuality="high";}catch(_){}g.drawImage(i,0,0,c.width,c.height);let out=c.toDataURL("image/jpeg",.74);if(out.length>420000)out=c.toDataURL("image/jpeg",.58);res(out.length<590000?out:"");}catch(_){res("");}};
+  i.onerror=()=>res("");i.src=src;});}
+// « On fait quoi ? » : votre prochain moment libre à deux, et l'envie qui y colle le mieux (météo comprise)
+const ideaWx=new Map();
+function slotWord(s){const n=dayDiff(ymd(new Date()),s.date),d=new Date(s.date+"T12:00:00"),part=s.lab==="Soirée"?"soir":s.lab==="Matin"?"matin":"après-midi";
+  if(n<=0)return s.lab==="Soirée"?"Ce soir":s.lab==="Matin"?"Ce matin":"Cet après-midi";
+  if(n===1)return "Demain "+part;
+  const wd=d.toLocaleDateString("fr-FR",{weekday:"long"});return (n<7?wd:wd+" "+d.getDate()).replace(/^./,c=>c.toUpperCase())+" "+part;}
+function ideaWxFor(s,fetchIt){const key=s.date+"|"+s.from;
+  if(!ideaWx.has(key)&&fetchIt&&dayDiff(ymd(new Date()),s.date)<=6){ideaWx.set(key,null);
+    weatherFor({id:"pick",date:s.date,time:s.from,location:""}).then(r=>{if(r){ideaWx.set(key,r);syncPush();}}).catch(()=>{});}
+  return ideaWx.get(key)||null;}
+function wIdea(){
+  const slots=pickSlots(8);if(!slots.length)return {sl:""};
+  let best=null;const more=[],used=new Set();
+  // pour les moments suivants, une autre envie que celles déjà proposées (quand il y en a une qui va)
+  slots.slice(0,6).forEach((s,i)=>{const r=rankIdeas(s,ideaWxFor(s,i<3));
+    if(!best){if(r.length){best={s,r};used.add(r[0].w.id);}}
+    else if(more.length<4){const t=r.find(x=>!used.has(x.w.id))||r[0];if(t)used.add(t.w.id);
+      more.push({sl:slotWord(s),d:s.date,f:s.from,to:s.to,lab:s.lab,t:t?String(t.w.title||"").slice(0,40):"",k:t&&t.k||"",c:t&&t.k?MOTIFS[t.k].c:""});}});
+  if(!best){const s=slots[0];return {sl:slotWord(s),d:s.date,f:s.from,to:s.to,lab:s.lab,t:"",n:0,more:[]};}
+  const {s,r}=best,top=r[0],k=top.k||"";
+  return {sl:slotWord(s),d:s.date,f:s.from,to:s.to,lab:s.lab,t:String(top.w.title||"").slice(0,48),k,c:k?MOTIFS[k].c:"",why:top.why.slice(0,2),
+    alt:r.slice(1,3).map(x=>({t:String(x.w.title||"").slice(0,40),k:x.k||"",c:x.k?MOTIFS[x.k].c:""})),n:r.length,more};
+}
+// Trajet en direct : qui arrive, à quelle heure (mis à jour par le téléphone de celui ou celle qui conduit)
+function wLive(uid){
+  const t=[...trips.values()].filter(x=>tripLive(x)&&(x.to===uid||x.by===uid)&&(events.has(x.id)||x.kind==="home")).sort((a,b)=>(b.startedAt||0)-(a.startedAt||0))[0];
+  if(!t)return null;const ev=events.get(t.id),k=tripKind(t);
+  return {k,st:t.stage,by:firstName(t.by).slice(0,20),to:firstName(t.to).slice(0,20),me:t.by===uid?1:0,eta:+t.eta||0,due:+t.due||0,at:+t.hereAt||+t.updatedAt||0,up:+t.updatedAt||+t.startedAt||0,
+    t:ev?String(ev.title||"").slice(0,40):k==="home"?"Retour à la maison":""};
+}
+// La semaine du widget : jours fériés et vacances scolaires des deux semaines à venir
+function wDays(){const fer={},today=ymd(new Date());for(let i=0;i<15;i++){const k=addDays(today,i),f=ferieName(k);if(f)fer[k]=f;}
+  const end=addDays(today,15),vac=vacData().filter(v=>v.b>today&&v.a<end).map(v=>({n:v.n,a:v.a,b:v.b})).slice(0,3);
+  return {fer,vac};}
 function widgetData(){
   const now=Date.now();
   // Le widget montre tout l'agenda du couple, sans tenir compte du filtre choisi à l'écran
@@ -4352,8 +4498,13 @@ function widgetData(){
       to:e.location?String(e.location).slice(0,160):"",
       ...(hasPickup(e)&&e.pickupWho!==myId&&driverOf(e)===myId?{pk:String(e.pickup).slice(0,160),pkl:String(shortAddr(e.pickup)).slice(0,40),pu:e.pickupWho,pw:firstName(e.pickupWho).slice(0,20),pm:Math.max(0,Math.round(+e.pickupMin||0))}:{})};});
   let tz="Europe/Paris";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz;}catch(_){}
+  // les autres widgets (courses, compte à rebours, souvenir, idée) et le trajet en direct : une erreur dans l'un ne gêne pas les autres
+  const ex={};for(const [k,f] of [["shop",wShop],["cd",()=>cdList(myId)],["sv",wSouv],["idea",wIdea],["live",()=>wLive(myId)]]){try{ex[k]=f();}catch(_){ex[k]=null;}}
+  let days={fer:{},vac:[]};try{days=wDays();}catch(_){}
+  for(const k of ["panier",...(ex.cd||[]).map(x=>x.m),ex.sv&&ex.sv.m,ex.idea&&ex.idea.k,...((ex.idea&&ex.idea.alt)||[]).map(x=>x.k),...((ex.idea&&ex.idea.more)||[]).map(x=>x.k)])
+    if(k&&MOTIFS[k]&&ic[k]==null)ic[k]=iconLines(k);
   return {ids:memberIds(),names:memberIds().map(firstName),me:firstName(myId).slice(0,30),home:String(homeAddr()||"").slice(0,160),tz,items,ic,th:widgetTheme(),
-    wishes:wishTodos().length,fb:feedbackDue().length};
+    wishes:wishTodos().length,fb:feedbackDue().length,...ex,fer:days.fer,vac:days.vac};
 }
 // Widget de chacun : calculé par n'importe quel téléphone, pour que l'ajout de l'un apparaisse aussi chez l'autre
 function widgetsAll(){const out={},me=myId;
@@ -4377,9 +4528,11 @@ async function syncPushNow(){
   const sig=hashStr(JSON.stringify([APP_V,items,widget,widgets,prefs])),csig=hashStr(JSON.stringify(cals));
   // les calendriers ne partent que s'ils ont changé (ils sont plus gros que le reste)
   const calNew=lsGet("a2.calSig")!==csig;
-  if(lsGet("a2.pushSig")===sig&&!calNew)return true;
-  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,items,widget,widgets,prefs,...(calNew?{cals}:{})});
-  if(r){lsSet("a2.pushSig",sig);lsSet("a2.calSig",csig);}
+  // la photo du widget « Souvenir » ne part qu'une fois : le serveur la garde
+  const wi=wImg.k&&wImg.d&&lsGet("a2.wimgK")!==wImg.k?{k:wImg.k,d:wImg.d}:null;
+  if(lsGet("a2.pushSig")===sig&&!calNew&&!wi)return true;
+  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,items,widget,widgets,prefs,...(calNew?{cals}:{}),...(wi?{wimg:wi}:{})});
+  if(r){lsSet("a2.pushSig",sig);lsSet("a2.calSig",csig);if(wi)lsSet("a2.wimgK",wi.k);}
   return !!r;
 }
 function widgetScript(base){
@@ -4393,6 +4546,212 @@ if(!code&&fm.fileExists(cf))code=fm.readString(cf);
 if(!code){const w=new ListWidget();w.addText("Together : connexion impossible");Script.setWidget(w);Script.complete();}
 else{const AF=Object.getPrototypeOf(async function(){}).constructor;await new AF("API","APP",code)(API,APP);}
 `;
+}
+/* ---------- La galerie des widgets : le vrai code du widget, dessiné dans l'app ----------
+   Le widget est un script Scriptable (widget-main.js). Pour montrer à quoi il ressemble avec vos vraies données,
+   l'app le fait tourner sur une petite imitation de Scriptable : mêmes dessins, mêmes polices de l'iPhone. */
+const WG_SIZES={small:[170,170],medium:[364,170],large:[364,382],accessoryCircular:[76,76],accessoryRectangular:[172,76],accessoryInline:[300,22]};
+const WG_SYS="-apple-system,system-ui,'Helvetica Neue',Arial,sans-serif";
+const WG_FONTS={"Georgia-Bold":"bold @ Georgia,serif","Georgia-BoldItalic":"italic bold @ Georgia,serif","Georgia-Italic":"italic @ Georgia,serif",
+  "AvenirNext-Bold":"bold @ 'Avenir Next',Avenir,Helvetica,Arial,sans-serif","AvenirNext-Heavy":"900 @ 'Avenir Next',Avenir,Helvetica,Arial,sans-serif",
+  "Futura-CondensedExtraBold":"800 @ Futura,'Avenir Next Condensed','Arial Narrow',sans-serif","Didot-Bold":"bold @ Didot,'Bodoni 72','Times New Roman',serif",
+  "MarkerFelt-Wide":"bold @ 'Marker Felt','Comic Sans MS',cursive","AvenirNextCondensed-Heavy":"900 @ 'Avenir Next Condensed','Arial Narrow',sans-serif",
+  "Noteworthy-Bold":"bold @ Noteworthy,'Marker Felt','Comic Sans MS',cursive"};
+function wgEnv(o){
+  // 2,5 fois la taille : net sur l'écran de l'iPhone sans trop de mémoire (une quinzaine d'aperçus à la fois)
+  const sc=o.scale||Math.min(2.5,Math.max(2,window.devicePixelRatio||2)),FS=o.fs||new Map();
+  class Point{constructor(x,y){this.x=x;this.y=y;}}
+  class Size{constructor(w,h){this.width=w;this.height=h;}}
+  class Rect{constructor(x,y,w,h){this.x=x;this.y=y;this.width=w;this.height=h;}get minX(){return this.x;}get minY(){return this.y;}get maxX(){return this.x+this.width;}get maxY(){return this.y+this.height;}}
+  class Color{constructor(h,a){this.hex=String(h||"#000000");this.alpha=a==null?1:+a;}
+    css(){let h=this.hex.replace("#","");if(h.length===3)h=h.split("").map(c=>c+c).join("");const n=parseInt(h.slice(0,6),16)||0;return "rgba("+(n>>16&255)+","+(n>>8&255)+","+(n&255)+","+this.alpha+")";}
+    static white(){return new Color("#ffffff");}static black(){return new Color("#000000");}static clear(){return new Color("#000000",0);}static gray(){return new Color("#8e8e93");}}
+  class Font{constructor(n,s){const f=WG_FONTS[n];this.size=s;this.css=f?f.replace("@",s+"px"):"bold "+s+"px "+WG_SYS;}
+    static sys(w,s,fam){const f=Object.create(Font.prototype);f.size=s;f.css=w+" "+s+"px "+(fam||WG_SYS);return f;}
+    static systemFont(s){return Font.sys(400,s);}static regularSystemFont(s){return Font.sys(400,s);}static mediumSystemFont(s){return Font.sys(500,s);}
+    static semiboldSystemFont(s){return Font.sys(600,s);}static boldSystemFont(s){return Font.sys(700,s);}static heavySystemFont(s){return Font.sys(800,s);}static blackSystemFont(s){return Font.sys(900,s);}
+    static heavyRoundedSystemFont(s){return Font.sys(800,s,"ui-rounded,'SF Pro Rounded',"+WG_SYS);}static boldRoundedSystemFont(s){return Font.sys(700,s,"ui-rounded,'SF Pro Rounded',"+WG_SYS);}
+    static italicSystemFont(s){const f=Font.sys(400,s);f.css="italic "+f.css;return f;}}
+  class Path{constructor(){this.ops=[];}move(p){this.ops.push(["m",p.x,p.y]);}addLine(p){this.ops.push(["l",p.x,p.y]);}closeSubpath(){this.ops.push(["z"]);}
+    addRect(r){this.ops.push(["r",r.x,r.y,r.width,r.height,0]);}addRoundedRect(r,a){this.ops.push(["r",r.x,r.y,r.width,r.height,a||0]);}
+    addEllipse(r){this.ops.push(["e",r.x,r.y,r.width,r.height]);}addCurve(p,a,b){this.ops.push(["c",a.x,a.y,b.x,b.y,p.x,p.y]);}addQuadCurve(p,a){this.ops.push(["q",a.x,a.y,p.x,p.y]);}
+    addLines(ps){ps.forEach((p,i)=>i?this.addLine(p):this.move(p));}}
+  class WImage{constructor(el,size){this._el=el;this.size=size||new Size(el.naturalWidth||el.width,el.naturalHeight||el.height);}
+    static fromData(d){return d&&d._img?new WImage(d._img):null;}static fromFile(p){const d=FS.get(p);return d&&d._img?new WImage(d._img):null;}}
+  const Data={fromJPEG:i=>({_img:i&&i._el,toBase64String:()=>""}),fromPNG:i=>({_img:i&&i._el,toBase64String:()=>""}),fromString:s=>({_s:s,toRawString:()=>s,toBase64String:()=>""}),fromBase64String:()=>null};
+  class DrawContext{constructor(){this.opaque=true;this.respectScreenScale=true;this._al="left";this.f=Font.systemFont(12);this.tc=Color.black();}
+    set size(s){this._s=s;this.cv=document.createElement("canvas");this.cv.width=Math.max(1,Math.round(s.width*sc));this.cv.height=Math.max(1,Math.round(s.height*sc));this.g=this.cv.getContext("2d");this.g.scale(sc,sc);}
+    get size(){return this._s;}
+    setFillColor(c){this.g.fillStyle=c.css();}setStrokeColor(c){this.g.strokeStyle=c.css();}setLineWidth(w){this.g.lineWidth=w;}
+    fillRect(r){this.g.fillRect(r.x,r.y,r.width,r.height);}strokeRect(r){this.g.strokeRect(r.x,r.y,r.width,r.height);}
+    fillEllipse(r){const g=this.g;g.beginPath();g.ellipse(r.x+r.width/2,r.y+r.height/2,Math.abs(r.width/2),Math.abs(r.height/2),0,0,Math.PI*2);g.fill();}
+    strokeEllipse(r){const g=this.g;g.beginPath();g.ellipse(r.x+r.width/2,r.y+r.height/2,Math.abs(r.width/2),Math.abs(r.height/2),0,0,Math.PI*2);g.stroke();}
+    addPath(p){this.p=p;}
+    _trace(){const g=this.g;g.beginPath();for(const o of (this.p&&this.p.ops)||[]){
+      if(o[0]==="m")g.moveTo(o[1],o[2]);else if(o[0]==="l")g.lineTo(o[1],o[2]);else if(o[0]==="z")g.closePath();
+      else if(o[0]==="c")g.bezierCurveTo(o[1],o[2],o[3],o[4],o[5],o[6]);else if(o[0]==="q")g.quadraticCurveTo(o[1],o[2],o[3],o[4]);
+      else if(o[0]==="e")g.ellipse(o[1]+o[3]/2,o[2]+o[4]/2,Math.abs(o[3]/2),Math.abs(o[4]/2),0,0,Math.PI*2);
+      else{const [,x,y,w,h]=o,r=Math.max(0,Math.min(o[5],Math.abs(w)/2,Math.abs(h)/2));g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}}}
+    fillPath(){this._trace();this.g.fill();this.p=null;}strokePath(){this.g.lineCap="butt";this.g.lineJoin="miter";this._trace();this.g.stroke();this.p=null;}
+    setFont(f){this.f=f;}setTextColor(c){this.tc=c;}setTextAlignedLeft(){this._al="left";}setTextAlignedCenter(){this._al="center";}setTextAlignedRight(){this._al="right";}
+    drawText(t,p){const g=this.g;g.font=this.f.css;g.fillStyle=this.tc.css();g.textAlign="left";g.textBaseline="top";g.fillText(String(t),p.x,p.y);}
+    // comme iOS : retour à la ligne entre les mots, et les lignes qui ne tiennent pas dans le cadre ne sont pas dessinées
+    drawTextInRect(t,r){const g=this.g;g.save();g.beginPath();g.rect(r.x,r.y,r.width,r.height);g.clip();g.font=this.f.css;g.fillStyle=this.tc.css();g.textAlign=this._al;g.textBaseline="top";
+      const lines=[];for(const para of String(t).split("\n")){let cur="";for(const w of para.split(" ")){const tt=cur?cur+" "+w:w;
+        if(g.measureText(tt).width>r.width&&cur){lines.push(cur);cur=w;}else cur=tt;}lines.push(cur);}
+      const lh=this.f.size*1.2,x=this._al==="left"?r.x:this._al==="center"?r.x+r.width/2:r.x+r.width;
+      lines.forEach((l,i)=>{if(i===0||(i+1)*lh<=r.height+this.f.size*0.35)g.fillText(l,x,r.y+i*lh);});g.restore();}
+    drawImageInRect(img,r){if(img&&img._el)this.g.drawImage(img._el,r.x,r.y,r.width,r.height);}
+    drawImageAtPoint(img,p){if(img&&img._el)this.g.drawImage(img._el,p.x,p.y,img.size.width,img.size.height);}
+    getImage(){return new WImage(this.cv,this._s);}}
+  class WStack{constructor(){this.kids=[];this.dir="v";this.spacing=0;this.pad=null;this.align="";this.backgroundColor=null;this.cornerRadius=0;this.size=null;this.url="";}
+    layoutHorizontally(){this.dir="h";}layoutVertically(){this.dir="v";}centerAlignContent(){this.align="center";}topAlignContent(){this.align="start";}bottomAlignContent(){this.align="end";}
+    setPadding(t,l,b,r){this.pad=[t,l,b,r];}useDefaultPadding(){this.pad=null;}
+    addText(t){const x={type:"text",text:String(t),font:null,textColor:null,lineLimit:0,minimumScaleFactor:1,textOpacity:1,al:"",centerAlignText(){this.al="center";},leftAlignText(){this.al="left";},rightAlignText(){this.al="right";}};this.kids.push(x);return x;}
+    addDate(d){const x={type:"date",date:d,style:"date",font:null,textColor:null,lineLimit:0,minimumScaleFactor:1,al:"",applyRelativeStyle(){this.style="rel";},applyTimerStyle(){this.style="timer";},applyTimeStyle(){this.style="time";},applyDateStyle(){this.style="date";},applyOffsetStyle(){this.style="rel";},centerAlignText(){this.al="center";},leftAlignText(){},rightAlignText(){this.al="right";}};this.kids.push(x);return x;}
+    addImage(img){const x={type:"img",img,imageSize:null,tintColor:null,cornerRadius:0,centerAlignImage(){},leftAlignImage(){},rightAlignImage(){},applyFittingContentMode(){},applyFillingContentMode(){}};this.kids.push(x);return x;}
+    addStack(){const s=new WStack();this.kids.push({type:"stack",s});return s;}
+    addSpacer(n){this.kids.push({type:"sp",n:n==null?null:n});return {length:n};}}
+  class ListWidget extends WStack{constructor(){super();this.backgroundImage=null;this.backgroundGradient=null;this.refreshAfterDate=null;this.addAccessoryWidgetBackground=false;}
+    presentSmall(){}presentMedium(){}presentLarge(){}presentExtraLarge(){}presentAccessoryCircular(){}presentAccessoryInline(){}presentAccessoryRectangular(){}}
+  class LinearGradient{constructor(){this.colors=[];this.locations=[];this.startPoint=null;this.endPoint=null;}}
+  const SFSymbol={named:n=>{const s={_sym:n,applyFont(){},applyBoldWeight(){},applyHeavyWeight(){},applySemiboldWeight(){},applyMediumWeight(){}};s.image={_sym:n,size:new Size(16,16)};return s;}};
+  const fmObj={joinPath:(a,b)=>String(a).replace(/\/$/,"")+"/"+b,documentsDirectory:()=>"/doc",cacheDirectory:()=>"/cache",temporaryDirectory:()=>"/tmp",libraryDirectory:()=>"/lib",
+    fileExists:p=>FS.has(p),isDirectory:p=>/^\/(doc|cache|tmp|lib)$/.test(p),createDirectory(){},readString:p=>{const v=FS.get(p);return typeof v==="string"?v:null;},writeString:(p,s)=>{FS.set(p,String(s));},
+    read:p=>FS.get(p)||null,write:(p,d)=>{FS.set(p,d);},readImage:p=>{const d=FS.get(p);return d&&d._img?new WImage(d._img):null;},writeImage:(p,i)=>{FS.set(p,{_img:i&&i._el});},
+    remove:p=>{FS.delete(p);},listContents:dir=>[...FS.keys()].filter(k=>k.startsWith(dir+"/")).map(k=>k.slice(dir.length+1)),downloadFileFromiCloud:async()=>{},isFileDownloaded:()=>true};
+  const FileManager={local:()=>fmObj,iCloud:()=>fmObj};
+  class Request{constructor(u){this.url=String(u||"");this.timeoutInterval=60;this.method="GET";this.headers={};}
+    async loadJSON(){if(/\/api\/w\?/.test(this.url))return {at:Date.now(),data:o.data};throw new Error("hors ligne");}
+    async loadString(){throw new Error("hors ligne");}
+    async load(){const m=/[?&]k=([^&]+)/.exec(this.url),im=m&&o.imgs&&o.imgs[decodeURIComponent(m[1])];if(im)return {_img:im,toBase64String:()=>""};throw new Error("hors ligne");}
+    async loadImage(){const d=await this.load();return new WImage(d._img);}}
+  let out=null;
+  const g={Color,Point,Size,Rect,Font,Path,DrawContext,Image:WImage,Data,LinearGradient,ListWidget,SFSymbol,FileManager,Request,
+    config:{widgetFamily:o.fam,runsInWidget:true,runsInApp:false,runsInAccessoryWidget:/^accessory/.test(o.fam),runsWithSiri:false,runsFromHomeScreen:false},
+    args:{widgetParameter:o.param||null,queryParameters:{},plainTexts:[],urls:[],fileURLs:[],images:[],notification:null,shortcutParameter:null},
+    Script:{name:()=>"Together",setWidget:w=>{out=w;},complete(){},setShortcutOutput(){}},
+    WebView:class{async loadHTML(){}async present(){}async evaluateJavaScript(){}},App:{close(){}},
+    Device:{locale:()=>"fr_FR",language:()=>"fr",isUsingDarkAppearance:()=>false,model:()=>"iPhone"},Notification:class{schedule(){}},Keychain:{contains:()=>false,get:()=>"",set(){}}};
+  return {g,get out(){return out;}};
+}
+let wgFn=null,wgSrc=null;
+async function wgCompile(){
+  if(wgFn)return wgFn;
+  if(!wgSrc){const r=await fetch("widget-main.js?v="+APP_V,{cache:"no-cache"});const t=r.ok?await r.text():"";if(!t.includes("ListWidget"))throw new Error("widget");wgSrc=t;}
+  const AF=Object.getPrototypeOf(async function(){}).constructor,names=Object.keys(wgEnv({fam:"small"}).g);
+  wgFn={names,run:new AF("API","APP",...names,wgSrc)};return wgFn;
+}
+// Fait tourner le widget pour une taille et un paramètre ; rend l'élément à afficher (image ou texte)
+async function wgRender(fam,param,data,imgs){
+  const F=await wgCompile(),E=wgEnv({fam,param,data,imgs});
+  await F.run("https://together.invalid/api/w?c=x&t=y&u=z",location.origin+location.pathname,...F.names.map(n=>E.g[n]));
+  const w=E.out;if(!w)throw new Error("vide");
+  return {el:wgElement(w,fam),url:w.url||"",refresh:w.refreshAfterDate?+w.refreshAfterDate:0};
+}
+function wgCssColor(c,fb){return c&&c.css?c.css():fb;}
+// Texte natif de Scriptable (écran verrouillé, voiture) traduit en HTML
+function wgElement(w,fam){
+  const [W,H]=WG_SIZES[fam]||[170,170];
+  if(w.backgroundImage&&w.backgroundImage._el){const cv=w.backgroundImage._el;cv.className="wg-img";cv.style.aspectRatio=W+"/"+H;return cv;}
+  const box=document.createElement("div");box.className="wg-txt wg-"+fam;
+  if(w.backgroundGradient&&w.backgroundGradient.colors.length)box.style.background="linear-gradient("+w.backgroundGradient.colors.map(c=>wgCssColor(c,"#000")).join(",")+")";
+  const p=w.pad||(fam==="accessoryInline"?[0,0,0,0]:/^accessory/.test(fam)?[2,4,2,4]:[16,16,16,16]);box.style.padding=p[0]+"px "+p[3]+"px "+p[2]+"px "+p[1]+"px";
+  const rel=d=>{const m=Math.round((+d-Date.now())/60000);if(m<=0)return m>-1?"maintenant":"il y a "+(-m)+" min";if(m<60)return "dans "+m+" min";const h=Math.floor(m/60);return "dans "+h+" h"+(m%60?" "+(m%60)+" min":"");};
+  const SYM={"car.fill":"🚗","figure.wave":"👋","flag.checkered":"🏁","heart.fill":"♥"};
+  const draw=(s,host)=>{const d=document.createElement("div");d.className="wg-st";d.style.flexDirection=s.dir==="h"?"row":"column";if(s.align)d.style.alignItems=s.align==="center"?"center":"flex-"+s.align;
+    d.style.gap=(s.spacing||0)+"px";if(s.pad)d.style.padding=s.pad[0]+"px "+s.pad[3]+"px "+s.pad[2]+"px "+s.pad[1]+"px";if(s.backgroundColor)d.style.background=wgCssColor(s.backgroundColor,"");
+    for(const k of s.kids){let e;
+      if(k.type==="stack")e=draw(k.s);
+      else if(k.type==="sp"){e=document.createElement("i");e.className="wg-sp";if(k.n==null)e.style.flex="1";else{e.style.flex="none";e.style[s.dir==="h"?"width":"height"]=k.n+"px";}}
+      else if(k.type==="img"){if(k.img&&k.img._el){e=k.img._el;e.className="wg-im";e.style.width=k.img.size.width+"px";}else{e=document.createElement("span");e.className="wg-sym";e.textContent=SYM[k.img&&k.img._sym]||"●";if(k.tintColor)e.style.color=wgCssColor(k.tintColor,"");}}
+      else{e=document.createElement("div");e.className="wg-t";const f=k.font||{css:"400 14px "+WG_SYS};e.style.font=f.css;e.style.color=wgCssColor(k.textColor,"#fff");
+        if(k.lineLimit===1)e.classList.add("wg-1");else if(k.lineLimit>1){e.classList.add("wg-n");e.style.webkitLineClamp=k.lineLimit;}
+        if(k.al)e.style.textAlign=k.al;e.textContent=k.type==="date"?(k.style==="rel"?rel(k.date):new Date(k.date).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})):k.text;}
+      d.appendChild(e);}
+    return d;};
+  box.appendChild(draw(w));return box;
+}
+const WG_LIST=[
+  {id:"agenda",p:"",n:"Agenda",d:"Le prochain moment en grand, le temps qui reste et la semaine, avec les jours fériés et les vacances. Quand l'un de vous est en route, l'heure d'arrivée s'affiche (« {o} arrive vers 20 h 10 »), ainsi que les retards annoncés à Siri, et le widget se met à jour plus souvent.",
+    f:["small","medium","large"],lk:1},
+  {id:"shop",p:"courses",n:"Courses",d:"La liste de courses rayon par rayon, dans l'ordre de votre magasin, et le nombre d'articles. Un toucher ouvre toute la liste.",f:["small","medium","large"],lk:1},
+  {id:"cd",p:"compte",n:"Compte à rebours",d:"J-12 avant votre prochain grand moment : voyage, concert, fête, long week-end ou vacances. Pour en choisir un : touche l'évènement dans l'agenda, puis « Compte à rebours ». Pour un widget réservé à un évènement, écris compte suivi d'un mot de son titre (compte Barcelone).",
+    f:["small","medium","large"],lk:1},
+  {id:"sv",p:"souvenir",n:"Souvenir",d:"La photo du jour : « Il y a un an » quand c'est le jour anniversaire d'une sortie, sinon une de vos sorties préférées. Avec ce que vous en avez dit.",f:["small","medium","large"],lk:1},
+  {id:"idea",p:"idée",n:"On fait quoi ?",d:"Votre prochain moment libre à deux, avec l'envie qui va le mieux : la météo, le budget du mois et la distance sont pris en compte (« Samedi après-midi libre : Zoo de Lunaret ? »).",
+    f:["small","medium","large"],lk:1},
+  {id:"car",p:"voiture",n:"Voiture (CarPlay)",d:"Pour l'écran de la voiture : l'étape du moment (partir, passer chercher l'autre, arriver), l'heure en grand et le temps restant. Un toucher lance l'itinéraire. voiture waze ouvre Waze.",f:["medium"],lk:0}];
+const WG_FAM_N={small:"Petit",medium:"Moyen",large:"Grand"};
+// Les données de la galerie : celles du widget de ce téléphone, avec les retards annoncés (comme le serveur les ajoute)
+async function wgData(){
+  const d=widgetData(),now=Date.now();
+  d.late=[...lateMap.values()].filter(x=>x.u!==myId&&now-x.at<3*3600000).map(x=>{const e=events.get(x.e);return {e:x.e,u:x.u,n:firstName(x.u),m:x.m,at:x.at,s:e?startOf(e).getTime():0,t:e?String(e.title||"").slice(0,60):""};});
+  const imgs={};
+  if(d.sv&&d.sv.k&&wImg.k===d.sv.k&&wImg.d){try{const im=new Image();im.src=wImg.d;await im.decode();imgs[wImg.k]=im;}catch(_){}}
+  return {d,imgs};
+}
+function wgFig(fam,cap){return el("figure",{class:"wg-fig wg-"+fam},el("div",{class:"wg-ph"}),el("figcaption",{},cap));}
+function openWidgets(focus){
+  const root=$("#sheet-root");root.textContent="";
+  const list=el("div",{class:"wg-list"}),jobs=[];
+  for(const x of WG_LIST){
+    const row=el("div",{class:"wg-row"});
+    if(x.id==="car"){const f=wgFig("medium","Écran de la voiture");f.classList.add("wg-car");row.append(f);jobs.push([f,"medium",x.p]);}
+    else for(const fam of x.f){const f=wgFig(fam,WG_FAM_N[fam]);row.append(f);jobs.push([f,fam,x.p]);}
+    if(x.lk){// l'écran verrouillé : la ligne du haut, l'heure, puis le rond et le rectangle
+      const inl=el("div",{class:"wg-ph wg-phl"}),circ=el("div",{class:"wg-ph wg-phc"}),rect=el("div",{class:"wg-ph wg-phr"});
+      const lock=el("figure",{class:"wg-fig wg-lock"},el("div",{class:"wg-lockbg"},inl,el("span",{class:"wg-clock"},hhmm(new Date())),el("div",{class:"wg-lockrow"},circ,rect)),el("figcaption",{},"Écran verrouillé"));
+      row.append(lock);jobs.push([inl,"accessoryInline",x.p,1],[circ,"accessoryCircular",x.p,1],[rect,"accessoryRectangular",x.p,1]);}
+    const copy=x.p?el("button",{type:"button",class:"btn primary",onclick:async()=>{let ok=false;try{await navigator.clipboard.writeText(x.p);ok=true;}catch(_){}
+        if(!ok)prompt("Copie ce mot :",x.p);toast("« "+x.p+" » copié : colle-le dans Paramètre, dans le réglage du widget");}},"Copier « "+x.p+" »"):
+      el("span",{class:"note"},"Paramètre : laisse vide");
+    list.append(el("section",{class:"wg-card",id:"wg-"+x.id},
+      el("div",{class:"wg-h"},el("strong",{},x.n),x.p?el("code",{class:"wg-p"},x.p):el("span",{class:"wg-p none"},"vide")),
+      el("p",{class:"note"},x.d.replace("{o}",firstName(otherId()||myId))),row,el("div",{class:"pchips"},copy)));
+  }
+  root.append(sheetShell("Les widgets",[
+    el("div",{class:"sheet-h"},el("h2",{},"Les widgets"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("p",{class:"note"},"Les aperçus sont dessinés par le vrai widget, avec vos données du moment. Chacun se met à jour tout seul."),
+    el("details",{class:"wg-how"},el("summary",{},"Ajouter un widget (une minute)"),el("ol",{class:"sc-steps"},
+      el("li",{},"Une seule fois : Réglages communs, Widgets, « Installer le widget ». Ce même script sert pour tous."),
+      el("li",{},"Écran d'accueil : appui long sur le fond, +, cherche Scriptable, choisis la taille, Ajouter le widget."),
+      el("li",{},"Touche le widget (ou appui long, Modifier le widget) : Script, Together, puis colle le mot copié ici dans Paramètre."),
+      el("li",{},"Écran verrouillé : appui long, Personnaliser, Écran verrouillé, touche la zone des widgets et choisis Scriptable, puis règle-le de la même façon."))),
+    list]));
+  if(focus){const c=document.getElementById("wg-"+focus);if(c)setTimeout(()=>c.scrollIntoView({block:"start",behavior:"smooth"}),120);}
+  (async()=>{
+    let D=null;try{D=await wgData();}catch(_){}
+    for(const [host,fam,param,small] of jobs){
+      if(!host.isConnected)return;
+      try{if(!D)throw new Error("données");const r=await wgRender(fam,param,D.d,D.imgs);
+        if(small)host.replaceWith(r.el);else host.querySelector(".wg-ph").replaceWith(r.el);}
+      catch(_){if(small)host.classList.add("wg-off");else{const ph=host.querySelector(".wg-ph");if(ph){ph.classList.add("wg-off");ph.textContent="Aperçu indisponible hors connexion";}}}
+      await new Promise(r=>setTimeout(r,0));
+    }
+  })();
+}
+// Réglages communs : installer le widget une fois, puis la galerie pour choisir
+function widgetSection(){
+  const box=el("div",{class:"disc-box"});
+  const gal=el("button",{type:"button",class:"btn primary",onclick:()=>openWidgets()},"Voir la galerie des widgets");
+  const st=el("p",{class:"note"},"Vérification…");
+  box.append(el("p",{class:"note"},"Six widgets : l'agenda, les courses, le compte à rebours, le souvenir du jour, « On fait quoi ? » et la voiture, pour l'écran d'accueil, l'écran verrouillé et CarPlay. La galerie les montre avec vos données et donne le mot à écrire dans leur réglage."),gal,st);
+  pushUrl().then(base=>{
+    st.remove();
+    if(!base){box.append(el("p",{class:"note"},"Le serveur ne répond pas pour l'instant. Réessaie dans quelques minutes pour installer le widget."));return;}
+    if(!pushToken()){box.append(el("p",{class:"note"},"Pour installer le widget, active d'abord les notifications sur l'un de vos deux téléphones : il utilise le même serveur."));return;}
+    const go=el("button",{type:"button",class:"btn"},"Installer le widget");
+    go.onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText(widgetScript(base));ok=true;}catch(_){}
+      if(!ok){prompt("Copie ce texte, puis colle-le dans Scriptable :",widgetScript(base));}
+      toast("Widget copié : colle-le dans Scriptable");setTimeout(()=>{location.href="scriptable:///add";},350);};
+    box.append(el("div",{class:"lab"},"Installation (une seule fois par téléphone)"),el("ol",{class:"sc-steps"},
+      el("li",{},"Installe l'app gratuite ",el("a",{href:"https://apps.apple.com/app/scriptable/id1405459188",target:"_blank",rel:"noopener"},"Scriptable"),"."),
+      el("li",{},"Touche « Installer le widget » : Scriptable s'ouvre. Touche l'écran, « Coller », puis « OK »."),
+      el("li",{},"Ensuite, chaque widget s'ajoute depuis l'écran d'accueil : la galerie explique comment.")),
+      el("div",{class:"pchips"},go,el("button",{type:"button",class:"btn quiet",onclick:async()=>{try{await navigator.clipboard.writeText(widgetScript(base));toast("Script copié");}catch(_){prompt("Copie ce script :",widgetScript(base));}}},"Copier le script du widget")));
+  });
+  return box;
 }
 function notifSection(){
   const box=el("div",{class:"disc-box"});
@@ -4419,18 +4778,6 @@ function notifSection(){
           "Apple a refusé la notification (code "+codes.join(", ")+") : sur son iPhone, ouvre Together, Réglages communs, Notifications, puis « Réactiver ».";};
       box.append(tb,res);
     }
-    // widget
-    box.append(el("div",{class:"pgroup-h"},"Widget sur l'écran d'accueil"));
-    if(!pushToken()){box.append(el("p",{class:"note"},"Active d'abord les notifications sur l'un de vos deux téléphones : le widget utilise le même serveur."));return;}
-    const go=el("button",{type:"button",class:"btn primary"},"Installer le widget");
-    go.onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText(widgetScript(base));ok=true;}catch(_){}
-      if(!ok){prompt("Copie ce texte, puis colle-le dans Scriptable :",widgetScript(base));}
-      toast("Widget copié : colle-le dans Scriptable");setTimeout(()=>{location.href="scriptable:///add";},350);};
-    box.append(el("ol",{class:"sc-steps"},
-      el("li",{},"Une seule fois : installe l'app gratuite ",el("a",{href:"https://apps.apple.com/app/scriptable/id1405459188",target:"_blank",rel:"noopener"},"Scriptable"),"."),
-      el("li",{},"Touche « Installer le widget » : Scriptable s'ouvre. Touche l'écran, « Coller », puis « OK »."),
-      el("li",{},"Sur l'écran d'accueil : appui long, +, Scriptable, Ajouter. Touche le widget et choisis le script.")),
-      go,el("button",{type:"button",class:"btn quiet",onclick:async()=>{try{await navigator.clipboard.writeText(widgetScript(base));toast("Script copié");}catch(_){prompt("Copie ce script :",widgetScript(base));}}},"Copier le script du widget"));
   });
   return box;
 }
@@ -4650,6 +4997,7 @@ function stop(ev,who){
 
   const tags=el("div",{class:"tags more-info"});
   if(ov)tags.append(el("span",{class:"tag warn"},"⚠ "+ovTxt));
+  if(ev.countdown&&cdAble(ev)) tags.append(el("span",{class:"tag cd num"},cdTag(ev)));
   if((+ev.cost||0)>0) tags.append(el("span",{class:"tag cost num"},"Budget "+(+ev.cost).toLocaleString("fr-FR")+" €"));
   if(ev.shopDone&&(+ev.paid||0)>0) tags.append(el("span",{class:"tag cost num"},"Ticket "+euro(+ev.paid)));
   for(const r of liveReminders(ev)){const past=remWhen(ev,r).getTime()<Date.now();tags.append(el("span",{class:"tag num"+(presetOf(r)==="leave"?" alarm":"")+(past?" past":"")},remChip(ev,r)));}
@@ -4671,6 +5019,7 @@ function stop(ev,who){
   if(canWrite&&canStartHere(ev)) links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();tripFromHere(ev,e.currentTarget);}},"Partir d'où je suis"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openPostpone(ev)},"Reporter"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
+  if(canWrite&&cdAble(ev)) links.append(el("button",{class:"btn"+(ev.countdown?" on":""),type:"button","aria-pressed":String(!!ev.countdown),onclick:e=>{e.stopPropagation();toggleCountdown(ev);}},(ev.countdown?"✓ ":"")+"Compte à rebours"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
 
   if(ev.busy){links.textContent="";tags.textContent="";}
@@ -6023,6 +6372,7 @@ function openSettings(){
     el("div",{class:"pgroup-h",id:"fer-h"},"Jours fériés et vacances"),holidaySection(),
     el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
     coupleId?el("div",{class:"pgroup-h"},"Notifications"):null,coupleId?notifSection():null,
+    coupleId?el("div",{class:"pgroup-h",id:"wid-h"},"Widgets"):null,coupleId?widgetSection():null,
     coupleId?el("div",{class:"pgroup-h",id:"np-h"},"Rappels et résumé du matin"):null,coupleId?notifPrefsSection():null,
     coupleId?el("div",{class:"pgroup-h",id:"car-h"},"Dans la voiture (CarPlay)"):null,coupleId?carPlaySection():null,
     coupleId?el("div",{class:"pgroup-h",id:"add-h"},"Ajouter avec Siri ou Partager"):null,coupleId?addSection():null,
@@ -6828,7 +7178,7 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="64";
+const APP_V="65";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
