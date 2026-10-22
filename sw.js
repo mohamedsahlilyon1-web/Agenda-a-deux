@@ -1,5 +1,5 @@
 // Garde l'app disponible même avec une connexion faible. Les données restent synchronisées par Firebase.
-const CACHE = "agenda-a-deux-v62";
+const CACHE = "agenda-a-deux-v63";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})); self.skipWaiting(); });
 // Bibliothèques externes à version fixe (Firebase, Leaflet) : gardées sur le téléphone, chargées instantanément
@@ -39,10 +39,14 @@ self.addEventListener("fetch", (e) => {
 
 // Notifications reçues du serveur Together
 // Toucher une notification ouvre directement ce dont elle parle : « ev-<id> » l'évènement, « trip-<id> » le trajet en direct
+// « fb-<id> » et « mem-<id> » le souvenir, « anniv » les souvenirs (il y a un an), « nudge » les envies
 const urlFor = (d) => {
   if (d.url && d.url !== "./") return d.url;
-  const m = /^(ev|fb|trip)-([A-Za-z0-9]{4,})/.exec(d.tag || "");
-  return m ? "./?" + (m[1] === "trip" ? "trip" : "ev") + "=" + m[2] : "./";
+  const t = d.tag || "";
+  if (t === "anniv") return "./?mem=anniv";
+  if (t === "nudge") return "./?wishes=1";
+  const m = /^(ev|fb|trip|mem)-([A-Za-z0-9]{4,})/.exec(t);
+  return m ? "./?" + (m[1] === "trip" ? "trip" : m[1] === "ev" ? "ev" : "mem") + "=" + m[2] : "./";
 };
 self.addEventListener("push", (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text() }; }
