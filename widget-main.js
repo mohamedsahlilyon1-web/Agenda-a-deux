@@ -157,11 +157,33 @@ function dice(c,x,y,s,col){const p=new Path();p.addRoundedRect(new Rect(x-s/2,y-
   for(const [a,b] of [[-.22,-.22],[.22,.22],[.22,-.22],[-.22,.22],[0,0]])dot(c,x+a*s,y+b*s,Math.max(1,s*.075),col);}
 function tick(c,x,y,r,col,lw){poly(c,[new Point(x-r*.5,y+r*.02),new Point(x-r*.12,y+r*.4),new Point(x+r*.55,y-r*.38)],col,lw);}
 
+// ---------- décors de saison (Together, Thème : Noël, Nouvel An, Saint-Valentin, Halloween, été, votre anniversaire) ----------
+function flake(c,x,y,r,col){for(let i=0;i<3;i++){const a=i*Math.PI/3;poly(c,[new Point(x-Math.cos(a)*r,y-Math.sin(a)*r),new Point(x+Math.cos(a)*r,y+Math.sin(a)*r)],col,Math.max(1,r/4));}}
+// un cœur : deux ronds et une pointe, remplis d'un seul coup (pas de recouvrement plus foncé)
+function heart(c,x,y,s,col){const p=new Path();p.addEllipse(new Rect(x-s*1.02,y-s*0.72,s*1.04,s*1.04));p.addEllipse(new Rect(x-s*0.02,y-s*0.72,s*1.04,s*1.04));
+  p.move(new Point(x-s*0.97,y-s*0.02));p.addLine(new Point(x+s*0.97,y-s*0.02));p.addLine(new Point(x,y+s*0.98));p.closeSubpath();c.addPath(p);c.setFillColor(col);c.fillPath();}
+function bat(c,x,y,s,col){poly(c,[[-1,0],[-.55,-.45],[-.4,-.1],[-.15,-.32],[0,-.12],[.15,-.32],[.4,-.1],[.55,-.45],[1,0],[.55,-.08],[.3,.2],[0,.02],[-.3,.2],[-.55,-.08]].map(([a,b])=>new Point(x+a*s,y+b*s)),col,0,true);}
+function pumpkin(c,x,y,s){const p=new Path();p.addEllipse(new Rect(x-s*1.15,y-s*0.85,s*2.3,s*1.7));c.addPath(p);c.setFillColor(C("#F97316",.55));c.fillPath();
+  const q=new Path();q.addEllipse(new Rect(x-s*0.45,y-s*0.85,s*0.9,s*1.7));c.addPath(q);c.setFillColor(C("#FB923C",.45));c.fillPath();
+  poly(c,[new Point(x,y-s*0.8),new Point(x+s*0.25,y-s*1.25)],C("#16A34A",.7),Math.max(1.5,s*0.18));}
+function seasonDeco(c,W,H){const z=TH.z;if(!["noel","nouvelan","valentin","anniv","halloween","ete"].includes(z))return;
+  let s=91;const r=()=>(s=s*16807%2147483647)/2147483647,S=Math.min(W,H),at=()=>[W*(0.6+r()*0.37),H*(0.05+r()*0.42)];
+  if(z==="noel")for(let i=0;i<8;i++){const [x,y]=at();flake(c,x,y,S*(0.022+r()*0.02),C("#ffffff",.2+r()*.2));}
+  else if(z==="valentin"||z==="anniv")for(let i=0;i<6;i++){const [x,y]=at();heart(c,x,y,S*(0.026+r()*0.022),C(i%2?"#FF8FB1":"#ffffff",.22+r()*.16));}
+  // la citrouille seulement sur le petit (ailleurs, le coin du bas est pris par la semaine ou vos prénoms)
+  else if(z==="halloween"){if(W<200)pumpkin(c,W-S*0.14,H-S*0.13,S*0.07);for(let i=0;i<3;i++){const [x,y]=at();bat(c,x,y,S*(0.045+r()*0.02),C("#07030F",.5));}}
+  // le soleil qui dépasse du coin, derrière le logo
+  else if(z==="ete"){const x=W-S*0.03,y=S*0.03,R=S*0.1;dot(c,x,y,R*1.25,C("#FFD54A",.14));dot(c,x,y,R,C("#FFD54A",.6));
+    for(let i=0;i<12;i++){const a=i*Math.PI/6;poly(c,[new Point(x+Math.cos(a)*R*1.3,y+Math.sin(a)*R*1.3),new Point(x+Math.cos(a)*R*1.75,y+Math.sin(a)*R*1.75)],C("#FFD54A",.55),Math.max(1.2,S*0.011));}}
+  else{const cols=["#FFD54A","#FF8FB1","#5EEAD4","#A78BFA"];for(let i=0;i<12;i++){const [x,y]=at(),a=r()*Math.PI,l=S*0.018;
+    poly(c,[new Point(x-Math.cos(a)*l,y-Math.sin(a)*l),new Point(x+Math.cos(a)*l,y+Math.sin(a)*l)],C(cols[i%4],.55),Math.max(1.5,S*0.012));}}}
+
 // ---------- éléments composés ----------
 function backdrop(c,W,H,col){c.setFillColor(C(BG));c.fillRect(new Rect(0,0,W,H));
   blob(c,W*0.95,-H*0.1,Math.max(W,H)*0.55,TH.p,.85);
   blob(c,W*0.05,H*1.05,Math.max(W,H)*0.45,col||EVC,.7);
   blob(c,W*0.6,H*0.9,Math.max(W,H)*0.25,ACC,.18);
+  seasonDeco(c,W,H);
   grain(c,W,H,Math.round(W*H/40));}
 function watermarkM(c,x,y,size,m){if(!(m&&icon(c,m,x,y,size,C("#ffffff",.07),size/12,-0.22)))logo(c,x,y,size*0.32,size/22,.07,"#ffffff","#ffffff");}
 function watermark(c,x,y,size){watermarkM(c,x,y,size,next&&next.m);}
