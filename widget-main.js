@@ -8,7 +8,16 @@ const fold=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""
 let data=null;
 // Ouvert en touchant le widget : on montre tout de suite la dernière copie, sans attendre le réseau trop longtemps
 const fromTap=!config.runsInWidget&&QP.from==="widget";
-try{const rq=new Request(API);if(!config.runsInWidget)rq.timeoutInterval=fm.fileExists(cache)?2.5:8;const j=await rq.loadJSON();data=j.data;if(data)fm.writeString(cache,JSON.stringify(data));}catch(e){}
+// (WV : la version du lanceur, pour « Tout marche ? » dans l'app)
+let GONE=false;
+try{const rq=new Request(API+(typeof WV!=="undefined"&&WV?"&wv="+encodeURIComponent(WV):""));if(!config.runsInWidget)rq.timeoutInterval=fm.fileExists(cache)?2.5:8;const j=await rq.loadJSON();
+  // téléphone retiré dans l'app (Appareils et sécurité) : plus rien n'est montré, même la dernière copie
+  if(j&&j.gone){GONE=true;try{if(fm.fileExists(cache))fm.remove(cache);}catch(e){}}
+  data=j.data;if(data)fm.writeString(cache,JSON.stringify(data));}catch(e){}
+if(GONE){const gw=new ListWidget();gw.backgroundColor=new Color("#1E1A5E");gw.setPadding(12,12,12,12);
+  const t1=gw.addText("Together");t1.font=Font.boldSystemFont(14);t1.textColor=Color.white();gw.addSpacer(4);
+  const t2=gw.addText("Ce téléphone n'a plus accès à votre agenda.");t2.font=Font.systemFont(12);t2.textColor=new Color("#FFFFFF",.85);t2.minimumScaleFactor=.7;
+  Script.setWidget(gw);Script.complete();return;}
 if(!data&&fm.fileExists(cache)){try{data=JSON.parse(fm.readString(cache));}catch(e){}}
 const D=data||{};
 const fam=config.widgetFamily||"medium",now=Date.now();

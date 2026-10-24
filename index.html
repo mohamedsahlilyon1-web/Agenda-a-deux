@@ -1219,14 +1219,161 @@ body{font-size:1rem}
 .skin-prev s{position:absolute;left:28px;bottom:12px;height:8px;width:35%;border-radius:4px;opacity:.5}
 .skin-name{font-weight:800}
 .skin-sub{font-size:.8rem;color:var(--muted)}
+
+/* Réglages communs : rubriques, recherche, « Tout marche ? », appareils, vacances, sauvegarde, nouveautés */
+.set-body{display:flex;flex-direction:column;gap:14px;flex:none;min-width:0}
+.set-body>*{flex:none}
+.set-top{margin-bottom:-6px}
+.set-back{padding-left:6px;font-weight:700;color:var(--line)}
+.set-title{margin:0;display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.45rem;letter-spacing:-.02em}
+.set-title .set-ic{width:32px;height:32px}
+.rub-help{margin:0;background:var(--ok-soft);color:var(--ink);border-radius:14px;padding:10px 13px;font-size:.92rem;line-height:1.4}
+.set-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:0 12px;cursor:text}
+.set-search:focus-within{border-color:var(--line);box-shadow:0 0 0 1px var(--line) inset}
+.set-loupe{display:grid;place-items:center;color:var(--muted)}
+.set-loupe svg{width:18px;height:18px}
+.set-search input{flex:1;min-width:0;border:none;background:none;padding:11px 0;font-size:1rem;outline:none;-webkit-appearance:none;appearance:none}
+.set-search input::-webkit-search-cancel-button{-webkit-appearance:none}
+.set-groups{display:flex;flex-direction:column;gap:8px}
+.set-gh{font-size:.76rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:8px 4px 0}
+.set-group{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--hair);border-radius:16px;overflow:hidden}
+.set-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:10px 12px;border:none;background:none;color:var(--ink);text-align:left;min-height:56px}
+.set-row+.set-row{border-top:1px solid var(--hair)}
+.set-row:active{background:var(--ok-soft)}
+.set-ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--ic,#6D5DF6);color:#fff;flex:none}
+.set-ic svg{width:18px;height:18px}
+.set-t{display:flex;flex-direction:column;min-width:0}
+.set-t strong{font-weight:700;line-height:1.25}
+.set-t small{color:var(--muted);font-size:.84rem;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.set-chev{color:var(--muted);font-size:1.4rem;line-height:1;padding-left:2px}
+.set-link{margin-top:2px}
+.set-res .note{padding:4px 2px}
+@keyframes flashSet{0%,35%{box-shadow:0 0 0 3px color-mix(in srgb,var(--sun) 70%,transparent);background-color:color-mix(in srgb,var(--sun) 16%,transparent)}100%{box-shadow:0 0 0 0 transparent;background-color:transparent}}
+.flash-set{animation:flashSet 1.8s ease-out;border-radius:10px}
+:root[data-motion="reduce"] .flash-set{animation:none;outline:2px solid var(--sun);outline-offset:3px}
+
+/* « Tout marche ? » */
+.ck-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--hair);border-radius:16px;padding:12px}
+.ck-card .set-t small{white-space:normal}
+.ck-card[data-st="bad"]{border-color:var(--danger);box-shadow:0 0 0 1px var(--danger) inset}
+.ck-card[data-st="warn"]{border-color:var(--warn)}
+.ck-dot{width:12px;height:12px;border-radius:50%;flex:none;background:var(--hair);box-shadow:0 0 0 4px color-mix(in srgb,var(--hair) 45%,transparent)}
+.ck-dot.ok{background:var(--go);box-shadow:0 0 0 4px color-mix(in srgb,var(--go) 22%,transparent)}
+.ck-dot.warn{background:var(--warn);box-shadow:0 0 0 4px color-mix(in srgb,var(--warn) 22%,transparent)}
+.ck-dot.bad{background:var(--danger);box-shadow:0 0 0 4px color-mix(in srgb,var(--danger) 22%,transparent)}
+.ck-dot.off{background:transparent;border:2px solid var(--muted);box-shadow:none;opacity:.55}
+.ck-dot.wait{background:var(--muted);opacity:.5;animation:ckWait 1s ease-in-out infinite alternate}
+@keyframes ckWait{to{opacity:.15}}
+.ck-page{display:flex;flex-direction:column;gap:12px}
+.ck-sum{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:14px}
+.ck-sum.ck-ok{border-color:color-mix(in srgb,var(--go) 55%,var(--hair))}
+.ck-sum.ck-bad{border-color:var(--danger)}
+.ck-sum.ck-warn{border-color:var(--warn)}
+.ck-sum strong{font-size:1.08rem}
+.ck-block{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--hair);border-radius:16px;overflow:hidden}
+.ck-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:11px 13px 9px;border-bottom:1px solid var(--hair)}
+.ck-h small{color:var(--muted);font-size:.84rem;text-align:right}
+.ck-block>.note{margin:0;padding:10px 13px}
+.ck-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;padding:10px 13px}
+.ck-row+.ck-row{border-top:1px solid var(--hair)}
+.ck-row .ck-dot{grid-row:1/span 2;align-self:start;margin-top:5px}
+.ck-tx{display:flex;flex-direction:column;min-width:0}
+.ck-tx span{font-size:.9rem;color:var(--muted);overflow-wrap:anywhere}
+.ck-row .btn{grid-column:2;justify-self:start;margin-top:4px;padding:7px 12px;font-size:.92rem}
+.ck-off .ck-tx strong{font-weight:600;color:var(--muted)}
+
+/* Appareils */
+.dev-box{gap:10px}
+.dev-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:start;background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:12px}
+.dev-card.me{border-color:color-mix(in srgb,var(--line) 45%,var(--hair))}
+.dev-card.old{border-style:dashed}
+.dev-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--ok-soft);color:var(--line)}
+.dev-card.old .dev-ic{color:var(--muted);background:color-mix(in srgb,var(--hair) 50%,transparent)}
+.dev-ic svg{width:20px;height:20px}
+.dev-tx{display:flex;flex-direction:column;min-width:0;gap:1px}
+.dev-tx span{font-size:.88rem;color:var(--muted);overflow-wrap:anywhere}
+.dev-card>.btn{align-self:center}
+.dev-act,.dev-card>.confirm{grid-column:1/-1;display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:6px}
+.dev-card>.confirm{flex-direction:row;flex-wrap:wrap;align-items:center}
+.dev-act .note{margin:0}
+
+/* Verrou Face ID */
+.lock{display:none}
+html.locked{overflow:hidden}
+html.locked body>*:not(#lock){visibility:hidden!important}
+html.locked .lock{display:flex;position:fixed;inset:0;z-index:2147483000;background:var(--bg);align-items:center;justify-content:center;padding:24px 20px calc(24px + env(safe-area-inset-bottom,0px))}
+.lock-in{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:340px;width:100%;text-align:center}
+.lock-mark{width:68px;height:68px}
+.lock-in h2{margin:0;font-weight:800;font-size:1.4rem;letter-spacing:-.02em}
+.lock-in .btn.primary{width:100%;padding:14px;font-size:1.05rem;display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.lock-in .btn.primary svg{width:22px;height:22px}
+.lock-in form{display:flex;gap:8px;width:100%}
+.lock-in form input{flex:1;min-width:0;border:1px solid var(--hair);background:var(--surface);border-radius:12px;padding:11px;text-transform:uppercase;letter-spacing:.06em}
+.lock-msg{min-height:1.2em;margin:0}
+.lock-after{margin-top:-4px}
+
+/* Mode vacances */
+.vac-on{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;background:var(--surface);border:1px solid color-mix(in srgb,#0891B2 45%,var(--hair));border-radius:16px;padding:13px}
+.vac-on>div{display:flex;flex-direction:column;gap:2px}
+.vac-on>div>span{font-size:.9rem;color:var(--muted)}
+.vac-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#0891B2;color:#fff;flex:none}
+.vac-ic svg{width:20px;height:20px}
+.vac-what{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:430px){.vac-what{grid-template-columns:1fr}}
+.vac-what>div{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:10px 12px;font-size:.9rem}
+.vac-what ul{margin:4px 0 0;padding-left:18px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.vac-quick .pchip{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vac-pill{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;width:100%;text-align:left;background:color-mix(in srgb,#0891B2 12%,var(--surface));color:var(--ink);border:1px solid color-mix(in srgb,#0891B2 40%,var(--hair));border-radius:16px;padding:10px 12px;font-weight:700}
+.vac-pill>span:last-child{display:flex;flex-direction:column;min-width:0}
+.vac-pill small{font-weight:500;color:var(--muted);font-size:.86rem}
+
+/* Sauvegarde, remettre, export */
+.ac-row .pname{text-transform:none}
+.ac-row .pname::first-letter{text-transform:uppercase}
+.bk-st,.rs-plan .note{margin:0}
+.rs-plan{display:flex;flex-direction:column;gap:10px}
+.rs-plan:empty{display:none}
+.rs-src{display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:10px 12px}
+.rs-src span{font-size:.9rem;color:var(--muted)}
+.rs-list{display:flex;flex-direction:column;gap:6px}
+.rs-none,.rs-done{margin:0;font-weight:700;color:var(--go)}
+
+/* Nouveautés */
+.news-card{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid color-mix(in srgb,#0284C7 40%,var(--hair));border-radius:18px;padding:14px}
+.nc-h{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center}
+.nc-h small{display:block;color:var(--muted);font-size:.82rem;font-weight:700}
+.nc-h strong{font-size:1.06rem;line-height:1.25}
+.nc-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#0284C7;color:#fff}
+.nc-ic svg{width:20px;height:20px}
+.nc-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:.93rem}
+.news-box,.faq-box{gap:8px}
+.nw,.faq{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:0 12px}
+.nw summary,.faq summary{list-style:none;cursor:pointer;padding:11px 0;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.nw-top{display:flex;align-items:center;gap:8px}
+.nw summary::-webkit-details-marker,.faq summary::-webkit-details-marker{display:none}
+.faq summary{font-weight:700}
+.nw-v{font-size:.78rem;font-weight:800;color:#fff;background:#0284C7;border-radius:999px;padding:2px 8px}
+.nw summary small{color:var(--muted);font-size:.84rem}
+.nw ul{margin:0 0 10px;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:.93rem}
+.nw .btn,.faq .btn{margin:0 0 10px -6px}
+.faq p{margin:0 0 6px;font-size:.93rem;color:var(--muted)}
+:root[data-contrast="high"] .set-t small,:root[data-contrast="high"] .ck-tx span,:root[data-contrast="high"] .dev-tx span{color:var(--muted)}
 </style>
 <script>(function(){try{var R=document.documentElement,L=localStorage;if(!L.getItem('a2.look2')){L.setItem('a2.look2','1');L.removeItem('a2.skin');}var _sk=L.getItem('a2.skin');if(/^(lavande|ocean|corail|graphite)$/.test(_sk||'')){L.removeItem('a2.skin');_sk=null;}
 var cc=L.getItem('a2.customCss');if(cc){var st=document.createElement('style');st.id='skin-perso';st.textContent=cc;document.head.appendChild(st);}else if(_sk==='perso')_sk=null;
 if(_sk&&_sk!=='encre')R.setAttribute('data-skin',_sk);
 var m=L.getItem('a2.mode');if(m==='light'||m==='dark')R.setAttribute('data-theme',m);else if(m==='night'){var u=JSON.parse(L.getItem('a2.sun')||'null')||{r:7,s:20},n=new Date(),h=n.getHours()+n.getMinutes()/60;R.setAttribute('data-theme',h>=u.s||h<u.r?'dark':'light');}
-var t=L.getItem('a2.text');if(t==='l'||t==='xl'||t==='ios')R.setAttribute('data-text',t);if(L.getItem('a2.contrast')==='1')R.setAttribute('data-contrast','high');if(L.getItem('a2.motion')==='reduce')R.setAttribute('data-motion','reduce');}catch(_){}})();</script>
+var t=L.getItem('a2.text');if(t==='l'||t==='xl'||t==='ios')R.setAttribute('data-text',t);if(L.getItem('a2.contrast')==='1')R.setAttribute('data-contrast','high');if(L.getItem('a2.motion')==='reduce')R.setAttribute('data-motion','reduce');if(L.getItem('a2.lock'))R.classList.add('locked');}catch(_){}})();</script>
 </head>
 <body>
+<div id="lock" class="lock" role="dialog" aria-modal="true" aria-labelledby="lock-t"><div class="lock-in">
+<svg class="lock-mark" viewBox="0 0 30 30" aria-hidden="true"><circle cx="11" cy="15" r="7.5" fill="none" stroke="var(--sun)" stroke-width="3.2"/><circle cx="19" cy="15" r="7.5" fill="none" stroke="var(--line)" stroke-width="3.2"/><path d="M16.2 8.6a7.5 7.5 0 0 1 2.2 2.4" fill="none" stroke="var(--sun)" stroke-width="3.2"/></svg>
+<h2 id="lock-t">Together est verrouillé</h2>
+<button type="button" class="btn primary" id="lock-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1M12 9.5v4h-1M9.5 16a3.5 3.5 0 0 0 5 0"/></svg>Déverrouiller</button>
+<button type="button" class="btn quiet" id="lock-code-b">Utiliser mon code de secours</button>
+<form id="lock-code" hidden><input id="lock-code-in" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code de secours" aria-label="Code de secours"><button type="submit" class="btn">OK</button></form>
+<p class="note lock-msg" id="lock-msg" role="status"></p>
+</div></div>
 
 
 <div class="wrap">
@@ -1449,6 +1596,8 @@ async function render(){
     wb.append(el("div",{class:"bar-row"},wf||el("span",{class:"bar-fill"}),el("button",{type:"button",class:"round bar-btn",id:"btn-search","aria-label":"Chercher dans l'agenda",title:"Chercher",html:LOUPE_SVG,onclick:()=>openSearch()})));
     wb.hidden=!wf&&!events.size;}
   {const rc=shopRunCard();if(rc)list.append(rc);}
+  {const vb=vacBanner();if(vb)list.append(vb);}
+  {const nc=newsCard();if(nc)list.append(nc);}
   {const pp=pushPromptCard();if(pp)list.append(pp);else{const ca=carPromptCard();if(ca)list.append(ca);}}
   if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
   syncPush();
@@ -1468,8 +1617,8 @@ async function render(){
   {const an=annivCard();if(an){const cb=list.querySelector(".cal-banner");cb?list.insertBefore(an,cb):list.append(an);}}
   {const due=feedbackDue();if(due.length){const box=el("section",{class:"wish-alerts","aria-label":"Sorties à raconter"},...due.slice(0,2).map(feedbackCard));const cb=list.querySelector(".cal-banner");cb?list.insertBefore(box,cb):list.append(box);}}
   {const wa=wishAlerts();if(wa){const cb=list.querySelector(".cal-banner");cb?list.insertBefore(wa,cb):list.append(wa);}}
-  {const lw=longWeekendCard(),[sat]=nextWeekend();if(lw)list.append(lw);
-    if(!lw||!(sat>=lw.dataset.from&&sat<=lw.dataset.to)){const wk=weekendCard();if(wk)list.append(wk);}}
+  if(!awayOn(myId,today0)){const lw0=longWeekendCard(),[sat]=nextWeekend(),lw=lw0&&!awayOn(myId,lw0.dataset.from)?lw0:null;if(lw)list.append(lw);
+    if(!lw||!(sat>=lw.dataset.from&&sat<=lw.dataset.to)){const wk=awayOn(myId,sat)?null:weekendCard();if(wk)list.append(wk);}}
   if(!shown.length){
     list.append(el("div",{class:"empty"},el("strong",{},"Rien de prévu pour l'instant"),
       el("p",{},"Écris un rendez-vous, une sortie ou des courses : l'app calcule le trajet, l'heure de départ et propose les rappels."),
@@ -3555,7 +3704,7 @@ function calSyncSection(){
     if(cals.length){box.append(el("div",{class:"lab"},"Calendrier par calendrier"));
       for(const c of cals)box.append(el("div",{class:"cs-cal"},el("span",{class:"cs-n"},c),chips(calModeFor(cfg,c),v=>saveCs({cals:{...cfg.cals,[c]:v}}),true)));}
     else box.append(el("p",{class:"note"},"Pour régler calendrier par calendrier (Travail en « Occupé », Famille à deux…), ajoute le calendrier à la fin de la ligne du raccourci « Export Agenda » : Titre | Début | Lieu | cal:Calendrier. Avec | fin:Date de fin, la durée est reprise aussi."));
-    box.append(st?el("p",{class:"note cs-st"},"Dernier envoi de l'iPhone "+agoTxt(st.at)+" : "+st.n+" rendez-vous suivis."):el("p",{class:"note cs-st"},inboxText?"Prêt : le prochain envoi du raccourci sera repris tout seul.":"Le raccourci « Export Agenda » n'a encore rien envoyé (voir « Installer sur l'iPhone de ta moitié »)."),
+    box.append(st?el("p",{class:"note cs-st"},"Dernier envoi de l'iPhone "+agoTxt(st.at)+" : "+st.n+" rendez-vous suivis."):el("p",{class:"note cs-st"},inboxText?"Prêt : le prochain envoi du raccourci sera repris tout seul.":"Le raccourci « Export Agenda » n'a encore rien envoyé (voir Nous deux, « Installer sur l'iPhone de ta moitié »)."),
       el("div",{class:"pchips"},el("button",{type:"button",class:"btn",onclick:openImport},"Importer à la main"),
         el("button",{type:"button",class:"btn quiet",onclick:async()=>{const r=await calSync();toast(r?"Synchronisé : "+r.add+" ajouté"+(r.add>1?"s":"")+", "+r.move+" déplacé"+(r.move>1?"s":"")+", "+r.del+" retiré"+(r.del>1?"s":""):"Rien à synchroniser pour l'instant");draw();}},"Synchroniser maintenant")));};
   draw();return box;
@@ -4365,7 +4514,7 @@ async function enablePush(btn){
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uBytes(pub)});
     await ensurePushToken();
-    const r=await pushPost("/api/sub",{uid:myId,sub:sub.toJSON(),hello:true});
+    const r=await pushPost("/api/sub",{uid:myId,sub:sub.toJSON(),hello:true,dev:devLabel()});
     if(!r){toast("Activation impossible pour l'instant. Réessaie dans un moment.");return false;}
     lsSet("a2.push","1");lsSet("a2.pushSig","");lsSet("a2.pushEp",sub.endpoint);lsSet("a2.pushSync",String(Date.now()));syncPush(true);
     toast("Notifications activées");return true;
@@ -4377,11 +4526,11 @@ function pushItems(){
   const now=Date.now(),items=[],mem=memberIds();
   for(const ev of events.values()){
     const st=startOf(ev).getTime();if(st<now-6*3600000||st>now+35*86400000)continue;
-    const w=whoOf(ev),to=w==="both"?mem:[w];
+    const w=whoOf(ev),to=(w==="both"?mem:[w]).filter(u=>!awayMute(u,ev));
     const when=dayParts(startOf(ev))[0].toLowerCase();
     if(hasPickup(ev)&&w==="both"){
       const tr=trips.get(ev.id),gone=!!tr&&["go","here","together"].includes(tr.stage);
-      if(!gone)for(const uid of mem){const v=viewFor(ev,uid),picked=v.pickedUp,dn=firstName(driverOf(ev)),pn=firstName(ev.pickupWho);
+      if(!gone)for(const uid of mem){if(awayMute(uid,ev))continue;const v=viewFor(ev,uid),picked=v.pickedUp,dn=firstName(driverOf(ev)),pn=firstName(ev.pickupWho);
         liveReminders(v).forEach((r,i)=>{const at=remWhen(v,r).getTime();if(at<=now+30000)return;const leave=presetOf(r)==="leave";
           items.push({id:ev.id+":p"+uid.slice(0,6)+":r"+i+":"+at,to:[uid],at,tag:"ev-"+ev.id,lv:leave?1:0,st,
             title:picked?(leave?dn+" passe te prendre maintenant":dn+" passe te prendre à "+hhmm(pickupAt(ev))):(leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+" à "+ev.time),
@@ -4390,7 +4539,7 @@ function pushItems(){
       if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
       continue;
     }
-    liveReminders(ev).forEach((r,i)=>{const at=remWhen(ev,r).getTime();if(at<=now+30000)return;
+    if(to.length)liveReminders(ev).forEach((r,i)=>{const at=remWhen(ev,r).getTime();if(at<=now+30000)return;
       const leave=presetOf(r)==="leave";
       items.push({id:ev.id+":r"+i+":"+at,to,at,tag:"ev-"+ev.id,
         title:leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+(isAllDay(ev)?"":" à "+ev.time),
@@ -4400,14 +4549,14 @@ function pushItems(){
   // résumé du matin, pour chacun à son heure : la journée de la personne, avec les heures de départ
   for(const uid of mem){const mt=prefOf(uid).morning;if(!mt)continue;
     const [h,m]=mt.split(":").map(Number);
-    for(let i=0;i<7;i++){const d=new Date();d.setHours(h,m,0,0);d.setDate(d.getDate()+i);const at=d.getTime();if(at<=now+30000)continue;
+    for(let i=0;i<7;i++){const d=new Date();d.setHours(h,m,0,0);d.setDate(d.getDate()+i);const at=d.getTime();if(at<=now+30000||awayOn(uid,ymd(d)))continue;
       const key=ymd(d),day=[...events.values()].filter(e=>e.date===key&&!e.busy&&(whoOf(e)==="both"||whoOf(e)===uid)&&(isAllDay(e)||startOf(e).getTime()>at)).sort((a,b)=>startOf(a)-startOf(b));
       if(!day.length)continue;
       const parts=day.slice(0,6).map(e=>{const v=viewFor(e,uid);return (e.title||"Évènement")+(isAllDay(e)?" (toute la journée)":" à "+e.time+(hasTrip(v)?", départ "+hhmm(departOf(v)):""));});
       items.push({id:"mrn:"+uid.slice(0,6)+":"+key+":"+mt,to:[uid],at,tag:"mrn",urgent:1,
         title:"Aujourd'hui, "+d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric"})+" : "+day.length+(day.length>1?" moments":" moment"),
         body:parts.join(" · ")+(day.length>6?" · et "+(day.length-6)+" autre"+(day.length>7?"s":""):"")});}}
-  {const nd=outingNudge(events.values(),now);if(nd&&nd.at>now+30000)items.push({id:"nudge:"+ymd(new Date(nd.at)),to:mem,at:nd.at,tag:"nudge",title:nd.title,body:nd.body});}
+  {const nd=outingNudge(events.values(),now);if(nd&&nd.at>now+30000&&!mem.some(u=>awayOn(u,ymd(new Date(nd.at)))))items.push({id:"nudge:"+ymd(new Date(nd.at)),to:mem,at:nd.at,tag:"nudge",title:nd.title,body:nd.body});}
   items.push(...annivPushes(now,mem));
   items.push(...couplePushes(now,mem));
   // ne pas déranger (22 h à 7 h) : un rappel tombant la nuit attend 7 h, ou disparaît si le moment est déjà passé.
@@ -4598,9 +4747,10 @@ async function syncPushNow(){
   const calNew=lsGet("a2.calSig")!==csig;
   // la photo du widget « Souvenir » ne part qu'une fois : le serveur la garde
   const wi=wImg.k&&wImg.d&&lsGet("a2.wimgK")!==wImg.k?{k:wImg.k,d:wImg.d}:null;
-  if(lsGet("a2.pushSig")===sig&&!calNew&&!wi)return true;
-  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,items,widget,widgets,prefs,...(calNew?{cals}:{}),...(wi?{wimg:wi}:{})});
-  if(r){lsSet("a2.pushSig",sig);lsSet("a2.calSig",csig);if(wi)lsSet("a2.wimgK",wi.k);}
+  // sans changement, une fois toutes les 12 h quand même : « Tout marche ? » sait ainsi que ce téléphone est actif
+  if(lsGet("a2.pushSig")===sig&&!calNew&&!wi&&Date.now()-(+lsGet("a2.pushBeat")||0)<12*3600000)return true;
+  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,dev:devLabel(),members:memberIds(),items,widget,widgets,prefs,...(calNew?{cals}:{}),...(wi?{wimg:wi}:{})});
+  if(r){lsSet("a2.pushSig",sig);lsSet("a2.calSig",csig);if(wi)lsSet("a2.wimgK",wi.k);lsSet("a2.pushBeat",String(Date.now()));}
   return !!r;
 }
 function widgetScript(base){
@@ -4976,7 +5126,7 @@ function carSection(){
     st.append(fresh(seen[myId])?line(true,"Ton iPhone reçoit le calendrier Together."):
       seen[myId]?line(false,"Ton iPhone n'a pas relu le calendrier depuis "+days(seen[myId])+" jours. Touche « Ajouter à nouveau »."):
       line(false,calSubOn()?"En attente : ton iPhone n'a pas encore lu le calendrier. Si tu as touché « S'abonner », patiente un peu.":"Pas encore ajouté sur ce téléphone."));
-    if(oth)st.append(fresh(seen[oth])?line(true,on+" l'a aussi sur son iPhone."):line(false,on+" ne l'a pas encore : sur son iPhone, Réglages communs puis « Dans la voiture »."));
+    if(oth)st.append(fresh(seen[oth])?line(true,on+" l'a aussi sur son iPhone."):line(false,on+" ne l'a pas encore : sur son iPhone, Réglages communs puis « Calendrier »."));
     go.textContent=calSubOn()?"Ajouter à nouveau":"Ajouter le calendrier Together";
   }
   box.append(
@@ -5038,10 +5188,10 @@ function pushPromptCard(){
 function carPromptCard(){
   if(!IS_IOS||!coupleId||!myId||!pushBase||lsGet("a2.carAsk"))return null;
   const b=el("button",{type:"button",class:"btn primary"},"Voir");
-  b.onclick=()=>{lsSet("a2.carAsk",String(Date.now()));scheduleRender();openSettings();setTimeout(()=>{const h=document.getElementById("car-h");if(h)h.scrollIntoView({block:"start"});},350);};
+  b.onclick=()=>{lsSet("a2.carAsk",String(Date.now()));scheduleRender();openSettings("siri","car-h");};
   return el("div",{class:"cal-banner car-ask"},el("div",{class:"cal-txt"},el("strong",{},"Together dans ta voiture"),
       el("span",{},"Le widget Together sur l'écran CarPlay, et « Dis Siri, on y va » pour lancer l'itinéraire du prochain départ.")),b,
-    el("button",{class:"cal-x",type:"button","aria-label":"Plus tard",onclick:()=>{lsSet("a2.carAsk",String(Date.now()));render();toast("Tu le retrouves dans Réglages communs, « Dans la voiture ».");}},"×"));
+    el("button",{class:"cal-x",type:"button","aria-label":"Plus tard",onclick:()=>{lsSet("a2.carAsk",String(Date.now()));render();toast("Tu le retrouves dans Réglages communs, « Siri et voiture ».");}},"×"));
 }
 function pickupLine(ev){
   const me=ev.pickupWho===myId,dn=firstName(driverOf(ev)),pn=firstName(ev.pickupWho);
@@ -6391,67 +6541,6 @@ function placeForm(p,done,presetKind){
   setTimeout(()=>(p?addr:name).focus(),50);
   return form;
 }
-function openSettings(){
-  const root=$("#sheet-root");root.textContent="";
-  const listBox=el("div",{class:"plist"});
-  let editing=false;
-  const GROUPS=[["home","Nos domiciles","Ajouter un domicile"],["work","Travail","Ajouter un lieu de travail"],["place","Nos destinations","Ajouter une destination"]];
-  function drawList(){
-    if(editing||!listBox.isConnected&&listBox.childNodes.length) return;
-    listBox.textContent="";
-    const ps=placesSorted();
-    for(const [k,title,addLabel] of GROUPS){
-      const items=ps.filter(p=>p.kind===k);
-      listBox.append(el("div",{class:"pgroup-h"},title,el("span",{class:"note"},items.length?" ("+items.length+")":"")));
-      if(!items.length) listBox.append(el("p",{class:"note"},k==="home"?"Ajoute la maison, et d'autres domiciles si besoin (chez tes parents, résidence secondaire…).":k==="work"?"Le travail de chacun, pour « depuis le boulot ».":"Dentiste, magasins, amis… autant que vous voulez."));
-      for(const p of items){
-        const row=el("div",{class:"prow"},
-          el("span",{class:"pdot "+p.kind}),
-          el("div",{class:"pinfo"},el("div",{class:"pname"},p.name,p.kind==="home"&&isDefaultHome(p)?el("span",{class:"pbadge"},"Départ par défaut"):null),el("div",{class:"small"},[p.address,p.kind==="work"&&p.owner?(p.owner===myId?"ton travail":"travail de "+firstName(p.owner)):"",+p.extra>0?"+"+p.extra+" min sur place":""].filter(Boolean).join(" · "))),
-          canWrite?el("button",{type:"button",class:"btn quiet",onclick:()=>{editing=true;row.replaceWith(placeForm(p,()=>{editing=false;drawList();}));}},"Modifier"):null);
-        listBox.append(row);
-      }
-      if(canWrite){
-        const add=el("button",{type:"button",class:"btn padd"},"+ "+addLabel);
-        add.onclick=()=>{editing=true;add.replaceWith(placeForm(null,()=>{editing=false;drawList();},k));};
-        listBox.append(add);
-      }
-    }
-  }
-  placesListRefresh=drawList;
-  const mode=el("select",{id:"s-mode"});for(const[k,v]of Object.entries(MODES))mode.append(el("option",{value:k,selected:k===settings.mode},v));
-  mode.onchange=async()=>{
-    if(!db)return;
-    try{await db.doc("config/home").set({home:settings.home||"",mode:mode.value,updatedBy:myId,updatedAt:Date.now()});toast("Transport habituel enregistré");}
-    catch(e){toast("Enregistrement impossible. Réessaie.");}
-  };
-  root.append(sheetShell("Réglages communs",[
-    el("div",{class:"sheet-h"},el("h2",{},"Réglages communs"),el("button",{class:"btn quiet",type:"button",onclick:()=>{placesListRefresh=null;brandsRefresh=null;closeSheet();}},"Fermer")),
-    el("p",{class:"note"},"Les adresses enregistrées apparaissent en raccourci quand vous créez un évènement. Écrivez simplement « dentiste mardi 9h » : l'app reconnaît vos lieux."),
-    listBox,
-    el("div",{class:"pgroup-h"},"Nos modèles"),
-    el("p",{class:"note"},"Ils apparaissent quand tu touches Ajouter. Pour en créer un, ouvre un évènement, puis Plus d'options et Enregistrer comme modèle."),
-    templatesSection(),
-    el("div",{class:"pgroup-h"},"Nos enseignes"),
-    el("p",{class:"note"},"Coche les magasins où vous allez. En remplissant « Où », touche une enseigne : l'app propose ses magasins les plus proches de chez vous."),
-    brandsSection(),
-    el("div",{class:"pgroup-h"},"Version de l'app"),el("div",{class:"disc-box"},el("p",{class:"note"},"Version "+APP_V+". Si une nouveauté n'apparaît pas, touche ce bouton : l'app télécharge la dernière version et redémarre. Tes évènements ne sont pas touchés."),el("button",{type:"button",class:"btn primary",onclick:forceUpdate},"Mettre à jour l'app")),
-    el("div",{class:"pgroup-h",id:"imp-h"},"Mon calendrier de l'iPhone dans Together"),coupleId?calSyncSection():el("div",{class:"disc-box"},el("button",{type:"button",class:"btn",onclick:openImport},"Importer mon calendrier")),
-    el("div",{class:"pgroup-h",id:"fer-h"},"Jours fériés et vacances"),holidaySection(),
-    el("div",{class:"pgroup-h"},"Alarme Horloge"),alarmSetupSection(),
-    coupleId?el("div",{class:"pgroup-h"},"Notifications"):null,coupleId?notifSection():null,
-    coupleId?el("div",{class:"pgroup-h",id:"wid-h"},"Widgets"):null,coupleId?widgetSection():null,
-    coupleId?el("div",{class:"pgroup-h",id:"np-h"},"Rappels et résumé du matin"):null,coupleId?notifPrefsSection():null,
-    coupleId?el("div",{class:"pgroup-h",id:"car-h"},"Dans la voiture (CarPlay)"):null,coupleId?carPlaySection():null,
-    coupleId?el("div",{class:"pgroup-h",id:"add-h"},"Ajouter avec Siri ou Partager"):null,coupleId?addSection():null,
-    coupleId?el("div",{class:"pgroup-h",id:"cal-h"},"Calendrier de l'iPhone (facultatif)"):null,coupleId?carSection():null,
-    el("div",{class:"pgroup-h"},"Nous deux"),coupleId?coupleSection():null,
-    coupleId?el("div",{class:"pgroup-h"},"Mon code de secours"):null,coupleId?recoverySection():null,
-    coupleId?el("div",{class:"pgroup-h"},"Installer sur l'iPhone de ta moitié"):null,coupleId?shortcutsSection():null,
-    el("div",{class:"field"},el("label",{for:"s-mode"},"Transport habituel"),mode),
-    el("p",{class:"note"},"Les rappels arrivent en notification, même app fermée : active-les une fois dans « Notifications », sur chaque téléphone.")]));
-  drawList();
-}
 let brandsRefresh=null;
 function brandsSection(){
   const box=el("div",{class:"pchips"});
@@ -6774,7 +6863,7 @@ async function openWallpaper(){
 /* ---------- La feuille « Thème » : essayer avant d'appliquer, sur l'app et sur le vrai widget ---------- */
 let sheetLeave=null;
 function setSkinAttr(id){const R=document.documentElement;if(id==="encre")R.removeAttribute("data-skin");else R.setAttribute("data-skin",id);syncBarColor();}
-function openTheme(){
+function openTheme(fromSet){
   leavePending();const root=$("#sheet-root");root.textContent="";
   let saved=currentSkin(),pick=saved,wTimer=null;
   const grid=el("div",{class:"skins"}),wprev=el("div",{class:"th-wid"}),bar=el("div",{class:"th-bar",hidden:true});
@@ -6828,7 +6917,7 @@ function openTheme(){
   const rm=el("input",{type:"checkbox",id:"th-rm"});rm.checked=lsGet("a2.motion")==="reduce";rm.onchange=()=>{lsSet("a2.motion",rm.checked?"reduce":"");applyComfort();};
   sheetLeave=()=>{clearTimeout(wTimer);themePreview=false;if(currentSkin()!==saved)setSkinAttr(saved);};
   root.append(sheetShell("Thème",[
-    el("div",{class:"sheet-h"},el("h2",{},"Thème"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("div",{class:"sheet-h"},fromSet===true?el("button",{class:"btn quiet set-back",type:"button",onclick:()=>openSettings()},"‹ Réglages"):null,el("h2",{},"Thème"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
     el("p",{class:"note"},"Touche un thème pour l'essayer sur l'app et sur ton widget, puis « Appliquer »."),
     wprev,grid,bar,
     el("div",{class:"pgroup-h"},"Clair ou sombre"),modeBox,modeNote,
@@ -7604,7 +7693,802 @@ function coupleSection(){
       el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));box.append(c);}},"Quitter cet agenda sur ce téléphone"));
   return box;
 }
-const APP_V="66";
+/* ---------- Réglages communs : des rubriques, une recherche ---------- */
+const SET_IC={
+  nous:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  lieux:'<path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+  tpl:'<rect x="4" y="7.5" width="12.5" height="12.5" rx="2.5"/><path d="M8 4.5h9a2.5 2.5 0 0 1 2.5 2.5v9"/>',
+  notif:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.6 2H4.4z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  vac:'<circle cx="12" cy="9.5" r="3.3"/><path d="M12 3v1.4M5.6 9.5H4.2M19.8 9.5h-1.4M7.4 4.9l1 1M16.6 4.9l-1 1"/><path d="M3 16.5c2 0 2-1.4 4.5-1.4s2.5 1.4 4.5 1.4 2-1.4 4.5-1.4 2.5 1.4 4.5 1.4M3 20c2 0 2-1.4 4.5-1.4S10 20 12 20s2-1.4 4.5-1.4S19 20 21 20"/>',
+  cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  siri:'<path d="M5 16V11l2-5h10l2 5v5M3.5 16h17v3h-17z"/><circle cx="7.5" cy="13" r="1"/><circle cx="16.5" cy="13" r="1"/>',
+  widgets:'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
+  theme:'<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor"/>',
+  save:'<rect x="3.5" y="4" width="17" height="5" rx="1.5"/><path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9M10 13h4"/>',
+  secu:'<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/>',
+  aide:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.7.3-1 .9-1 1.6v.5"/><circle cx="12" cy="17" r=".7" fill="currentColor"/>',
+  check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.8 2.8 5.4-5.6"/>'
+};
+const setSvg=k=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(SET_IC[k]||"")+'</svg>';
+// Les rubriques, dans l'ordre de l'écran. « need » : seulement une fois l'agenda rejoint
+const SET_PAGES=[
+  {g:"Vous deux",id:"nous",t:"Nous deux",c:"#E11D48",help:"Vos prénoms et vos photos s'affichent sur les évènements. Ce qui se règle ici vaut pour vous deux."},
+  {g:"Vous deux",id:"lieux",t:"Lieux et trajets",c:"#16A34A",help:"Les adresses enregistrées apparaissent en raccourci quand vous créez un évènement. Écrivez simplement « dentiste mardi 9h » : l'app reconnaît vos lieux et calcule le trajet."},
+  {g:"Vous deux",id:"tpl",t:"Nos modèles",c:"#D97706",help:"Ils apparaissent quand tu touches Ajouter. Pour en créer un, ouvre un évènement, puis Plus d'options et Enregistrer comme modèle."},
+  {g:"Rappels",id:"notif",t:"Notifications",c:"#DC2626",help:"Les rappels arrivent en notification, même app fermée. Active-les une fois sur chaque téléphone ; le reste se règle ici."},
+  {g:"Rappels",id:"vac",t:"Mode vacances",c:"#0891B2",need:1,help:"Pendant un séjour, Together met en pause ce qui rythme le quotidien. Tout reprend tout seul au retour."},
+  {g:"Rappels",id:"cal",t:"Calendrier",c:"#2563EB",help:"Vos rendez-vous de l'iPhone peuvent arriver tout seuls dans Together, et vos moments peuvent s'afficher dans l'app Calendrier."},
+  {g:"Sur l'iPhone",id:"siri",t:"Siri et voiture",c:"#4F46E5",need:1,help:"Ajoute un évènement en parlant à Siri ou depuis le menu Partager, et retrouve le prochain départ sur l'écran de la voiture."},
+  {g:"Sur l'iPhone",id:"widgets",t:"Widgets",c:"#7C3AED",need:1,help:"Un seul script Scriptable pour tous les widgets : l'agenda, les courses, le compte à rebours, le souvenir du jour, « On fait quoi ? » et la voiture."},
+  {g:"Sur l'iPhone",id:"theme",t:"Thème et affichage",c:"#EA580C"},
+  {g:"Vos données",id:"save",t:"Sauvegarde et export",c:"#0D9488",need:1,help:"Vos données sont gardées en ligne et sur vos deux téléphones. Une sauvegarde en plus vous protège d'un effacement par erreur."},
+  {g:"Vos données",id:"secu",t:"Appareils et sécurité",c:"#475569",help:"Les téléphones qui ont accès à votre agenda, et de quoi protéger Together sur celui-ci."},
+  {g:"Vos données",id:"aide",t:"Aide et nouveautés",c:"#0284C7",help:"Ce qui a changé à chaque version, et les réponses aux questions les plus courantes."},
+];
+const SET_CHECK={id:"check",t:"Tout marche ?",c:"#16A34A",need:1,help:"Together vérifie vos deux téléphones : version, notifications, widget, calendrier et Siri. Un toucher règle ce qui coince."};
+const setPage=id=>SET_PAGES.find(p=>p.id===id)||(id==="check"?SET_CHECK:null);
+// La recherche : [titre, mots-clés, rubrique, ancre]
+const SET_INDEX=[
+  ["Prénom et photo","nom prenom photo avatar profil","nous","nd-me"],
+  ["Ensemble depuis","anniversaire couple date rencontre","nous","nd-since"],
+  ["Code d'invitation","inviter rejoindre code agenda ferme","nous","nd-me"],
+  ["Installer sur l'iPhone de ta moitié","raccourcis raccourci lien icloud alarme export installer","nous","sc-h"],
+  ["Quitter l'agenda sur ce téléphone","quitter deconnexion sortir","nous","nd-me"],
+  ["Nos lieux","adresse adresses maison domicile travail destination lieu lieux","lieux","pl-h"],
+  ["Transport habituel","voiture velo pied transports transport mode trajet","lieux","s-mode"],
+  ["Nos enseignes","magasin magasins supermarche enseigne courses","lieux","br-h"],
+  ["Nos modèles","modele modeles evenement","tpl",""],
+  ["Activer les notifications","notification notifications push activer reactiver","notif","nt-h"],
+  ["Tester les notifications","test essai notification","notif","nt-h"],
+  ["Résumé du matin","matin resume journee","notif","np-h"],
+  ["Ne pas déranger la nuit","nuit silence calme dormir","notif","np-h"],
+  ["Rappels proposés par type","rappel rappels veille avant depart defaut","notif","np-h"],
+  ["« Ça fait 3 semaines sans sortie »","petit rappel sortie semaines","notif","np-h"],
+  ["« Il y a un an »","souvenir anniversaire un an","notif","np-h"],
+  ["Alarme Horloge","alarme reveil horloge sonnerie","notif","al-h"],
+  ["Mode vacances","vacances pause voyage conges sejour","vac",""],
+  ["Mon calendrier de l'iPhone dans Together","importer synchroniser calendrier iphone occupe export agenda","cal","imp-h"],
+  ["Jours fériés et vacances scolaires","ferie feries pont zone vacances scolaires","cal","fer-h"],
+  ["Together dans le Calendrier de l'iPhone","abonnement ics calendrier abonner","cal","cal-h"],
+  ["Exporter l'agenda (.ics)","exporter export google outlook ics fichier","save","ics-h"],
+  ["Ajouter avec Siri ou Partager","siri raccourci partager ajouter dicter","siri","add-h"],
+  ["Dans la voiture (CarPlay)","carplay voiture on y va retard en bas itineraire","siri","car-h"],
+  ["Widgets","widget widgets scriptable ecran accueil verrouille","widgets","wid-h"],
+  ["Thème","theme couleur couleurs clair sombre soir saison","theme",""],
+  ["Taille du texte et contraste","texte taille lecture contraste animations","theme",""],
+  ["Fond d'écran","fond ecran wallpaper","theme",""],
+  ["Sauvegarde complète","sauvegarde sauvegarder copie fichier donnees photos","save","bk-h"],
+  ["Copies automatiques","copie copies automatique semaine","save","auto-h"],
+  ["Remettre une sauvegarde","restaurer remettre recuperer efface supprime perdu","save","rs-h"],
+  ["Vos téléphones","telephone telephones appareil appareils ancien retirer","secu","dev-h"],
+  ["Verrouiller avec Face ID","verrou verrouiller face id touch id code securite","secu","lock-h"],
+  ["Mon code de secours","code secours recuperer nouveau telephone perdu","secu","rec-h"],
+  ["Quoi de neuf","nouveautes nouveaute nouveau version","aide","qn-h"],
+  ["Mettre à jour l'app","version mise a jour","aide","up-h"],
+  ["Tout marche ?","probleme diagnostic verifier marche bug","check",""],
+];
+function setSearch(q){
+  const W=norm(q).split(/[^a-z0-9]+/).filter(Boolean);if(!W.length)return [];
+  const out=[];
+  for(const x of SET_INDEX){const P=setPage(x[2]);if(P&&P.need&&!coupleId)continue;
+    const words=norm(x[0]+" "+x[1]+" "+(P?P.t:"")).split(/[^a-z0-9]+/).filter(Boolean),tw=norm(x[0]);let sc=0,okAll=true;
+    for(const t of W){if(words.some(z=>z.startsWith(t)))sc+=tw.includes(t)?2:1;else{okAll=false;break;}}
+    if(okAll)out.push({x,sc});}
+  return out.sort((a,b)=>b.sc-a.sc).slice(0,8).map(r=>r.x);
+}
+// Une ligne de réglage (aussi pour aller d'une rubrique à l'autre)
+function setIcon(P){return el("span",{class:"set-ic",style:"--ic:"+P.c,html:setSvg(P.id)});}
+function setRow(P,sub,onclick,id){return el("button",{type:"button",class:"set-row",id:id||null,onclick},setIcon(P),el("span",{class:"set-t"},el("strong",{},P.t),sub?el("small",{},sub):null),el("span",{class:"set-chev","aria-hidden":"true"},"›"));}
+function setLink(page,sub,anchor){const P=setPage(page);return el("div",{class:"set-group set-link"},setRow(P,sub,()=>setGo(page,anchor)));}
+const LOOK_TXT={auto:"comme l'iPhone",light:"clair",dark:"sombre",night:"sombre le soir"};
+function setSub(id){try{const today=ymd(new Date());
+  switch(id){
+  case "nous":{const n=memberIds().map(firstName).join(" et "),s=coupleSince(),y=s?yearsTogether():0;return n+(s?" · "+(y>=1?(y===1?"un an":y+" ans")+" ensemble":"ensemble depuis le "+frDay(s,true)):"");}
+  case "lieux":{const n=places.size;return (n?n+(n>1?" lieux":" lieu"):"Aucun lieu")+" · "+(MODE_IN[settings.mode]||MODE_IN.car);}
+  case "tpl":{const n=tplList().length;return n?n+(n>1?" modèles":" modèle"):"Aucun modèle";}
+  case "notif":{if(!coupleId)return "Alarme Horloge";const p=prefOf(myId);return (pushOn()?"Activées":"Pas activées sur ce téléphone")+(p.morning?" · résumé à "+p.morning.replace(":"," h "):"")+(p.quiet?" · nuit calme":"");}
+  case "vac":{const a=awayCfg();if(!a||a.to<today)return "Désactivé";return a.from<=today?"En pause jusqu'au "+frDay(a.to,true):"Prévu du "+frDay(a.from,true)+" au "+frDay(a.to,true);}
+  case "cal":{const z=schoolZone(),c=coupleId?calCfg():{};return [z?"Vacances zone "+z:"",c.auto&&lsGet("a2.impSync")?"iPhone suivi tout seul":"",calSubOn()?"Together dans l'iPhone":""].filter(Boolean).join(" · ")||"Fériés, vacances, iPhone";}
+  case "siri":return "« Dis Siri, ajoute à Together », CarPlay";
+  case "widgets":{const h=healthC&&healthC.d&&healthC.d.u&&healthC.d.u[myId];return h&&h.w?"Installé · mis à jour "+agoTxt(h.w.at):"Accueil, écran verrouillé, voiture";}
+  case "theme":{const sk=currentSkin(),S=SKINS.find(x=>x.id===sk);return (sk==="perso"?((customTheme()||{}).n||"Notre thème"):S?S.name:"Encre")+" · "+(LOOK_TXT[lookMode()]||"");}
+  case "save":{const b=+lsGet("a2.bkAt")||0,c=+lsGet("a2.autoAt")||0;return b?"Dernière sauvegarde "+agoTxt(b):c?"Copie automatique "+agoTxt(c):"Copie chaque semaine, fichier, export";}
+  case "secu":return (lockCfg()?"Face ID activé":"Téléphones, Face ID")+" · code de secours";
+  case "aide":return "Version "+APP_V+" · quoi de neuf";
+  }}catch(_){}return "";}
+// Ouvrir les réglages, éventuellement directement à une rubrique (et à un réglage précis)
+function openSettings(page,anchor){
+  if(typeof page!=="string")page="";
+  if(typeof leavePending==="function")leavePending();
+  const root=$("#sheet-root");root.textContent="";
+  root.append(sheetShell("Réglages communs",[el("div",{class:"set-body"})]));
+  setGo(page||"home",anchor);
+}
+function setGo(page,anchor){
+  const body=document.querySelector("#sheet-root .set-body");
+  if(page==="theme"){openTheme(true);return;}
+  if(!body){openSettings(page,anchor);return;}
+  placesListRefresh=null;brandsRefresh=null;templatesRefresh=null;
+  const P=page==="home"?null:setPage(page);
+  body.textContent="";body.dataset.page=P?P.id:"home";
+  const sheet=body.closest(".sheet");if(sheet)sheet.scrollTop=0;
+  if(!P||(P.need&&!coupleId)){body.append(...setHome().filter(Boolean));return;}
+  let parts=[];try{parts=SET_BUILD[P.id]();}catch(e){console.error(e);parts=[el("p",{class:"note"},"Cette rubrique n'a pas pu s'afficher. Réessaie dans un instant.")];}
+  body.append(el("div",{class:"sheet-h set-top"},el("button",{type:"button",class:"btn quiet set-back",onclick:()=>setGo("home")},"‹ Réglages"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("h2",{class:"set-title"},el("span",{class:"set-ic",style:"--ic:"+P.c,html:setSvg(P.id)}),P.t),P.help?el("p",{class:"rub-help"},P.help):null,...parts.filter(Boolean));
+  if(anchor)setTimeout(()=>{const a=document.getElementById(anchor);if(!a||!a.isConnected)return;try{a.scrollIntoView({block:"start",behavior:"smooth"});}catch(_){a.scrollIntoView();}
+    const t=a.closest(".field")||a;t.classList.remove("flash-set");void t.offsetWidth;t.classList.add("flash-set");},140);
+}
+function setHome(){
+  const q=el("input",{type:"search",id:"set-q",placeholder:"Rechercher un réglage","aria-label":"Rechercher un réglage",autocomplete:"off",enterkeyhint:"search"});
+  const res=el("div",{class:"set-res",hidden:true}),groups=el("div",{class:"set-groups"});
+  q.oninput=()=>{const v=q.value.trim(),L=setSearch(v);res.textContent="";res.hidden=!v;groups.hidden=!!v;
+    if(!v)return;
+    if(!L.length){res.append(el("p",{class:"note"},"Rien trouvé pour « "+v+" ». Essaie un autre mot : notifications, widget, sauvegarde, vacances…"));return;}
+    res.append(el("div",{class:"set-group"},...L.map(x=>{const P=setPage(x[2]);return el("button",{type:"button",class:"set-row",onclick:()=>setGo(x[2],x[3])},setIcon(P),el("span",{class:"set-t"},el("strong",{},x[0]),el("small",{},x[0]===P.t?(setSub(P.id)||P.t):P.t)),el("span",{class:"set-chev","aria-hidden":"true"},"›"));})));};
+  q.addEventListener("keydown",e=>{if(e.key==="Enter"){const b=res.querySelector(".set-row");if(b){e.preventDefault();b.click();}}});
+  let cur=null,box=null;
+  for(const P of SET_PAGES){if(P.need&&!coupleId)continue;
+    if(P.g!==cur){cur=P.g;groups.append(el("div",{class:"set-gh"},P.g));box=el("div",{class:"set-group"});groups.append(box);}
+    box.append(setRow(P,setSub(P.id),()=>setGo(P.id),"set-r-"+P.id));}
+  return [el("div",{class:"sheet-h"},el("h2",{},"Réglages communs"),el("button",{class:"btn quiet",type:"button",onclick:()=>{placesListRefresh=null;brandsRefresh=null;closeSheet();}},"Fermer")),
+    el("label",{class:"set-search"},el("span",{class:"set-loupe",html:LOUPE_SVG}),q),res,
+    coupleId?checkCard():null,groups];
+}
+// Le contenu de chaque rubrique (les blocs existants, rangés)
+const SET_BUILD={
+  nous(){
+    if(!coupleId)return [el("p",{class:"note"},"Rejoins d'abord votre agenda.")];
+    const since=el("input",{type:"date",id:"nd-since-in",value:coupleSince(),max:ymd(new Date())});
+    since.onchange=async()=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(since.value))return;if(await themeWrite({since:since.value})){lsSet("a2.since",since.value);applySeason();syncPush(true);toast("Votre date est enregistrée pour vous deux");}};
+    return [el("div",{class:"pgroup-h",id:"nd-me"},"Ton prénom et ta photo"),coupleSection(),
+      el("div",{class:"pgroup-h",id:"nd-since"},"Ensemble depuis"),
+      el("div",{class:"field"},el("label",{for:"nd-since-in"},"Votre anniversaire de couple, pour vous deux"),since),
+      el("p",{class:"note"},"Le jour venu : une carte « Joyeux anniversaire à vous deux » en haut de l'agenda, un décor sur l'app et le widget, et une notification à 9 h."),
+      el("div",{class:"pgroup-h",id:"sc-h"},"Installer sur l'iPhone de ta moitié"),shortcutsSection()];
+  },
+  lieux(){
+    const listBox=el("div",{class:"plist",id:"pl-h"});let editing=false;
+    const GROUPS=[["home","Nos domiciles","Ajouter un domicile"],["work","Travail","Ajouter un lieu de travail"],["place","Nos destinations","Ajouter une destination"]];
+    function drawList(){
+      if(editing||!listBox.isConnected&&listBox.childNodes.length) return;
+      listBox.textContent="";
+      const ps=placesSorted();
+      for(const [k,title,addLabel] of GROUPS){
+        const items=ps.filter(p=>p.kind===k);
+        listBox.append(el("div",{class:"pgroup-h"},title,el("span",{class:"note"},items.length?" ("+items.length+")":"")));
+        if(!items.length) listBox.append(el("p",{class:"note"},k==="home"?"Ajoute la maison, et d'autres domiciles si besoin (chez tes parents, résidence secondaire…).":k==="work"?"Le travail de chacun, pour « depuis le boulot ».":"Dentiste, magasins, amis… autant que vous voulez."));
+        for(const p of items){
+          const row=el("div",{class:"prow"},
+            el("span",{class:"pdot "+p.kind}),
+            el("div",{class:"pinfo"},el("div",{class:"pname"},p.name,p.kind==="home"&&isDefaultHome(p)?el("span",{class:"pbadge"},"Départ par défaut"):null),el("div",{class:"small"},[p.address,p.kind==="work"&&p.owner?(p.owner===myId?"ton travail":"travail de "+firstName(p.owner)):"",+p.extra>0?"+"+p.extra+" min sur place":""].filter(Boolean).join(" · "))),
+            canWrite?el("button",{type:"button",class:"btn quiet",onclick:()=>{editing=true;row.replaceWith(placeForm(p,()=>{editing=false;drawList();}));}},"Modifier"):null);
+          listBox.append(row);
+        }
+        if(canWrite){
+          const add=el("button",{type:"button",class:"btn padd"},"+ "+addLabel);
+          add.onclick=()=>{editing=true;add.replaceWith(placeForm(null,()=>{editing=false;drawList();},k));};
+          listBox.append(add);
+        }
+      }
+    }
+    placesListRefresh=drawList;
+    const mode=el("select",{id:"s-mode"});for(const[k,v]of Object.entries(MODES))mode.append(el("option",{value:k,selected:k===settings.mode},v));
+    mode.onchange=async()=>{
+      if(!db)return;
+      try{await db.doc("config/home").set({home:settings.home||"",mode:mode.value,updatedBy:myId,updatedAt:Date.now()});toast("Transport habituel enregistré");}
+      catch(e){toast("Enregistrement impossible. Réessaie.");}
+    };
+    drawList();
+    return [listBox,
+      el("div",{class:"field"},el("label",{for:"s-mode"},"Transport habituel"),mode),
+      el("p",{class:"note"},"Il sert à calculer l'heure de départ. Chaque évènement peut avoir le sien."),
+      el("div",{class:"pgroup-h",id:"br-h"},"Nos enseignes"),
+      el("p",{class:"note"},"Coche les magasins où vous allez. En remplissant « Où », touche une enseigne : l'app propose ses magasins les plus proches de chez vous."),
+      brandsSection()];
+  },
+  tpl(){return [templatesSection()];},
+  notif(){
+    return [coupleId?el("div",{class:"pgroup-h",id:"nt-h"},"Sur ce téléphone"):null,coupleId?notifSection():null,
+      coupleId?el("div",{class:"pgroup-h",id:"np-h"},"Rappels et résumé du matin"):null,coupleId?notifPrefsSection():null,
+      el("div",{class:"pgroup-h",id:"al-h"},"Alarme Horloge"),alarmSetupSection(),
+      coupleId?setLink("vac",setSub("vac")):null];
+  },
+  vac(){return [vacSection()];},
+  cal(){
+    return [el("div",{class:"pgroup-h",id:"imp-h"},"Mon calendrier de l'iPhone dans Together"),coupleId?calSyncSection():el("div",{class:"disc-box"},el("button",{type:"button",class:"btn",onclick:openImport},"Importer mon calendrier")),
+      el("div",{class:"pgroup-h",id:"fer-h"},"Jours fériés et vacances"),holidaySection(),
+      coupleId?el("div",{class:"pgroup-h",id:"cal-h"},"Together dans le Calendrier de l'iPhone (facultatif)"):null,coupleId?carSection():null,
+      coupleId?setLink("save","Exporter l'agenda : fichier .ics, Google Agenda, Outlook","ics-h"):null];
+  },
+  siri(){return [el("div",{class:"pgroup-h",id:"add-h"},"Ajouter avec Siri ou Partager"),addSection(),el("div",{class:"pgroup-h",id:"car-h"},"Dans la voiture (CarPlay)"),carPlaySection()];},
+  widgets(){return [el("div",{class:"pgroup-h",id:"wid-h"},"Widgets"),widgetSection()];},
+  save(){return [el("div",{class:"pgroup-h",id:"auto-h"},"Copies automatiques"),autoCopySection(),
+    el("div",{class:"pgroup-h",id:"bk-h"},"Sauvegarde complète"),backupSection(),
+    el("div",{class:"pgroup-h",id:"rs-h"},"Remettre une sauvegarde"),restoreSection(),
+    el("div",{class:"pgroup-h",id:"ics-h"},"Exporter l'agenda"),icsSection()];},
+  secu(){return [coupleId?el("div",{class:"pgroup-h",id:"dev-h"},"Vos téléphones"):null,coupleId?devicesSection():null,
+    el("div",{class:"pgroup-h",id:"lock-h"},"Verrouiller avec Face ID"),lockSection(),
+    coupleId?el("div",{class:"pgroup-h",id:"rec-h"},"Mon code de secours"):null,coupleId?recoverySection():null];},
+  aide(){return [el("div",{class:"pgroup-h",id:"qn-h"},"Quoi de neuf"),newsSection(),
+    el("div",{class:"pgroup-h",id:"up-h"},"Version de l'app"),versionSection(),
+    el("div",{class:"pgroup-h",id:"faq-h"},"Questions fréquentes"),faqSection()];},
+  check(){return [checkPage()];},
+};
+
+/* ---------- « Tout marche ? » : vos deux téléphones vérifiés, et réglés d'un toucher ---------- */
+let healthC=null,latestV=null;
+async function healthGet(force){
+  if(!force&&healthC&&Date.now()-healthC.at<60000)return healthC.d;
+  if(!pushToken())return null;
+  const r=await pushPost("/api/health",{uid:myId});
+  if(r&&r.ok){healthC={at:Date.now(),d:r};return r;}
+  return null;
+}
+// La dernière version publiée : lue dans le service worker (petit fichier), sans attendre trop longtemps
+async function latestVersion(){
+  if(latestV&&Date.now()-latestV.at<10*60000)return latestV.v;
+  try{const r=await Promise.race([fetch("sw.js?check",{cache:"no-store"}),new Promise((_,j)=>setTimeout(()=>j(new Error("lent")),5000))]);
+    const m=/agenda-a-deux-v(\d+)/.exec(await r.text());if(m){latestV={at:Date.now(),v:m[1]};return m[1];}}catch(_){}
+  return null;
+}
+const vNum=v=>{const n=parseInt(String(v||"").replace(/[^0-9]/g,""),10);return Number.isFinite(n)?n:0;};
+async function epHashLocal(ep){const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("together-ep:"+ep)));return [...h.slice(0,6)].map(x=>x.toString(16).padStart(2,"0")).join("");}
+function devLabel(){const u=navigator.userAgent||"";
+  const k=/iPad/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1)?"iPad":/iPhone|iPod/.test(u)?"iPhone":/Android/.test(u)?"Android":/Macintosh/.test(u)?"Mac":/Windows/.test(u)?"PC":"Navigateur";
+  return k+(isStandalone()?"":" · navigateur");}
+function partnerText(){return "Peux-tu ouvrir Together sur ton téléphone, puis Réglages communs › « Tout marche ? » ? Il dit ce qui est à régler (notifications, mise à jour…) et le fait en un toucher.";}
+async function sendText(t){try{if(navigator.share){await navigator.share({text:t});return true;}}catch(e){if(e&&e.name==="AbortError")return false;}
+  try{await navigator.clipboard.writeText(t);toast("Message copié : colle-le dans Messages");return true;}catch(_){prompt("Copie ce message :",t);return true;}}
+// Ce que l'on vérifie, téléphone par téléphone. st : ok, warn (à regarder), bad (ne marche pas), off (pas utilisé, facultatif)
+async function checkItems(force){
+  const [H,lat]=await Promise.all([healthGet(force).catch(()=>null),latestVersion().catch(()=>null)]);
+  const now=Date.now(),latest=Math.max(vNum(lat),vNum(APP_V)),o=otherId(),on=o?firstName(o):"";
+  const U=(H&&H.u)||{},me=U[myId]||null,ot=o?U[o]||null:null,tok=!!pushToken();
+  let myH="";try{const ep=lsGet("a2.pushEp")||"";if(ep&&pushOn())myH=await epHashLocal(ep);}catch(_){}
+  const A=[],B=[];
+  // ce téléphone
+  if(vNum(APP_V)<latest)A.push({k:"ver",st:"warn",t:"Version "+APP_V,d:"La version "+latest+" est prête.",fix:{l:"Mettre à jour",f:forceUpdate}});
+  else A.push({k:"ver",st:"ok",t:"Version "+APP_V,d:"C'est la dernière."});
+  const reon=b=>{lsSet("a2.push","");return enablePush(b);};
+  if(!pushSupported())A.push({k:"push",st:"bad",t:"Notifications",d:IS_IOS&&!isStandalone()?"Ouvre Together depuis son icône sur l'écran d'accueil : dans Safari, l'iPhone ne les permet pas.":"Ce téléphone ne permet pas les notifications (il faut iOS 16.4 ou plus récent)."});
+  else if(typeof Notification!=="undefined"&&Notification.permission==="denied")A.push({k:"push",st:"bad",t:"Notifications",d:"Coupées dans les réglages de l'iPhone : Réglages, Notifications, Together, Autoriser les notifications."});
+  else if(!pushOn())A.push({k:"push",st:"bad",t:"Notifications",d:"Pas activées sur ce téléphone.",fix:{l:"Activer",f:b=>enablePush(b)}});
+  else if(H&&myH&&!(me&&me.subs.some(s=>s.h===myH)))A.push({k:"push",st:"bad",t:"Notifications",d:"Le serveur ne connaît plus ce téléphone.",fix:{l:"Réactiver",f:reon}});
+  else if(H&&me&&me.bad)A.push({k:"push",st:"bad",t:"Notifications",d:"Apple a refusé la dernière notification (code "+me.bad.st+").",fix:{l:"Réactiver",f:reon}});
+  else A.push({k:"push",st:"ok",t:"Notifications",d:"Activées"+(me&&me.ok?" · dernière envoyée "+agoTxt(me.ok):"")+"."});
+  if(tok&&!H)A.push({k:"srv",st:"warn",t:"Serveur Together",d:"Ne répond pas pour l'instant : le widget, le calendrier et Siri seront vérifiés plus tard.",fix:{l:"Réessayer",f:async()=>{healthC=null;}}});
+  if(H){
+    if(!me||now-(me.at||0)>36*3600e3)A.push({k:"sync",st:"warn",t:"Rappels",d:me&&me.at?"Pas envoyés au serveur depuis "+agoTxt(me.at).replace(/^il y a /,"")+".":"Pas encore envoyés au serveur.",fix:{l:"Envoyer",f:async()=>{lsSet("a2.pushSig","");await syncPushNow();healthC=null;}}});
+    if(!me||!me.w)A.push({k:"wid",st:"off",t:"Widget",d:"Pas installé (facultatif).",fix:{l:"Installer",f:()=>setGo("widgets","wid-h"),nav:1}});
+    else if(now-me.w.at>48*3600e3)A.push({k:"wid",st:"warn",t:"Widget",d:"Pas mis à jour depuis le "+new Date(me.w.at).toLocaleDateString("fr-FR",{day:"numeric",month:"long"})+" : touche-le une fois, il se recharge.",fix:{l:"Ouvrir Scriptable",f:()=>{location.href="scriptable:///run/Together";},nav:1}});
+    else A.push({k:"wid",st:"ok",t:"Widget",d:"Mis à jour "+agoTxt(me.w.at)+"."});
+    if(me&&me.cal&&now-me.cal<48*3600e3)A.push({k:"cal",st:"ok",t:"Calendrier Together",d:"Lu par l'iPhone "+agoTxt(me.cal)+"."});
+    else if(calSubOn())A.push({k:"cal",st:"warn",t:"Calendrier Together",d:me&&me.cal?"L'iPhone ne l'a pas lu depuis le "+new Date(me.cal).toLocaleDateString("fr-FR",{day:"numeric",month:"long"})+".":"L'iPhone ne l'a pas encore lu.",fix:{l:"Ajouter à nouveau",f:b=>subscribeCal(b)}});
+    else A.push({k:"cal",st:"off",t:"Calendrier Together",d:"Pas utilisé (facultatif)."});
+    const sr=Math.max(me&&me.add||0,me&&me.car||0);
+    A.push(sr?{k:"siri",st:"ok",t:"Siri et voiture",d:"Utilisés "+agoTxt(sr)+"."}:{k:"siri",st:"off",t:"Siri et voiture",d:"Pas encore utilisés (facultatif).",fix:{l:"Installer",f:()=>setGo("siri"),nav:1}});
+  }
+  {let s=null;try{s=JSON.parse(lsGet("a2.impSync")||"null");}catch(_){}
+    if(s&&s.at)A.push(now-s.at<72*3600e3?{k:"imp",st:"ok",t:"Calendrier de l'iPhone",d:"Dernier envoi du raccourci "+agoTxt(s.at)+"."}:{k:"imp",st:"warn",t:"Calendrier de l'iPhone",d:"Le raccourci « Export Agenda » n'a rien envoyé depuis le "+new Date(s.at).toLocaleDateString("fr-FR",{day:"numeric",month:"long"})+".",fix:{l:"Voir",f:()=>setGo("cal","imp-h"),nav:1}});}
+  // le téléphone de l'autre
+  let other=null,ping=null;
+  if(o&&tok&&H){
+    const okPush=!!(ot&&ot.subs&&ot.subs.length&&!ot.bad);
+    // un toucher : l'autre reçoit une notification qui ouvre « Tout marche ? » chez lui ou chez elle (ou un message, si les notifications ne passent pas)
+    ping=okPush?{l:"Prévenir "+on,f:async()=>{const r=await pushPost("/api/notify",{to:[o],title:"Together : un réglage à vérifier",body:firstName(myId)+" a vérifié vos deux téléphones. Touche pour voir ce qui est à régler sur le tien.",tag:"check",url:"./?check=1"});toast(r&&r.sent?"Notification envoyée à "+on:"Rien n'est parti. Envoie plutôt un message.");}}
+      :{l:"Envoyer un message à "+on,f:()=>sendText(partnerText())};
+    other=[];
+    if(!ot)other.push({k:"ver",st:"warn",t:"Together",d:"Le téléphone de "+on+" n'a encore rien envoyé au serveur.",fix:ping});
+    else{
+      const old=vNum(ot.v)&&vNum(ot.v)<latest;
+      other.push({k:"ver",st:old?"warn":"ok",t:"Version "+(ot.v||"?"),d:(old?"La mise à jour se fait à sa prochaine ouverture de Together.":"À jour.")+(ot.at?" Ouvert "+agoTxt(ot.at)+".":""),fix:old?ping:null});
+      if(ot.at&&now-ot.at>7*864e5)other.push({k:"seen",st:"warn",t:"Pas ouvert depuis "+Math.floor((now-ot.at)/864e5)+" jours",d:"Ses rappels restent programmés, mais sans les dernières nouveautés.",fix:ping});
+      if(!ot.subs||!ot.subs.length)other.push({k:"push",st:"bad",t:"Notifications",d:"Pas activées sur le téléphone de "+on+".",fix:{l:"Envoyer un message à "+on,f:()=>sendText(partnerText())}});
+      else if(ot.bad)other.push({k:"push",st:"bad",t:"Notifications",d:"Apple a refusé la dernière notification (code "+ot.bad.st+") : il faut les réactiver sur son téléphone.",fix:{l:"Envoyer un message à "+on,f:()=>sendText(partnerText())}});
+      else other.push({k:"push",st:"ok",t:"Notifications",d:"Activées"+(ot.ok?" · dernière envoyée "+agoTxt(ot.ok):"")+"."});
+      other.push(ot.w?(now-ot.w.at>48*3600e3?{k:"wid",st:"warn",t:"Widget",d:"Pas mis à jour depuis le "+new Date(ot.w.at).toLocaleDateString("fr-FR",{day:"numeric",month:"long"})+"."}:{k:"wid",st:"ok",t:"Widget",d:"Mis à jour "+agoTxt(ot.w.at)+"."}):{k:"wid",st:"off",t:"Widget",d:"Pas installé (facultatif)."});
+      other.push(ot.cal?{k:"cal",st:now-ot.cal<48*3600e3?"ok":"warn",t:"Calendrier Together",d:"Lu par son iPhone "+agoTxt(ot.cal)+"."}:{k:"cal",st:"off",t:"Calendrier Together",d:"Pas utilisé (facultatif)."});
+      const so=Math.max(ot.add||0,ot.car||0);
+      other.push(so?{k:"siri",st:"ok",t:"Siri et voiture",d:"Utilisés "+agoTxt(so)+"."}:{k:"siri",st:"off",t:"Siri et voiture",d:"Pas encore utilisés (facultatif)."});
+      // un seul bouton pour prévenir l'autre : sur le problème le plus important
+      const main=other.find(x=>x.st==="bad"&&x.fix)||other.find(x=>x.st==="warn"&&x.fix);
+      for(const x of other)if(x!==main&&x.fix&&!x.fix.nav)x.fix=null;
+    }
+  }
+  const mem=memberIds(),olds=Object.keys(U).filter(u=>!mem.includes(u));
+  return {me:A,other,on,ot,olds,H,latest,ping};
+}
+const ckBadN=R=>[...R.me,...(R.other||[])].filter(x=>x.st==="bad"||x.st==="warn").length+(R.olds.length?1:0);
+function ckSummary(R){const n=ckBadN(R),probs=[...R.me.map(x=>[x,"toi"]),...(R.other||[]).map(x=>[x,R.on])].filter(([x])=>x.st==="bad"||x.st==="warn");
+  if(!n)return {st:"ok",t:R.other?"Tout marche sur vos deux téléphones":"Tout marche sur ce téléphone",d:"Notifications, version, widget et rappels : rien à régler."};
+  const bad=probs.some(([x])=>x.st==="bad");
+  const ME={push:"tes notifications",ver:"la mise à jour",sync:"l'envoi des rappels",wid:"ton widget",cal:"le calendrier Together",imp:"le calendrier de l'iPhone",srv:"le serveur"};
+  const OT={push:"les notifications de ",ver:"la mise à jour de ",wid:"le widget de ",cal:"le calendrier de "};
+  const names=probs.map(([x,w])=>w==="toi"?ME[x.k]||x.t.toLowerCase():x.k==="seen"?w+" n'ouvre plus Together":(OT[x.k]||x.t.toLowerCase()+" de ")+w);if(R.olds.length)names.push("un ancien téléphone");
+  return {st:bad?"bad":"warn",t:n===1?"1 chose à régler":n+" choses à régler",d:(names.slice(0,3).join(", ")+(names.length>3?"…":"")).replace(/^./,c=>c.toUpperCase())+(names.length>3?"":".")};}
+function checkCard(){
+  const dot=el("span",{class:"ck-dot wait","aria-hidden":"true"}),t=el("strong",{},"Tout marche ?"),d=el("small",{},"Vérification de vos deux téléphones…");
+  const card=el("button",{type:"button",class:"ck-card",id:"ck-card",onclick:()=>setGo("check")},dot,el("span",{class:"set-t"},t,d),el("span",{class:"set-chev","aria-hidden":"true"},"›"));
+  checkItems(false).then(R=>{if(!card.isConnected)return;const S=ckSummary(R);dot.className="ck-dot "+S.st;d.textContent=S.st==="ok"?"Oui : "+S.t.charAt(0).toLowerCase()+S.t.slice(1)+".":S.t+" : "+S.d;card.dataset.st=S.st;}).catch(()=>{d.textContent="Vérification impossible pour l'instant.";});
+  return card;
+}
+function ckRow(it,redraw){
+  const b=it.fix?el("button",{type:"button",class:"btn"+(it.st==="bad"?" primary":"")},it.fix.l):null;
+  if(b)b.onclick=async()=>{b.disabled=true;try{await it.fix.f(b);}catch(_){}finally{b.disabled=false;}if(!it.fix.nav){healthC=null;setTimeout(()=>{if(b.isConnected)redraw(true);},600);}};
+  return el("div",{class:"ck-row ck-"+it.st,"data-k":it.k},el("span",{class:"ck-dot "+it.st,"aria-hidden":"true"}),
+    el("span",{class:"ck-tx"},el("strong",{},it.t),el("span",{},it.d)),b);
+}
+function checkPage(){
+  const box=el("div",{class:"ck-page"});
+  const draw=async force=>{box.textContent="";box.append(el("p",{class:"note"},"Vérification de vos deux téléphones…"));
+    let R=null;try{R=await checkItems(force);}catch(_){}
+    box.textContent="";if(!R){box.append(el("p",{class:"note"},"Vérification impossible pour l'instant. Réessaie dans un moment."));return;}
+    const S=ckSummary(R);
+    box.append(el("div",{class:"ck-sum ck-"+S.st},el("span",{class:"ck-dot "+S.st,"aria-hidden":"true"}),el("span",{class:"ck-tx"},el("strong",{},S.t),el("span",{},S.d))));
+    box.append(el("section",{class:"ck-block"},el("div",{class:"ck-h"},el("strong",{},"Ce téléphone"),el("small",{},devLabel()+" · "+firstName(myId))),...R.me.map(x=>ckRow(x,draw))));
+    if(R.other)box.append(el("section",{class:"ck-block"},el("div",{class:"ck-h"},el("strong",{},"Le téléphone de "+R.on),el("small",{},(R.ot&&R.ot.dev)||"")),...R.other.map(x=>ckRow(x,draw)),
+      R.other.some(x=>x.st==="bad"||x.st==="warn")&&R.ping?el("p",{class:"note"},/^Prévenir/.test(R.ping.l)?"« "+R.ping.l+" » : une notification ouvre « Tout marche ? » sur son téléphone, avec les boutons pour régler.":"Ses notifications ne passent pas : le bouton prépare un message (Messages, WhatsApp…) qui explique quoi faire."):null));
+    else if(otherId()&&!pushToken())box.append(el("p",{class:"note"},"Active les notifications sur ce téléphone : Together pourra alors vérifier aussi celui de "+firstName(otherId())+"."));
+    if(R.olds.length)box.append(el("section",{class:"ck-block"},el("div",{class:"ck-h"},el("strong",{},"Anciens téléphones")),
+      ckRow({k:"old",st:"warn",t:R.olds.length===1?"Un ancien téléphone":R.olds.length+" anciens téléphones",d:R.olds.length===1?"Il garde son widget et ses liens Siri tant qu'il n'est pas retiré.":"Ils gardent leur widget et leurs liens Siri tant qu'ils ne sont pas retirés.",fix:{l:"Voir",f:()=>setGo("secu","dev-h"),nav:1}},draw)));
+    box.append(el("div",{class:"pchips"},el("button",{type:"button",class:"btn quiet",onclick:()=>{healthC=null;latestV=null;draw(true);}},"Vérifier à nouveau")));
+  };
+  draw(false);return box;
+}
+
+/* ---------- Appareils et sécurité ---------- */
+const PHONE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
+function devicesSection(){
+  const box=el("div",{class:"disc-box dev-box"});
+  const draw=async force=>{box.textContent="";box.append(el("p",{class:"note"},"Recherche de vos téléphones…"));
+    const H=await healthGet(force).catch(()=>null);box.textContent="";
+    if(!H){box.append(el("p",{class:"note"},pushToken()?"Le serveur ne répond pas pour l'instant. Réessaie dans un moment.":"La liste apparaît une fois les notifications activées sur l'un de vos deux téléphones."));return;}
+    const U=H.u||{},mem=memberIds();let myH="";try{const ep=lsGet("a2.pushEp")||"";if(ep&&pushOn())myH=await epHashLocal(ep);}catch(_){}
+    for(const u of mem){const x=U[u]||null,me=u===myId,subs=(x&&x.subs)||[],oldS=me&&myH?subs.filter(s=>s.h!==myH):[];
+      const lines=[(me?devLabel():(x&&x.dev)||"Téléphone")+" · Together "+(me?APP_V:(x&&x.v)||"?"),
+        me?"C'est ce téléphone":x&&x.at?"Synchronisé "+agoTxt(x.at):"Pas encore synchronisé",
+        "Notifications : "+(subs.length?(subs.length>1?subs.length+" inscriptions":"activées"):"pas activées")+(x&&x.w?" · widget installé":"")];
+      const card=el("div",{class:"dev-card"+(me?" me":"")},el("span",{class:"dev-ic",html:PHONE_SVG}),
+        el("div",{class:"dev-tx"},el("strong",{},me?"Ce téléphone ("+firstName(u)+")":"Le téléphone de "+firstName(u)),...lines.map(l=>el("span",{},l))));
+      if(oldS.length){const b=el("button",{type:"button",class:"btn quiet"},"Retirer "+(oldS.length>1?"les anciennes inscriptions":"l'ancienne inscription"));
+        b.onclick=async()=>{b.disabled=true;const r=await pushPost("/api/unsubh",{uid:myId,h:oldS.map(s=>s.h)});toast(r&&r.ok?"Ancienne inscription retirée : les notifications n'arrivent plus qu'ici":"Impossible pour l'instant. Réessaie.");healthC=null;draw(true);};
+        card.append(el("div",{class:"dev-act"},el("span",{class:"note"},"Une inscription d'avant (ancienne installation de Together) reçoit aussi tes notifications."),b));}
+      box.append(card);}
+    const olds=Object.keys(U).filter(u=>!mem.includes(u));
+    for(const u of olds){const x=U[u]||{};
+      const b=el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)"},"Retirer");
+      const card=el("div",{class:"dev-card old"},el("span",{class:"dev-ic",html:PHONE_SVG}),
+        el("div",{class:"dev-tx"},el("strong",{},"Ancien téléphone"+(x.name?" de "+x.name:"")),el("span",{},(x.dev||"Téléphone")+(x.v?" · Together "+x.v:"")),el("span",{},x.at?"Vu pour la dernière fois "+agoTxt(x.at):"Plus vu depuis longtemps"),
+          el("span",{},"N'a plus accès à l'agenda. Garde encore "+[x.subs&&x.subs.length?"ses notifications":"",x.w?"son widget":"","ses liens Siri"].filter(Boolean).join(", ")+".")),b);
+      b.onclick=()=>{if(card.querySelector(".confirm"))return;const c=el("div",{class:"confirm"},el("span",{},"Retirer ce téléphone ? Il ne recevra plus rien de Together : notifications, widget, calendrier, Siri."),
+          el("button",{class:"btn danger",type:"button",onclick:async e=>{e.currentTarget.disabled=true;const r=await pushPost("/api/forget",{uid:u,me:myId});
+            toast(r&&r.ok?"Ancien téléphone retiré":"Impossible pour l'instant. Réessaie.");healthC=null;draw(true);}},"Retirer"),
+          el("button",{class:"btn quiet",type:"button",onclick:()=>c.remove()},"Annuler"));card.append(c);};
+      box.append(card);}
+    box.append(el("p",{class:"note"},"Un téléphone perdu ou changé ? Sur le nouveau, installe Together et touche « J'ai un code de secours » : l'ancien perd aussitôt l'accès à l'agenda. Retire-le ensuite ici pour couper aussi ses notifications, son widget et ses liens Siri."));
+  };
+  draw(false);return box;
+}
+// Face ID : une clé d'accès (passkey) propre à ce téléphone ; l'iPhone la vérifie à chaque ouverture
+const LOCK_KEY="a2.lock";
+function lockCfg(){try{const x=JSON.parse(lsGet(LOCK_KEY)||"null");return x&&x.id?x:null;}catch(_){return null;}}
+const bytesB64u=b=>{let s="";for(const x of b)s+=String.fromCharCode(x);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");};
+async function lockAvailable(){try{return !!(window.PublicKeyCredential&&PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());}catch(_){return false;}}
+async function lockAssert(id){
+  try{const r=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:b64uBytes(id),transports:["internal"]}],userVerification:"required",timeout:60000}});
+    return !!r&&bytesB64u(new Uint8Array(r.rawId))===id;}catch(_){return false;}
+}
+async function lockEnable(){
+  if(!lsGet("a2.rec")){toast("Le code de secours se prépare : réessaie dans un instant.");return false;}
+  // une clé déjà créée sur ce téléphone : on la reprend (pas de doublon dans les mots de passe de l'iPhone)
+  const old=lsGet("a2.lockId");
+  if(old&&await lockAssert(old)){lsSet(LOCK_KEY,JSON.stringify({id:old,after:5,at:Date.now()}));toast("Together se verrouille maintenant avec Face ID");return true;}
+  try{
+    const nm="Together · "+firstName(myId);
+    const cred=await navigator.credentials.create({publicKey:{rp:{name:"Together"},user:{id:new TextEncoder().encode(String(myId||"together").slice(0,60)),name:nm,displayName:nm},
+      challenge:crypto.getRandomValues(new Uint8Array(32)),pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"preferred"},timeout:60000,attestation:"none"}});
+    if(!cred)return false;
+    const id=bytesB64u(new Uint8Array(cred.rawId));lsSet("a2.lockId",id);lsSet(LOCK_KEY,JSON.stringify({id,after:5,at:Date.now()}));
+    toast("Together se verrouille maintenant avec Face ID");return true;
+  }catch(e){toast(e&&e.name==="NotAllowedError"?"Face ID n'a pas été confirmé. Réessaie.":"Face ID impossible ici : le trousseau iCloud doit être activé (Réglages de l'iPhone, ton nom, iCloud).");return false;}
+}
+function lockDisable(){lsSet(LOCK_KEY,null);hideLock();toast("Together ne se verrouille plus");}
+function lockSection(){
+  const box=el("div",{class:"disc-box lock-box"});
+  const draw=async()=>{const c=lockCfg(),avail=await lockAvailable();box.textContent="";
+    if(!avail&&!c){box.append(el("p",{class:"note"},IS_IOS&&!isStandalone()?"Ouvre Together depuis son icône sur l'écran d'accueil pour pouvoir le verrouiller avec Face ID.":"Ce téléphone ne permet pas Face ID ou Touch ID pour Together."));return;}
+    const sw=el("input",{type:"checkbox",id:"lock-on"});sw.checked=!!c;
+    sw.onchange=async()=>{sw.disabled=true;if(sw.checked){if(!await lockEnable())sw.checked=false;}else lockDisable();sw.disabled=false;draw();};
+    box.append(el("label",{class:"rs-row",for:"lock-on"},sw,el("span",{class:"rs-txt"},el("strong",{},"Verrouiller Together avec Face ID"),
+      el("span",{},"À l'ouverture, Together demande Face ID (ou Touch ID, ou le code de l'iPhone). Propre à ce téléphone."))));
+    if(c){const after=+c.after||0;
+      box.append(el("div",{class:"lab"},"Quand Together repasse au premier plan"),el("div",{class:"pchips lock-after"},...[[0,"Tout de suite"],[5,"Après 5 min"],[60,"Après 1 h"]].map(([v,t])=>
+          el("button",{type:"button",class:"pchip"+(after===v?" on":""),"aria-pressed":String(after===v),onclick:()=>{lsSet(LOCK_KEY,JSON.stringify({...lockCfg(),after:v}));draw();}},t))),
+        el("p",{class:"note"},"Si Face ID ne marche pas, ton code de secours (juste en dessous) déverrouille aussi Together. Les notifications et les widgets restent visibles : ils se règlent dans les réglages de l'iPhone."));}
+  };
+  draw();return box;
+}
+let lockHiddenAt=0;
+function showLock(){if(!lockCfg())return;document.documentElement.classList.add("locked");const m=document.getElementById("lock-msg");if(m)m.textContent="";
+  const f=document.getElementById("lock-code");if(f)f.hidden=true;try{if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();}catch(_){}}
+function hideLock(){document.documentElement.classList.remove("locked");lockHiddenAt=0;}
+function lockWire(){
+  const go=document.getElementById("lock-go");if(!go)return;
+  if(!lockCfg())hideLock();
+  go.onclick=async()=>{const c=lockCfg();if(!c){hideLock();return;}go.disabled=true;const ok=await lockAssert(c.id);go.disabled=false;
+    if(ok)hideLock();else document.getElementById("lock-msg").textContent="Pas reconnu. Réessaie, ou utilise ton code de secours.";};
+  document.getElementById("lock-code-b").onclick=()=>{const f=document.getElementById("lock-code");f.hidden=false;document.getElementById("lock-code-in").focus();};
+  document.getElementById("lock-code").onsubmit=e=>{e.preventDefault();const i=document.getElementById("lock-code-in"),v=recNorm(i.value);
+    if(v.length>=24&&v===recNorm(lsGet("a2.rec")||"")){i.value="";hideLock();}else document.getElementById("lock-msg").textContent="Ce n'est pas ton code de secours.";};
+  document.addEventListener("visibilitychange",()=>{const c=lockCfg();if(!c)return;
+    if(document.visibilityState==="hidden"){if(!document.documentElement.classList.contains("locked"))lockHiddenAt=Date.now();}
+    else if(lockHiddenAt&&Date.now()-lockHiddenAt>=(+c.after||0)*60000)showLock();});
+}
+lockWire();
+
+/* ---------- Mode vacances : le quotidien en pause pendant un séjour, reprise toute seule au retour ---------- */
+// config/notif.away : {from, to, who: "both" ou une personne, all: tout mettre en pause, by, at}
+function awayCfg(){const a=notifCfg&&notifCfg.away;return a&&/^\d{4}-\d{2}-\d{2}$/.test(a.from||"")&&/^\d{4}-\d{2}-\d{2}$/.test(a.to||"")&&a.to>=a.from?a:null;}
+function awayOn(uid,key){const a=awayCfg();if(!a)return false;if(a.who&&a.who!=="both"&&a.who!==uid)return false;return key>=a.from&&key<=a.to;}
+// les rendez-vous qui reviennent (une série, le travail) se taisent ; un vol ou une visite garde son rappel, sauf « tout en pause »
+function awayMute(uid,ev){const a=awayCfg();return !!a&&!!ev&&!!ev.date&&awayOn(uid,ev.date)&&(!!a.all||!!ev.seriesId||ev.category==="travail");}
+function vacWhat(a){
+  return el("div",{class:"vac-what"},
+    el("div",{},el("strong",{},"En pause"),el("ul",{},el("li",{},"le résumé du matin ;"),el("li",{},a&&a.all?"tous les rappels des rendez-vous ;":"les rappels des rendez-vous qui se répètent (sport, cours, travail…) ;"),el("li",{},"« Ça fait 3 semaines sans sortie » et les idées de sorties du week-end."))),
+    el("div",{},el("strong",{},"Toujours là"),el("ul",{},a&&a.all?null:el("li",{},"les rappels des rendez-vous ponctuels (un vol, une visite…) et les départs ;"),el("li",{},"les messages et les ajouts de "+(otherId()?firstName(otherId()):"l'autre")+" ;"),el("li",{},"« Comment c'était ? » après une sortie."))));
+}
+function vacTrips(){
+  const today=ymd(new Date()),out=[];
+  for(const e of events.values()){if(!e.date||e.date<today||dayDiff(today,e.date)>150||e.busy)continue;
+    const trip=motifOf(e)==="voyage"||/vacances|voyage|sejour|week-?end a|road ?trip|conges/.test(norm(e.title||""));if(!trip)continue;
+    const end=isAllDay(e)||(+e.durationMin||0)>=1440?ymd(new Date(endOf(e).getTime()-60000)):e.date;
+    out.push({t:String(e.title||"Voyage").slice(0,40),a:e.date,b:end<e.date?e.date:end});}
+  out.sort((p,q)=>p.a.localeCompare(q.a));
+  const v=vacData().find(x=>x.b>today&&dayDiff(today,x.a)<=60);
+  if(v)out.push({t:v.n,a:v.a>today?v.a:today,b:addDays(v.b,-1)});
+  return out.slice(0,3);
+}
+function vacSection(){
+  const box=el("div",{class:"disc-box vac-box"});
+  const save=async away=>{try{notifCfg={...notifCfg,away};await db.doc("config/notif").set({away},{merge:true});syncPush(true);scheduleRender();return true;}catch(_){toast("Enregistrement impossible. Vérifie ta connexion.");return false;}};
+  const edit=a=>{box.textContent="";const today=ymd(new Date()),o=otherId();
+    const from=el("input",{type:"date",id:"vac-from",value:(a&&a.from>today?a.from:today),min:today});
+    const to=el("input",{type:"date",id:"vac-to",value:(a&&a.to)||addDays(today,6),min:today});
+    let who=(a&&a.who)||"both";const all=el("input",{type:"checkbox",id:"vac-all"});all.checked=!!(a&&a.all);
+    const quick=[];const [sat,sun]=nextWeekend();
+    quick.push(["Ce week-end",sat<today?today:sat,sun]);quick.push(["Une semaine",today,addDays(today,6)]);quick.push(["Deux semaines",today,addDays(today,13)]);
+    const dS=k=>new Date(k+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
+    for(const x of vacTrips())quick.push([x.t+" · "+dS(x.a)+(x.b!==x.a?" – "+dS(x.b):""),x.a,x.b]);
+    const qBox=el("div",{class:"pchips vac-quick"},...quick.map(([t,f,b])=>el("button",{type:"button",class:"pchip",onclick:()=>{from.value=f;to.value=b;}},t)));
+    const whoBox=el("div",{class:"pchips"});const drawWho=()=>{whoBox.textContent="";for(const [v,t] of [["both","Pour vous deux"],[myId,"Seulement moi"]])whoBox.append(el("button",{type:"button",class:"pchip"+(who===v?" on":""),"aria-pressed":String(who===v),onclick:()=>{who=v;drawWho();}},t));};drawWho();
+    const go=el("button",{type:"button",class:"btn primary",id:"vac-go"},a?"Enregistrer":"Activer le mode vacances");
+    go.onclick=async()=>{const f=from.value,t=to.value;
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(f)||!/^\d{4}-\d{2}-\d{2}$/.test(t)||t<f){toast("Choisis la date de retour après la date de départ.");return;}
+      if(t<today){toast("Ces dates sont déjà passées.");return;}
+      if(dayDiff(f,t)>92){toast("Trois mois au plus. Raccourcis la période.");return;}
+      go.disabled=true;
+      const away={from:f,to:t,who:o?who:"both",all:all.checked,by:myId,at:Date.now()};
+      if(await save(away)){toast("Mode vacances du "+frDay(f,true)+" au "+frDay(t,true)+" : le quotidien se met en pause");
+        if(o&&away.who==="both")pushOther(firstName(myId)+" a activé le mode vacances","Du "+frDay(f,true)+" au "+frDay(t,true)+" : résumé du matin, rappels du quotidien et idées de sorties en pause pour vous deux. Tout reprend au retour.","vac");
+        draw();}
+      go.disabled=false;};
+    box.append(...[el("div",{class:"lab"},"Choisir vite"),qBox,
+      el("div",{class:"grid2"},el("div",{class:"field"},el("label",{for:"vac-from"},"Départ"),from),el("div",{class:"field"},el("label",{for:"vac-to"},"Retour"),to)),
+      o?el("div",{class:"lab"},"Pour qui"):null,o?whoBox:null,
+      el("label",{class:"rs-row",for:"vac-all"},all,el("span",{class:"rs-txt"},el("strong",{},"Tout mettre en pause"),el("span",{},"Même les rappels de vos rendez-vous ponctuels. Les départs déjà prévus aussi."))),
+      vacWhat(a||{}),el("div",{class:"pchips"},go,a?el("button",{type:"button",class:"btn quiet",onclick:draw},"Annuler"):null)].filter(Boolean));};
+  const draw=()=>{box.textContent="";const a=awayCfg(),today=ymd(new Date());
+    if(a&&a.to>=today){const now=a.from<=today;
+      box.append(el("div",{class:"vac-on"},el("span",{class:"vac-ic",html:setSvg("vac")}),el("div",{},el("strong",{},now?"En vacances jusqu'au "+frDay(a.to):"Vacances prévues du "+frDay(a.from,true)+" au "+frDay(a.to,true)),
+          el("span",{},[a.who&&a.who!=="both"?"Pour "+(a.who===myId?"toi":firstName(a.who))+" seulement":"Pour vous deux",a.all?"tout est en pause":"",a.by?"réglé par "+(a.by===myId?"toi":firstName(a.by)):""].filter(Boolean).join(" · ")),
+          el("span",{},"Tout reprend tout seul le "+frDay(addDays(a.to,1))+"."))),
+        vacWhat(a),
+        el("div",{class:"pchips"},el("button",{type:"button",class:"btn",onclick:()=>edit(a)},"Modifier"),
+          el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)",onclick:async()=>{if(await save(null)){toast(now?"Mode vacances arrêté : tout a repris":"Mode vacances annulé");draw();}}},now?"Arrêter maintenant":"Annuler ces vacances")));
+      return;}
+    edit(null);
+    if(a&&a.to<today)box.prepend(el("p",{class:"note"},"Dernières vacances : du "+frDay(a.from,true)+" au "+frDay(a.to,true)+". Tout a repris."));
+  };
+  draw();return box;
+}
+// L'agenda le rappelle en haut, pendant le séjour et dans les deux semaines qui le précèdent
+function vacBanner(){
+  const a=awayCfg(),today=ymd(new Date());if(!a||a.to<today)return null;
+  const now=a.from<=today;if(!now&&dayDiff(today,a.from)>14)return null;
+  const mine=!a.who||a.who==="both"||a.who===myId,who=mine?"":firstName(a.who)+" : ";
+  return el("button",{type:"button",class:"vac-pill",onclick:()=>openSettings("vac")},el("span",{class:"vac-ic",html:setSvg("vac")}),
+    el("span",{},who+(now?"mode vacances jusqu'au "+frDay(a.to,true):"mode vacances du "+frDay(a.from,true)+" au "+frDay(a.to,true)).replace(/^./,c=>c.toUpperCase()),el("small",{},mine?(now?"Le quotidien est en pause. Tout reprend le "+frDay(addDays(a.to,1),true)+".":"Le quotidien se mettra en pause."):"Ses rappels du quotidien sont en pause.")));
+}
+// Au retour : un petit mot, une seule fois par téléphone
+function vacBack(){const a=awayCfg(),today=ymd(new Date());if(!a||a.to>=today||dayDiff(a.to,today)>7)return;
+  if(lsGet("a2.vacBack")===a.from+"|"+a.to)return;lsSet("a2.vacBack",a.from+"|"+a.to);
+  if(!a.who||a.who==="both"||a.who===myId)toast("Bon retour ! Le résumé du matin et les rappels du quotidien ont repris.");}
+
+/* ---------- Sauvegarde : copies automatiques, fichier complet, remettre ce qui manque, export .ics ---------- */
+const CFG_DOCS=["brands","budget","calsync","fr","home","notif","shop","shortcuts","templates","theme"];
+const countsTxt=n=>{n=n||{};const p=(k,s,pl)=>+n[k]?(+n[k])+" "+(+n[k]>1?pl:s):"";
+  return [p("events","évènement","évènements"),p("wishes","envie","envies"),(p("memories","souvenir","souvenirs")+(+n.media?" ("+n.media+" photo"+(+n.media>1?"s":"")+" et vidéos)":"")).trim(),p("places","lieu","lieux"),+n.shop?n.shop+" article"+(+n.shop>1?"s":"")+" de courses":""].filter(Boolean).join(", ")||"rien";};
+const fmtSize=b=>b>=1048576?(Math.round(b/104857.6)/10).toString().replace(".",",")+" Mo":Math.max(1,Math.round(b/1024))+" Ko";
+// Le contenu : depuis le serveur (fichier) ou depuis ce que le téléphone a déjà (copie automatique, sans réseau)
+async function backupHead(fresh){
+  const B={app:"Together",kind:"backup",v:1,appV:APP_V,at:Date.now(),by:myId,byName:firstName(myId),
+    couple:{id:coupleId,members:memberIds(),names:(couple&&couple.names)||{},photos:(couple&&couple.photos)||{}},events:[],wishes:[],memories:[],places:[],config:{}};
+  if(fresh){
+    for(const k of ["events","wishes","memories","places"]){const s=await db.collection(k).get();B[k]=s.docs.map(d=>({id:d.id,...d.data()}));}
+    for(const k of CFG_DOCS){try{const s=await db.doc("config/"+k).get();if(s.exists)B.config[k]=s.data();}catch(_){}}
+  }else{
+    B.events=[...events.values()].map(x=>({...x}));B.wishes=[...wishes.values()].map(x=>({...x}));
+    B.memories=[...memories.values()].map(x=>({...x}));B.places=[...places.values()].map(x=>({...x}));
+    const C={brands:brands&&brands.length?{list:brands}:null,budget:budgetCfg,calsync:calCfgAll,fr:frCfg,home:settings&&settings.home?{home:settings.home,mode:settings.mode}:null,
+      notif:notifCfg,shop:shopRaw,shortcuts:scLinks,templates:templates?{list:templates}:null,theme:themeCfg};
+    for(const [k,v] of Object.entries(C))if(v&&typeof v==="object"&&Object.keys(v).length)B.config[k]=JSON.parse(JSON.stringify(v));
+  }
+  const shopN=B.config.shop&&B.config.shop.list?Object.keys(B.config.shop.list).length:0;
+  B.counts={events:B.events.length,wishes:B.wishes.length,memories:B.memories.length,places:B.places.length,shop:shopN,media:0};
+  return B;
+}
+// IndexedDB : les copies automatiques de ce téléphone (les trois dernières)
+function idbOpen(){return new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error("idb"));const r=indexedDB.open("together-copies",1);
+  r.onupgradeneeded=()=>{try{r.result.createObjectStore("copies",{keyPath:"at"});}catch(_){}};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbDo(mode,fn){const d=await idbOpen();return new Promise((res,rej)=>{const t=d.transaction("copies",mode),st=t.objectStore("copies");let out;try{out=fn(st);}catch(e){rej(e);return;}
+  t.oncomplete=()=>{d.close();res(out&&"result" in out?out.result:undefined);};t.onerror=()=>{d.close();rej(t.error);};t.onabort=()=>{d.close();rej(t.error);};});}
+const idbAll=()=>idbDo("readonly",st=>st.getAll());
+async function autoCopy(force){
+  if(!coupleId||!myId||firstSnap)return false;
+  const last=+lsGet("a2.autoAt")||0;if(!force&&Date.now()-last<7*864e5)return false;
+  try{const B=await backupHead(false);
+    await idbDo("readwrite",st=>st.put({at:B.at,c:coupleId,n:B.counts,data:B}));
+    const L=(await idbAll()).filter(x=>x.c===coupleId).sort((a,b)=>b.at-a.at);
+    for(const x of L.slice(3))await idbDo("readwrite",st=>st.delete(x.at));
+    lsSet("a2.autoAt",String(B.at));return true;
+  }catch(_){return false;}
+}
+function autoCopySection(){
+  const box=el("div",{class:"disc-box ac-box"});
+  const draw=async()=>{let L=[];try{L=(await idbAll()).filter(x=>x.c===coupleId).sort((a,b)=>b.at-a.at);}catch(_){}
+    box.textContent="";
+    box.append(el("p",{class:"note"},"Chaque semaine, ce téléphone garde une copie de l'agenda, des envies, des souvenirs (sans les photos ni les vidéos), des lieux et de la liste de courses. Les trois dernières restent ici."));
+    if(!L.length)box.append(el("p",{class:"note"},"Pas encore de copie sur ce téléphone."));
+    for(const x of L)box.append(el("div",{class:"prow ac-row"},el("span",{class:"pdot",style:"background:var(--go)"}),
+      el("div",{class:"pinfo"},el("div",{class:"pname"},"Copie du "+new Date(x.at).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})),el("div",{class:"small"},countsTxt(x.n))),
+      el("button",{type:"button",class:"btn quiet",onclick:()=>restorePreview(x.data,"la copie du "+new Date(x.at).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}))},"Remettre…")));
+    const b=el("button",{type:"button",class:"btn",id:"ac-now"},"Faire une copie maintenant");
+    b.onclick=async()=>{b.disabled=true;const ok=await autoCopy(true);toast(ok?"Copie faite sur ce téléphone":"Copie impossible ici.");draw();};
+    box.append(el("div",{class:"pchips"},b));};
+  draw();return box;
+}
+// Le fichier complet : préparé d'abord (les photos peuvent être nombreuses), puis enregistré d'un toucher (l'iPhone l'exige)
+function backupSection(){
+  const box=el("div",{class:"disc-box bk-box"});
+  const media=el("input",{type:"checkbox",id:"bk-media"});media.checked=true;
+  const last=+lsGet("a2.bkAt")||0;
+  const st=el("p",{class:"note bk-st",role:"status"},last?"Dernière sauvegarde complète "+agoTxt(last)+".":"Pas encore de sauvegarde complète depuis ce téléphone.");
+  const go=el("button",{type:"button",class:"btn primary",id:"bk-go"},"Préparer le fichier");
+  const acts=el("div",{class:"pchips"},go);
+  go.onclick=async()=>{go.disabled=true;media.disabled=true;
+    try{const r=await backupBuild(media.checked,t=>{st.textContent=t;});
+      st.textContent="Prêt : "+countsTxt(r.counts)+" ("+fmtSize(r.blob.size)+").";
+      const save=el("button",{type:"button",class:"btn primary",id:"bk-save"},"Enregistrer le fichier");
+      save.onclick=async()=>{const how=await shareOrDownload(r.blob,r.name,"application/json");if(how==="cancel")return;lsSet("a2.bkAt",String(Date.now()));
+        st.textContent="Sauvegarde enregistrée : "+countsTxt(r.counts)+" ("+fmtSize(r.blob.size)+"). Garde-la dans Fichiers ou iCloud Drive.";};
+      acts.textContent="";acts.append(save,el("button",{type:"button",class:"btn quiet",onclick:()=>{acts.textContent="";acts.append(go);go.disabled=false;media.disabled=false;}},"Recommencer"));
+    }catch(e){console.error(e);st.textContent="La sauvegarde n'a pas pu être préparée. Vérifie ta connexion et réessaie.";go.disabled=false;media.disabled=false;}};
+  box.append(el("p",{class:"note"},"Tout dans un seul fichier : l'agenda, les envies, les souvenirs, les lieux, la liste de courses et vos réglages communs. Garde-le dans Fichiers (iCloud Drive) ou envoie-le-toi."),
+    el("label",{class:"rs-row",for:"bk-media"},media,el("span",{class:"rs-txt"},el("strong",{},"Avec les photos et les vidéos des souvenirs"),el("span",{},"Le fichier est plus lourd, mais rien ne manque."))),acts,st);
+  return box;
+}
+async function backupBuild(withMedia,status){
+  status&&status("Préparation de l'agenda, des envies et des souvenirs…");
+  const B=await backupHead(true),parts=[];
+  const head=JSON.stringify(B);
+  if(!withMedia){parts.push(head);}
+  else{
+    // les photos, souvenir par souvenir : chaque morceau part dans le fichier au fur et à mesure (peu de mémoire)
+    parts.push(head.slice(0,-1)+',"media":{');let first=true,n=0;
+    const withPics=B.memories.filter(m=>(+m.mediaCount||0)>0);
+    for(let i=0;i<withPics.length;i++){const m=withPics[i];status&&status("Photos et vidéos des souvenirs : "+(i+1)+" sur "+withPics.length+"…");
+      const L=await loadMedia(m.id);if(!L.length)continue;n+=L.length;
+      parts.push(new Blob([(first?"":",")+JSON.stringify(m.id)+":"+JSON.stringify(L)]));first=false;}
+    parts.push("}}");B.counts.media=n;
+  }
+  const blob=new Blob(parts,{type:"application/json"});
+  return {blob,counts:B.counts,name:"together-sauvegarde-"+ymd(new Date())+(withMedia?"":"-sans-photos")+".json"};
+}
+async function shareOrDownload(blob,name,type){
+  const f=new File([blob],name,{type});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:name});return "share";}catch(e){if(e&&e.name==="AbortError")return "cancel";}}
+  const u=URL.createObjectURL(f),a=el("a",{href:u,download:name,rel:"noopener"});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),120000);return "download";
+}
+// Remettre : seulement ce qui manque. Rien de ce qui existe n'est remplacé
+function restoreSection(){
+  const box=el("div",{class:"disc-box rs-box",id:"rs-box"});
+  const file=el("input",{type:"file",accept:".json,application/json",hidden:true,id:"rs-file"});
+  file.onchange=async()=>{const f=file.files&&file.files[0];if(!f)return;
+    let B=null;try{B=JSON.parse(await f.text());}catch(_){}
+    file.value="";
+    if(!B||B.app!=="Together"||B.kind!=="backup"){toast("Ce fichier n'est pas une sauvegarde Together.");return;}
+    restorePreview(B,"le fichier du "+new Date(+B.at||Date.now()).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}));};
+  box.append(el("p",{class:"note"},"Choisis un fichier de sauvegarde, ou une copie automatique plus haut : Together remet seulement ce qui manque (un évènement effacé, un souvenir…). Rien de ce qui existe n'est effacé ni remplacé."),
+    el("div",{class:"pchips"},el("button",{type:"button",class:"btn",onclick:()=>file.click()},"Choisir un fichier"),file),el("div",{class:"rs-plan"}));
+  return box;
+}
+// Une sauvegarde d'un autre agenda (nouveau départ) : on fait correspondre les personnes
+function uidGuess(B,pick){
+  const old=B.couple&&Array.isArray(B.couple.members)?B.couple.members.filter(u=>typeof u==="string"&&u):[],cur=memberIds(),map={};
+  if(!old.length||old.every(u=>cur.includes(u)))return map;
+  let meOld=old.includes(myId)?myId:pick||null;
+  if(!meOld){const nm=norm(firstName(myId)),c=old.filter(u=>norm((B.couple.names||{})[u]||"")===nm);if(c.length===1)meOld=c[0];}
+  if(!meOld)return null;
+  if(meOld!==myId)map[meOld]=myId;
+  const o=otherId(),otherOld=old.find(u=>u!==meOld);
+  if(otherOld&&o&&otherOld!==o)map[otherOld]=o;
+  return map;
+}
+function remapUids(x,map){if(!map||!Object.keys(map).length)return x;
+  const f=v=>typeof v==="string"?(v.length<=128&&map[v]?map[v]:v):Array.isArray(v)?v.map(f):v&&typeof v==="object"?Object.fromEntries(Object.entries(v).map(([k,w])=>[map[k]||k,f(w)])):v;
+  return f(x);}
+async function restorePlan(B,map){
+  const R=x=>remapUids(x,map),P={events:[],wishes:[],memories:[],places:[],media:[],memPatch:[],config:[]};
+  for(const e of B.events||[])if(e&&e.id&&!events.has(e.id))P.events.push(R(e));
+  for(const w of B.wishes||[])if(w&&w.id&&!wishes.has(w.id))P.wishes.push(R(w));
+  for(const p of B.places||[])if(p&&p.id&&!places.has(p.id))P.places.push(R(p));
+  const M=B.media||{};
+  for(const m of B.memories||[]){if(!m||!m.id)continue;const cur=memories.get(m.id),L=Array.isArray(M[m.id])?M[m.id].filter(x=>x&&x.id):[];
+    if(!cur){P.memories.push(R(m));for(const x of L)P.media.push([m.id,R(x)]);continue;}
+    if(L.length&&(+cur.mediaCount||0)<L.length){const have=new Set((await loadMedia(m.id)).map(x=>x.id)),add=L.filter(x=>!have.has(x.id));
+      if(add.length){for(const x of add)P.media.push([m.id,R(x)]);P.memPatch.push({id:m.id,add:add.length,cover:!cur.cover&&m.cover?m.cover:null});}}}
+  for(const [k,v] of Object.entries(B.config||{})){if(!CFG_DOCS.includes(k)||!v||typeof v!=="object")continue;
+    let has=true;try{has=(await db.doc("config/"+k).get()).exists;}catch(_){}
+    if(!has)P.config.push([k,R(v)]);}
+  return P;
+}
+const CFG_NAMES={brands:"enseignes",budget:"budget des sorties",calsync:"calendrier de l'iPhone",fr:"jours fériés",home:"transport",notif:"notifications",shop:"liste de courses",shortcuts:"raccourcis",templates:"modèles",theme:"thème"};
+async function restorePreview(B,label,pick){
+  let box=document.getElementById("rs-box");if(!box){setGo("save","rs-h");box=document.getElementById("rs-box");}if(!box)return;
+  const out=box.querySelector(".rs-plan");out.textContent="";out.append(el("p",{class:"note"},"Comparaison avec votre agenda…"));
+  setTimeout(()=>{try{box.scrollIntoView({block:"start",behavior:"smooth"});}catch(_){}},60);
+  const map=uidGuess(B,pick);
+  if(map===null){const names=(B.couple&&B.couple.names)||{},old=(B.couple.members||[]).filter(Boolean);out.textContent="";
+    out.append(el("p",{class:"note"},"Cette sauvegarde vient d'un autre agenda. Qui es-tu dedans ?"),
+      el("div",{class:"pchips"},...old.map(u=>el("button",{type:"button",class:"pchip",onclick:()=>restorePreview(B,label,u)},names[u]||"Sans prénom"))));return;}
+  let P;try{P=await restorePlan(B,map);}catch(e){out.textContent="";out.append(el("p",{class:"note"},"Comparaison impossible pour l'instant. Vérifie ta connexion."));return;}
+  out.textContent="";
+  const nMem=P.memories.length+P.memPatch.length,lines=[
+    ["events",P.events.length,"Évènements",P.events.slice(0,3).map(e=>e.title).filter(Boolean)],
+    ["wishes",P.wishes.length,"Envies",P.wishes.slice(0,3).map(w=>w.title).filter(Boolean)],
+    ["memories",nMem+P.media.length?nMem:0,"Souvenirs",[...P.memories.slice(0,3).map(m=>m.title).filter(Boolean),P.media.length?P.media.length+" photo"+(P.media.length>1?"s":"")+" et vidéos":""].filter(Boolean)],
+    ["places",P.places.length,"Lieux",P.places.slice(0,3).map(p=>p.name).filter(Boolean)],
+    ["config",P.config.length,"Réglages communs",P.config.map(([k])=>CFG_NAMES[k]||k)]];
+  const total=P.events.length+P.wishes.length+P.memories.length+P.media.length+P.memPatch.length+P.places.length+P.config.length;
+  out.append(el("div",{class:"rs-src"},el("strong",{},"Dans "+label),el("span",{},countsTxt(B.counts||{events:(B.events||[]).length,wishes:(B.wishes||[]).length,memories:(B.memories||[]).length,places:(B.places||[]).length})+".")));
+  if(!total){out.append(el("p",{class:"rs-none"},"✓ Rien ne manque : tout ce qui est dans cette sauvegarde est déjà dans Together."));return;}
+  const sel={};const boxes=el("div",{class:"rs-list"});
+  for(const [k,n,t,ex] of lines){if(!n&&!(k==="memories"&&P.media.length))continue;sel[k]=true;
+    const cb=el("input",{type:"checkbox",id:"rs-"+k});cb.checked=true;cb.onchange=()=>{sel[k]=cb.checked;};
+    boxes.append(el("label",{class:"rs-row",for:"rs-"+k},cb,el("span",{class:"rs-txt"},el("strong",{},t+" : "+(k==="memories"&&!n?P.media.length+" photos à remettre":n+" à remettre")),ex.length?el("span",{},ex.join(", ")+(n>3&&k!=="config"?"…":"")):null)));}
+  const go=el("button",{type:"button",class:"btn primary",id:"rs-go"},"Remettre ce qui manque");
+  const st=el("p",{class:"note",role:"status"});
+  go.onclick=async()=>{go.disabled=true;const r=await restoreRun(P,sel,(i,n)=>{st.textContent="Remise en place : "+i+" sur "+n+"…";});
+    st.textContent="";out.textContent="";
+    out.append(el("p",{class:"rs-done"},"✓ C'est fait : "+r.done+" élément"+(r.done>1?"s":"")+" remis"+(r.bad?" ("+r.bad+" n'ont pas pu l'être : réessaie plus tard)":"")+"."));
+    toast(r.done+" élément"+(r.done>1?"s":"")+" remis depuis la sauvegarde");scheduleRender();};
+  out.append(el("p",{class:"note"},"Voici ce qui manque aujourd'hui dans Together :"),boxes,el("div",{class:"pchips"},go),st);
+}
+async function restoreRun(P,sel,progress){
+  const strip=x=>{const {id,...r}=x;return r;},jobs=[];
+  if(sel.events)for(const e of P.events)jobs.push(()=>db.doc("events/"+e.id).set(strip(e)));
+  if(sel.wishes)for(const w of P.wishes)jobs.push(()=>db.doc("wishes/"+w.id).set(strip(w)));
+  if(sel.places)for(const p of P.places)jobs.push(()=>db.doc("places/"+p.id).set(strip(p)));
+  if(sel.memories){for(const m of P.memories)jobs.push(()=>db.doc("memories/"+m.id).set(strip(m)));
+    for(const [mid,x] of P.media)jobs.push(()=>db.doc("memories/"+mid+"/media/"+x.id).set(strip(x)));
+    for(const p of P.memPatch)jobs.push(async()=>{const cur=memories.get(p.id)||{};await db.doc("memories/"+p.id).set({mediaCount:(+cur.mediaCount||0)+p.add,...(p.cover?{cover:p.cover}:{})},{merge:true});});}
+  if(sel.config)for(const [k,v] of P.config)jobs.push(()=>db.doc("config/"+k).set(v));
+  const n=jobs.length;let done=0,bad=0;
+  const worker=async()=>{while(jobs.length){const j=jobs.shift();try{await j();}catch(_){bad++;}done++;progress&&progress(done,n);}};
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  return {done:done-bad,bad};
+}
+// L'agenda pour un autre calendrier : un fichier .ics, ou un lien d'abonnement qui reste à jour
+function icsExport(scope){
+  const from=Date.now()-366*864e5,o=otherId();
+  const evs=[...events.values()].filter(e=>{if(e.busy||!e.date)return false;const w=whoOf(e);if(scope==="me"&&w!=="both"&&w!==myId)return false;return startOf(e).getTime()>=from;})
+    .sort((a,b)=>startOf(a)-startOf(b)||String(a.id).localeCompare(String(b.id)));
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Together//Agenda a deux//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:"+icsText(scope==="me"?"Together ("+firstName(myId)+")":"Together")];
+  for(const ev of evs){const w=whoOf(ev),uid=w==="both"?myId:w;
+    let V=[];try{V=calVevents(ev,uid);}catch(_){continue;}
+    for(const ve of V){
+      if(scope!=="me"&&w!=="both"&&w!==myId&&o){const i=ve.findIndex(l=>l.startsWith("SUMMARY:"));if(i>=0)ve[i]="SUMMARY:"+icsText(firstName(w)+" : ")+ve[i].slice(8);}
+      L.push(...ve);}}
+  L.push("END:VCALENDAR");
+  return L.map(icsFold).join("\r\n")+"\r\n";
+}
+function icsSection(){
+  const box=el("div",{class:"disc-box ics-box"});let scope="all";
+  const chips=el("div",{class:"pchips"});
+  const drawChips=()=>{chips.textContent="";for(const [v,t] of [["all","Tout l'agenda"],["me","Mes moments et les vôtres"]])chips.append(el("button",{type:"button",class:"pchip"+(scope===v?" on":""),"aria-pressed":String(scope===v),onclick:()=>{scope=v;drawChips();}},t));};
+  drawChips();
+  const go=el("button",{type:"button",class:"btn primary",id:"ics-go"},"Créer le fichier .ics");
+  go.onclick=async()=>{const t=icsExport(scope),n=(t.match(/BEGIN:VEVENT/g)||[]).length;
+    const how=await shareOrDownload(new Blob([t],{type:"text/calendar"}),"together-agenda-"+ymd(new Date())+".ics","text/calendar");
+    if(how!=="cancel")toast(n+" évènement"+(n>1?"s":"")+" dans le fichier, de l'an dernier à la suite");};
+  // le lien est prêt avant le toucher : l'iPhone refuse une copie faite après une attente
+  let url="";const link=el("button",{type:"button",class:"btn",disabled:true,id:"ics-link"},"Copier le lien d'abonnement");
+  link.onclick=()=>{if(!url)return;navigator.clipboard.writeText(url).then(()=>toast("Lien copié : colle-le dans Google Agenda ou Outlook"),()=>prompt("Copie ce lien :",url));};
+  (async()=>{if(!pushToken())return;const base=await pushUrl();if(base){url=await calFeedUrl(base,myId);link.disabled=false;}})();
+  box.append(el("p",{class:"note"},"Un fichier .ics avec vos évènements, de l'an dernier à la suite : il s'importe dans Google Agenda, Outlook ou un autre calendrier."),chips,el("div",{class:"pchips"},go),
+    el("div",{class:"lab"},"Ou un agenda qui reste à jour tout seul"),
+    el("p",{class:"note"},"Dans Google Agenda (sur un ordinateur) : Autres agendas, +, « À partir de l'URL », puis colle le lien. Dans Outlook : Ajouter un calendrier, « S'abonner à partir du web ». Ils y retrouvent tes moments et les vôtres, mis à jour toutes les quelques heures."),
+    el("div",{class:"pchips"},link));
+  if(!pushToken())box.append(el("p",{class:"note"},"Le lien est prêt une fois les notifications activées (il passe par le même serveur)."));
+  return box;
+}
+
+/* ---------- Aide et nouveautés ---------- */
+const NEWS=[
+  {v:"67",d:"2026-10-25",t:"Des réglages rangés, et vos données à l'abri",i:["Les réglages sont rangés par rubriques, avec une recherche.","« Tout marche ? » vérifie vos deux téléphones (notifications, version, widget, calendrier, Siri) et règle ce qui coince d'un toucher.","Sauvegarde : une copie automatique chaque semaine, un fichier complet avec les photos, et « Remettre » pour retrouver ce qui a été effacé.","Export de l'agenda pour Google Agenda ou Outlook.","Appareils et sécurité : vos téléphones, retirer un ancien téléphone, verrouiller Together avec Face ID.","Mode vacances : le quotidien en pause pendant un séjour, reprise toute seule au retour."],go:"check"},
+  {v:"66",d:"2026-10-24",t:"Thèmes",i:["Essayer un thème avant de l'appliquer, et le même thème pour vous deux.","Clair, sombre, ou sombre le soir, au coucher du soleil chez vous.","Décors de saison et votre anniversaire de couple.","Un thème tiré d'une de vos photos, et un fond d'écran assorti.","Taille du texte, contraste renforcé, moins d'animations."],go:"theme"},
+  {v:"65",d:"2026-10-22",t:"Widgets",i:["Nouveaux widgets : courses, compte à rebours, souvenir du jour, « On fait quoi ? ».","Les arrivées et les retards en direct dans le widget.","Jours fériés et vacances scolaires dans la semaine du widget.","La galerie des widgets, dessinés avec vos vraies données."],go:"widgets"},
+  {v:"64",d:"2026-10-22",t:"Calendrier de l'iPhone et voiture",i:["En montant dans la voiture, Siri annonce le départ et lance l'itinéraire.","« Dis Siri, notre journée » et « Dis Siri, je suis en retard ».","Le calendrier de l'iPhone suivi tout seul, et « Occupé » sans les détails.","Jours fériés, ponts et vacances scolaires."],go:"siri"},
+  {v:"63",d:"2026-10-22",t:"Souvenirs",i:["« Il y a un an », la carte de vos sorties et « On y retourne ? ».","Le film en vraie vidéo, avec trois ambiances et sa musique.","Votre bilan à deux et l'album à imprimer."]},
+  {v:"62",d:"2026-10-22",t:"Envies et sorties",i:["Une envie de partout : une phrase, Siri, un lien ou un lieu de Plans.","« Vous en avez tous les deux envie » et proposer 2 ou 3 dates.","« On fait quoi ? » et le budget des sorties."]},
+  {v:"61",d:"2026-10-22",t:"Courses",i:["Un seul panier partagé, dans l'ordre de votre magasin.","Ajouter une recette, « Je pars faire les courses », « Il en manque ? ».","Le ticket de caisse et l'envoi de la liste."]},
+  {v:"60",d:"2026-10-21",t:"Rappels et notifications",i:["Le résumé du matin et « Ne pas déranger la nuit ».","Les notifications disent ce qui a changé.","Des rappels proposés selon le type, et les notifications de l'autre regroupées."],go:"notif"},
+  {v:"59",d:"2026-10-21",t:"Trajet en direct",i:["Rejoindre l'autre, rentrer à la maison, retards prévenus tout seuls.","Un message libre, et ⏭ sur l'écran verrouillé et dans la voiture."]},
+  {v:"58",d:"2026-10-21",t:"Trajets et départs",i:["Enchaîner deux rendez-vous, les heures de pointe affichées.","« Partir d'où je suis », le travail de chacun, l'heure de retour, le temps sur place."]},
+  {v:"56",d:"2026-10-21",t:"Dans la voiture",i:["Le widget voiture, « Dis Siri, on y va » et « Je suis en bas ».","Le trajet dans « En cours de lecture » sur CarPlay."]},
+  {v:"55",d:"2026-10-21",t:"Agenda",i:["Modifier toute une série, chercher dans l'agenda, « Quand sommes-nous libres ? ».","Reporter, la pastille des chevauchements, la bande des jours sur 6 semaines."]},
+  {v:"54",d:"2026-10-21",t:"Ajouter un évènement",i:["Répétitions, durée et plusieurs évènements dans une phrase.","Ajouter avec Siri ou depuis le menu Partager.","Les chevauchements signalés, « Pour qui » deviné."]},
+];
+// La version déjà vue sur ce téléphone. Sans trace : un agenda déjà utilisé avant cette version (on montre les nouveautés de la 67),
+// ou une toute première installation (rien à montrer). On le sait au chargement, avant que l'agenda soit rejoint.
+const NEWS_FIRST=!lsGet("a2.seenV")&&!lsGet(COUPLE_KEY);
+function newsSeen(){let s=lsGet("a2.seenV");if(!s){s=NEWS_FIRST?APP_V:"66";lsSet("a2.seenV",s);}return s;}
+function newsCard(){
+  if(!coupleId)return null;const s=newsSeen();if(vNum(s)>=vNum(APP_V))return null;
+  const N=NEWS.filter(x=>vNum(x.v)>vNum(s)&&vNum(x.v)<=vNum(APP_V));if(!N.length){lsSet("a2.seenV",APP_V);return null;}
+  const top=N[0],more=N.length>1?" (et "+(N.length-1)+" autre"+(N.length>2?"s":"")+" version"+(N.length>2?"s":"")+")":"";
+  const done=()=>lsSet("a2.seenV",APP_V);
+  return el("section",{class:"news-card"},el("div",{class:"nc-h"},el("span",{class:"nc-ic",html:setSvg("aide")}),el("div",{},el("small",{},"Nouveau dans la version "+top.v+more),el("strong",{},top.t))),
+    el("ul",{class:"nc-list"},...top.i.slice(0,3).map(x=>el("li",{},x))),
+    el("div",{class:"pchips"},el("button",{type:"button",class:"btn primary",onclick:()=>{done();scheduleRender();openSettings("aide","qn-h");}},"Tout voir"),
+      top.go?el("button",{type:"button",class:"btn",onclick:()=>{done();scheduleRender();openSettings(top.go);}},top.go==="check"?"Tout marche ?":"Essayer"):null,
+      el("button",{type:"button",class:"btn quiet",onclick:()=>{done();scheduleRender();}},"Plus tard")));
+}
+function newsSection(){
+  const box=el("div",{class:"disc-box news-box"});
+  NEWS.forEach((x,i)=>{const d=new Date(x.d+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
+    box.append(el("details",{class:"nw",open:i===0?true:null},el("summary",{},el("span",{class:"nw-top"},el("span",{class:"nw-v"},"Version "+x.v),el("small",{},d)),el("strong",{},x.t)),
+      el("ul",{},...x.i.map(t=>el("li",{},t))),x.go?el("button",{type:"button",class:"btn quiet",onclick:()=>setGo(x.go)},x.go==="check"?"Ouvrir « Tout marche ? »":"Voir dans les réglages"):null));});
+  lsSet("a2.seenV",APP_V);
+  return box;
+}
+function versionSection(){
+  const st=el("p",{class:"note"},"Version "+APP_V+".");
+  latestVersion().then(v=>{if(!st.isConnected)return;st.textContent="Version "+APP_V+(v&&vNum(v)>vNum(APP_V)?" : la version "+v+" est prête, touche le bouton pour l'installer.":" : c'est la dernière.");});
+  return el("div",{class:"disc-box"},st,el("p",{class:"note"},"Si une nouveauté n'apparaît pas, touche ce bouton : l'app télécharge la dernière version et redémarre. Tes évènements ne sont pas touchés."),
+    el("button",{type:"button",class:"btn primary",onclick:forceUpdate},"Mettre à jour l'app"));
+}
+const FAQ=[
+  ["Les notifications n'arrivent pas","« Tout marche ? » dit sur quel téléphone ça coince et le règle d'un toucher.","check",""],
+  ["Un nouveau téléphone","Installe Together depuis Safari (Partager, Sur l'écran d'accueil), puis touche « J'ai un code de secours ». Ton code est dans Appareils et sécurité.","secu","rec-h"],
+  ["Un évènement ou un souvenir effacé par erreur","Sauvegarde et export, « Remettre » : Together remet ce qui manque, sans rien effacer.","save","rs-h"],
+  ["Le widget ne bouge plus","Touche-le une fois : il se recharge. « Tout marche ? » dit quand il s'est mis à jour pour la dernière fois.","check",""],
+  ["Partir en vacances l'esprit léger","Le mode vacances met le quotidien en pause, et tout reprend au retour.","vac",""],
+];
+function faqSection(){return el("div",{class:"disc-box faq-box"},...FAQ.map(([q,a,p,an])=>{const P=setPage(p);if(P&&P.need&&!coupleId)return null;
+  return el("details",{class:"faq"},el("summary",{},q),el("p",{},a),el("button",{type:"button",class:"btn quiet",onclick:()=>setGo(p,an)},P?"Ouvrir « "+P.t+" »":"Ouvrir"));}));}
+
+/* ---------- Au démarrage (une fois l'agenda chargé) ---------- */
+function opt12Init(){
+  try{newsSeen();}catch(_){}
+  try{vacBack();}catch(_){}
+  // la copie automatique de la semaine, quand le téléphone est tranquille
+  setTimeout(()=>{autoCopy(false).catch(()=>{});},15000);
+}
+
+const APP_V="67";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -8515,11 +9399,11 @@ function tripHero(n,t){
     el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.stale&&!here?" · dernière position "+agoShort(S.age):"")),b);
 }
 /* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
-let pendingLink=/[?&](trip|ev|add|shop|wishes|mem)=/.test(location.search)?location.search:null;
+let pendingLink=/[?&](trip|ev|add|shop|wishes|mem|check|set|news)=/.test(location.search)?location.search:null;
 function runPendingLink(){
   if(!pendingLink||firstSnap||!tripsReady)return;
   const q=pendingLink;pendingLink=null;
-  try{if(/[?&](trip|ev|add|shop|wishes|mem)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
+  try{if(/[?&](trip|ev|add|shop|wishes|mem|check|set|news)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
   setTimeout(()=>{if(!handleDeepLink(q))toast("Cet évènement n'existe plus.");},150);
 }
 function handleDeepLink(q){
@@ -8528,6 +9412,9 @@ function handleDeepLink(q){
   if(aid){openPendingAdd(aid);return true;}
   if(p.has("shop")){openShop();return true;}
   if(p.has("wishes")){openWishes();return true;}
+  if(p.has("check")){openSettings("check");return true;}
+  if(p.has("set")){openSettings(p.get("set")||"");return true;}
+  if(p.has("news")){openSettings("aide","qn-h");return true;}
   if(p.has("mem")){const id=p.get("mem")||"";closeSheet();setView("mem");
     if(id&&events.has(id))openMemory(events.get(id));else if(id&&memories.has(id)){const m=memories.get(id);openMemory({id,title:m.title,date:m.date,time:m.time,location:m.place||"",motif:m.motif||"",category:"sortie"});}
     return true;}
@@ -8766,7 +9653,7 @@ function bootFromCache(){
     }
     const wasFirst=firstSnap;firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);calSyncSoon(2500);}
+    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);calSyncSoon(2500);setTimeout(opt12Init,2000);}
     if(shopRefresh)shopRefresh();
     migrateShop(shopRaw);
     saveBoot();

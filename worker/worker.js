@@ -1,5 +1,5 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
-// Déploiement : 2026-10-20 (étiquette « Topic » toujours valide pour Apple ; raison des refus dans le journal)
+// Déploiement : 2026-10-25 (« Tout marche ? », appareils : santé, retirer un ancien téléphone, dernière utilisation du widget et de Siri)
 // Envoie les notifications Web Push aux iPhone, garde les rappels programmés
 // et publie pour chacun un calendrier .ics auquel l'iPhone s'abonne.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
@@ -70,10 +70,10 @@ async function sendTo(env, subs, uids, msg) {
   for (const uid of uids) {
     const list = subs[uid] || [];
     const keep = [];
-    if (!list.length) codes.push({ to: String(uid).slice(0, 4), st: -1 }); // aucun abonnement pour ce téléphone
+    if (!list.length) codes.push({ to: String(uid).slice(0, 8), st: -1 }); // aucun abonnement pour ce téléphone
     for (const s of list) {
       let st = 0, rs = ""; try { const x = await sendPush(env, s, msg); st = x.st; rs = x.reason; } catch (e) { st = 0; rs = String(e && e.message || e).slice(0, 40); }
-      codes.push({ to: String(uid).slice(0, 4), st, ...(rs ? { rs } : {}) });
+      codes.push({ to: String(uid).slice(0, 8), st, ...(rs ? { rs } : {}) });
       if (st === 404 || st === 410) { changed = true; continue; }
       if (st >= 200 && st < 300) sent++;
       keep.push(s);
@@ -179,6 +179,24 @@ async function expandLinks(t) {
   return t;
 }
 const UID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+// « Tout marche ? » et « Appareils » : un abonnement aux notifications est désigné par une empreinte courte, jamais par son adresse
+async function epHash(ep) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode("together-ep:" + ep)));
+  let s = ""; for (const x of h.slice(0, 6)) s += x.toString(16).padStart(2, "0"); return s;
+}
+// Les anciens téléphones retirés dans l'app (« Appareils et sécurité ») : leurs liens (widget, Siri, voiture) ne répondent plus
+const goneOf = (c) => (c && Array.isArray(c.gone) ? c.gone : []);
+// Dernière utilisation du widget (w), de Siri (a) et des raccourcis de la voiture (c), pour « Tout marche ? ».
+// Notée au plus toutes les 3 h (ou quand la version du widget change) : peu d'écritures.
+async function noteUse(env, ctx, id, uid, kind, v) {
+  if (!uid || !UID_RE.test(uid)) return;
+  const key = "us:" + id, U = (await env.KV.get(key, "json")) || {}, now = Date.now(), o = U[uid] || {}, prev = o[kind];
+  const at = prev && typeof prev === "object" ? +prev.at || 0 : +prev || 0, pv = prev && typeof prev === "object" ? prev.v || "" : "";
+  if (now - at < 3 * 3600000 && !(v && pv !== v)) return;
+  U[uid] = { ...o, [kind]: v ? { at: now, v } : now };
+  const p = env.KV.put(key, JSON.stringify(U));
+  if (ctx && ctx.waitUntil) ctx.waitUntil(p); else await p;
+}
 // Les pages de recettes (Marmiton, 750g…) publient leurs ingrédients en données « Recipe » (schema.org) :
 // on les lit pour l'app, qui ne peut pas ouvrir ces pages elle-même
 const RECIPE_URL = /(?:^|\.)(?:marmiton\.org|750g\.com|cuisineaz\.com|ptitchef\.com|chefsimon\.com|jow\.fr|hellofresh\.[a-z]+|allrecipes\.[a-z]+|bbcgoodfood\.com|ricardocuisine\.com|cuisineactuelle\.fr|journaldesfemmes\.fr|papillesetpupilles\.fr|cookomix\.com|cuisine-libre\.org|giallozafferano\.[a-z]+)$/i;
@@ -343,7 +361,9 @@ export default {
     if (ad) {
       const [, id, uid, key] = ad;
       const c = await getCouple(env, id);
-      if (!c || !c.token || key !== await addKey(c.token, uid)) return txt("Lien d'ajout inconnu. Copie à nouveau ton lien dans Together : Réglages, Ajouter avec Siri.", 404);
+      if (!c || !c.token || key !== await addKey(c.token, uid)) return txt("Lien d'ajout inconnu. Copie à nouveau ton lien dans Together : Réglages communs, Siri et voiture.", 404);
+      if (goneOf(c).includes(uid)) return txt("Ce téléphone n'a plus accès à Together.", 403);
+      try { await noteUse(env, ctx, id, uid, "a"); } catch (_) {}
       let t = url.searchParams.get("t") || url.searchParams.get("text") || "";
       if (req.method === "POST") {
         const ct = (req.headers.get("Content-Type") || "").toLowerCase();
@@ -380,7 +400,10 @@ export default {
       const txt = (t, st) => { const r = new Response(t, { status: st || 200, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...cors(req) } }); return r; };
       const [, id, uid, key] = cr;
       const c = await getCouple(env, id);
-      if (!c || !c.token || key !== await addKey(c.token, uid)) return txt("Lien voiture inconnu. Copie à nouveau ton lien dans Together : Réglages, Dans la voiture.", 404);
+      if (!c || !c.token || key !== await addKey(c.token, uid)) return txt("Lien voiture inconnu. Copie à nouveau ton lien dans Together : Réglages communs, Siri et voiture.", 404);
+      if (goneOf(c).includes(uid)) return txt("Ce téléphone n'a plus accès à Together.", 403);
+      // (« Essayer » dans l'app passe aussi par ici : seule l'utilisation depuis l'iPhone compte)
+      if (!ORIGIN_OK(req.headers.get("Origin")) || !req.headers.get("Origin")) { try { await noteUse(env, ctx, id, uid, "c"); } catch (_) {} }
       const act = String(url.searchParams.get("a") || "go").toLowerCase(), now = Date.now();
       const W = await getWidgets(env, id, c), D = (W.map && W.map[uid]) || {};
       let fmt; try { fmt = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: D.tz || "Europe/Paris" }); } catch (_) { fmt = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }); }
@@ -487,6 +510,10 @@ export default {
       const c = id && await getCouple(env, id);
       if (!c || !t || c.token !== t) return json(req, { error: "unknown" }, 404);
       const u = clean(url.searchParams.get("u"), 80), W = await getWidgets(env, id, c);
+      // un ancien téléphone retiré : son widget le dit, sans plus rien montrer
+      if (u && goneOf(c).includes(u)) return json(req, { gone: 1, data: null });
+      // (le diagnostic passe aussi par ici : il ne compte pas comme une utilisation du widget)
+      if (!url.searchParams.has("diag")) { try { await noteUse(env, ctx, id, u, "w", clean(url.searchParams.get("wv"), 8)); } catch (_) {} }
       const data = (W.map[u] || Object.values(W.map)[0]) || null;
       // « Dis Siri, je suis en retard » : le retard annoncé par l'autre (depuis moins de 3 h) arrive tout de suite dans le widget
       if (data) {
@@ -521,9 +548,10 @@ export default {
     if (path === "/api/sub") {
       const uid = clean(b.uid, 80), s = b.sub;
       if (!uid || !s || !/^https:\/\//.test(s.endpoint || "") || !s.keys || !s.keys.p256dh || !s.keys.auth) return json(req, { error: "sub" }, 400);
+      if (goneOf(c).includes(uid)) return json(req, { error: "gone" }, 403);
       const subs = await getSubs(env, id, c);
       const list = (subs[uid] || []).filter((x) => x.endpoint !== s.endpoint);
-      list.push({ endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh, auth: s.keys.auth } });
+      list.push({ endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh, auth: s.keys.auth }, at: Date.now(), ...(b.dev ? { dev: clean(b.dev, 40) } : {}) });
       subs[uid] = list.slice(-3); await putSubs(env, id, subs);
       if (b.hello) { const r = await sendTo(env, subs, [uid], { title: "Notifications activées", body: "Together te préviendra ici, même quand l'app est fermée.", tag: "hello" }); if (r.changed) await putSubs(env, id, subs); }
       return json(req, { ok: true });
@@ -550,7 +578,11 @@ export default {
         .filter((x) => x.id && x.at > now - 60000 && x.at < now + 40 * 86400000 && !done.has(x.id));
       // dernière synchronisation de chaque téléphone, avec la version de l'app (aide au diagnostic)
       const who = clean(b.uid, 80);
-      if (who) { c.seen = c.seen && typeof c.seen === "object" ? c.seen : {}; c.seen[who] = { v: clean(b.v, 12) || "<51", at: now }; }
+      // un ancien téléphone retiré ne touche plus à rien (pas même aux rappels de l'autre)
+      if (who && goneOf(c).includes(who)) return json(req, { ok: false, gone: true }, 403);
+      // retiré par erreur ? Il revient dès que l'autre téléphone le compte encore parmi vous deux
+      if (Array.isArray(b.members) && goneOf(c).length) { const mem = b.members.slice(0, 4).map((x) => clean(x, 80)); const back = c.gone.filter((u) => mem.includes(u) && u !== who); if (back.length) c.gone = c.gone.filter((u) => !back.includes(u)); }
+      if (who) { c.seen = c.seen && typeof c.seen === "object" ? c.seen : {}; c.seen[who] = { v: clean(b.v, 12) || "<51", at: now, ...(b.dev ? { dev: clean(b.dev, 40) } : {}) }; }
       // ne pas déranger la nuit (choix de chacun) : le serveur en a besoin pour garder les nouveautés jusqu'à 7 h
       if (b.prefs && typeof b.prefs === "object") { const P = {};
         for (const [k, v] of Object.entries(b.prefs).slice(0, 4)) if (UID_RE.test(k)) P[k] = { quiet: !!(v && v.quiet), tz: clean(v && v.tz, 40) || "Europe/Paris" };
@@ -613,6 +645,49 @@ export default {
       if (!u || !/^https?:$/.test(u.protocol) || !u.hostname.includes(".") || /^(?:localhost|[\d.]+|\[.*\])$/i.test(u.hostname) || /\.(?:local|internal|lan)$/i.test(u.hostname)) return json(req, { ok: false, error: "url" }, 400);
       const r = await fetchPage(u.toString());
       return json(req, r ? { ok: true, ...r } : { ok: false });
+    }
+    // « Tout marche ? » : ce que le serveur sait de chaque téléphone (version, notifications, widget, calendrier, Siri)
+    if (path === "/api/health") {
+      const now = Date.now(), gone = goneOf(c);
+      const subs = await getSubs(env, id, c), W = await getWidgets(env, id, c), K = await getCals(env, id);
+      const ks = (await env.KV.get("ks:" + id, "json")) || {}, us = (await env.KV.get("us:" + id, "json")) || {}, L = (await env.KV.get("l:" + id, "json")) || [];
+      const all = new Set([...Object.keys(c.seen || {}), ...Object.keys(subs), ...Object.keys(W.map || {}), ...Object.keys(K.map || {}), ...Object.keys(ks), ...Object.keys(us)]);
+      const out = {};
+      for (const u of [...all].filter((x) => UID_RE.test(x) && !gone.includes(x)).slice(0, 12)) {
+        // le journal garde 8 caractères de l'identifiant (4 dans les anciennes lignes)
+        const s = (c.seen || {})[u] || {}, lg = L.filter((x) => x && (x.to === u.slice(0, 8) || (String(x.to).length === 4 && x.to === u.slice(0, 4))));
+        const okAt = lg.filter((x) => x.st >= 200 && x.st < 300).reduce((m, x) => Math.max(m, +x.at || 0), 0);
+        const bad = lg.filter((x) => !(x.st >= 200 && x.st < 300)).sort((p, q) => (+p.at || 0) - (+q.at || 0)).pop();
+        const U = us[u] || {}, w = U.w && typeof U.w === "object" ? U.w : U.w ? { at: +U.w } : null;
+        out[u] = { v: clean(s.v, 12), at: +s.at || 0, dev: clean(s.dev, 40), name: clean((W.map[u] || {}).me, 30),
+          subs: await Promise.all((subs[u] || []).map(async (x) => ({ h: await epHash(x.endpoint), at: +x.at || 0, dev: clean(x.dev, 40), apple: /push\.apple\.com/.test(x.endpoint) ? 1 : 0 }))),
+          w: w ? { at: +w.at || 0, v: clean(w.v, 8) } : null, cal: +ks[u] || 0, calOn: K.map && K.map[u] ? 1 : 0, add: +U.a || 0, car: +U.c || 0,
+          ok: okAt, bad: bad && (+bad.at || 0) > okAt ? { st: bad.st, at: +bad.at || 0, rs: clean(bad.rs, 40) } : null };
+      }
+      return json(req, { ok: true, now, u: out, gone: gone.length });
+    }
+    // Retirer un ancien téléphone : plus de notifications, de widget, de calendrier ni de liens Siri pour lui
+    if (path === "/api/forget") {
+      const u = clean(b.uid, 80), me = clean(b.me, 80);
+      if (!UID_RE.test(u) || u === me) return json(req, { error: "uid" }, 400);
+      const subs = await getSubs(env, id, c); if (subs[u]) { delete subs[u]; await putSubs(env, id, subs); }
+      const W = await getWidgets(env, id, c); if (W.map && W.map[u]) { delete W.map[u]; await putWidgets(env, id, W); }
+      const K = await getCals(env, id); if (K.map && K.map[u]) { delete K.map[u]; await env.KV.put("k:" + id, JSON.stringify(K)); }
+      for (const k of ["ks:", "us:"]) { const o = (await env.KV.get(k + id, "json")) || {}; if (o[u] != null) { delete o[u]; await env.KV.put(k + id, JSON.stringify(o)); } }
+      if (c.seen) delete c.seen[u];
+      if (c.prefs) delete c.prefs[u];
+      c.gone = [...goneOf(c).filter((x) => x !== u), u].slice(-20);
+      c.sched = (Array.isArray(c.sched) ? c.sched : []).map((x) => ({ ...x, to: (x.to || []).filter((t) => t !== u) })).filter((x) => x.to.length);
+      await putCouple(env, id, c);
+      return json(req, { ok: true });
+    }
+    // Nettoyer ses propres abonnements : ceux d'avant (même personne, ancienne inscription), désignés par leur empreinte
+    if (path === "/api/unsubh") {
+      const u = clean(b.uid, 80), hs = new Set((Array.isArray(b.h) ? b.h : []).slice(0, 6).map((x) => clean(x, 16)));
+      const subs = await getSubs(env, id, c), list = subs[u] || [], keep = [];
+      for (const x of list) if (!hs.has(await epHash(x.endpoint))) keep.push(x);
+      if (keep.length !== list.length) { subs[u] = keep; await putSubs(env, id, subs); }
+      return json(req, { ok: true, left: keep.length });
     }
     if (path === "/api/calstat") {
       const seen = (await env.KV.get("ks:" + id, "json")) || {}, K = await getCals(env, id);
