@@ -1358,6 +1358,57 @@ html.locked .lock{display:flex;position:fixed;inset:0;z-index:2147483000;backgro
 .nw .btn,.faq .btn{margin:0 0 10px -6px}
 .faq p{margin:0 0 6px;font-size:.93rem;color:var(--muted)}
 :root[data-contrast="high"] .set-t small,:root[data-contrast="high"] .ck-tx span,:root[data-contrast="high"] .dev-tx span{color:var(--muted)}
+
+/* Trafic en direct */
+.tf-line{display:flex;align-items:center;gap:7px;font-size:.88rem;font-weight:700;margin-top:4px}
+.tf-line.bad{color:var(--warn)}
+.tf-line.ok{color:var(--muted);font-weight:600}
+.tf-ic{display:inline-grid;place-items:center;flex:none}
+.tf-ic svg{width:16px;height:16px}
+#next .tf-line{color:inherit;opacity:.92;margin-top:2px}
+#next .tf-line.bad{background:color-mix(in srgb,var(--warn) 22%,transparent);border-radius:10px;padding:3px 9px;align-self:flex-start;width:fit-content}
+.tf-on{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;background:var(--surface);border:1px solid color-mix(in srgb,var(--go) 50%,var(--hair));border-radius:14px;padding:11px 13px}
+.tf-on .tf-ic{width:32px;height:32px;border-radius:10px;background:color-mix(in srgb,var(--go) 16%,transparent);color:var(--go)}
+.tf-on .tf-ic svg{width:19px;height:19px}
+.tf-on>div{display:flex;flex-direction:column;min-width:0}
+.tf-on span{font-size:.88rem;color:var(--muted)}
+.tf-err{color:var(--warn)}
+#tf-key:not(:placeholder-shown){font-family:ui-monospace,Menlo,monospace;letter-spacing:.02em}
+
+/* Idées cadeaux (liste secrète) */
+.gift-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#DB2777;color:#fff;flex:none}
+.gift-ic svg{width:20px;height:20px}
+.gift-lk{display:inline-grid;vertical-align:-2px;margin-right:4px}
+.gift-lk svg{width:13px;height:13px}
+.gift-entry{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);color:var(--ink);border:1px dashed color-mix(in srgb,#DB2777 55%,var(--hair));border-radius:16px;padding:11px 12px}
+.gift-entry small{white-space:normal}
+.gift-card{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:start;background:var(--surface);border:1px solid color-mix(in srgb,#DB2777 40%,var(--hair));border-radius:18px;padding:13px}
+.gift-card .pchips{grid-column:1/-1}
+.gc-tx{display:flex;flex-direction:column;min-width:0}
+.gc-tx small{color:var(--muted);font-weight:700;font-size:.8rem}
+.gc-tx strong{font-size:1.05rem}
+.gc-tx>span{font-size:.92rem;color:var(--muted)}
+.gift-body{display:flex;flex-direction:column;gap:12px;flex:none}
+.gift-lock{display:flex;gap:9px;align-items:flex-start;background:color-mix(in srgb,#DB2777 9%,var(--surface));border:1px solid color-mix(in srgb,#DB2777 30%,var(--hair));border-radius:14px;padding:10px 12px;font-size:.9rem}
+.gift-lock .gift-lk{margin-top:2px;color:#DB2777}
+.gift-lock .gift-lk svg{width:16px;height:16px}
+.gift-list{display:flex;flex-direction:column;gap:8px}
+.gift-row{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:11px 12px}
+.gift-t{display:flex;flex-direction:column;min-width:0}
+.gift-t a{font-weight:700;color:var(--ink);text-decoration:underline;text-decoration-color:color-mix(in srgb,#DB2777 60%,transparent);text-underline-offset:3px;overflow-wrap:anywhere}
+.gift-t small{color:var(--muted);font-size:.86rem;overflow-wrap:anywhere}
+.gift-act{display:flex;flex-wrap:wrap;gap:6px}
+.gift-act .btn{padding:6px 12px;font-size:.9rem}
+.gift-row.done{opacity:.75}
+.gift-form{display:flex;flex-direction:column;gap:7px}
+.gift-form input,.gift-form select{border:1px solid var(--hair);background:var(--bg);border-radius:10px;padding:9px 10px;width:100%;min-width:0}
+.gift-occs{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--hair);border-radius:14px;overflow:hidden}
+.gift-oc{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;font-size:.92rem}
+.gift-oc+.gift-oc{border-top:1px solid var(--hair)}
+.gift-oc span{color:var(--muted);text-align:right}
+.gift-done summary{cursor:pointer;font-weight:700;color:var(--muted);padding:4px 0}
+.gift-done{display:flex;flex-direction:column;gap:8px}
+.gift-occ .pchip{font-size:.86rem}
 </style>
 <script>(function(){try{var R=document.documentElement,L=localStorage;if(!L.getItem('a2.look2')){L.setItem('a2.look2','1');L.removeItem('a2.skin');}var _sk=L.getItem('a2.skin');if(/^(lavande|ocean|corail|graphite)$/.test(_sk||'')){L.removeItem('a2.skin');_sk=null;}
 var cc=L.getItem('a2.customCss');if(cc){var st=document.createElement('style');st.id='skin-perso';st.textContent=cc;document.head.appendChild(st);}else if(_sk==='perso')_sk=null;
@@ -1598,6 +1649,8 @@ async function render(){
   {const rc=shopRunCard();if(rc)list.append(rc);}
   {const vb=vacBanner();if(vb)list.append(vb);}
   {const nc=newsCard();if(nc)list.append(nc);}
+  {const gc=giftCard();if(gc)list.append(gc);}
+  tfFetch(false).catch(()=>{});
   {const pp=pushPromptCard();if(pp)list.append(pp);else{const ca=carPromptCard();if(ca)list.append(ca);}}
   if(pushBase===null)pushUrl().then(b=>{if(b)scheduleRender();});
   syncPush();
@@ -1651,7 +1704,7 @@ function renderNext(upcoming){
   {const lt=myLiveTrip();if(lt){tripHero(n,lt);return;}}
   const ev0=upcoming.filter(e=>!isAllDay(e)&&!e.busy).map(e=>viewFor(e,myId)).find(e=>(hasTripEv(e)?departOf(e):startOf(e)).getTime()>now-15*60000);
   const ev=ev0||null;
-  const ref=ev?(hasTripEv(ev)&&(trips.get(ev.id)||{}).stage!=="together"?departOf(ev):startOf(ev)):null;
+  const ref=ev?(hasTripEv(ev)&&(trips.get(ev.id)||{}).stage!=="together"?new Date(departOf(ev).getTime()-tfDelay(ev)*60000):startOf(ev)):null;
   if(!ev||ref-now>7*86400000){n.hidden=true;delete n.dataset.ev;return;}
   n.dataset.ev=ev.id;
   const together=(trips.get(ev.id)||{}).stage==="together";
@@ -1681,6 +1734,7 @@ function renderNext(upcoming){
     el("div",{class:"in"},when),
     el("div",{class:"what"},ev.title+(trip?", rendez-vous à "+ev.time:"")),
     lateLine(ev),
+    trip?tfLine(ev):null,
     trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||ev.title))):null,
     trip?el("div",{class:"trip-meta"},ev.pickedUp?"Prépare-toi pour "+hhmm(ref)+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Arrivée à "+ev.time+".":fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null,
     trip&&hasPickup(ev)&&!ev.pickedUp?el("div",{class:"pk-hero"},el("b",{class:"num"},hhmm(pickupAt(ev))),"Récupérer "+firstName(ev.pickupWho)+(ev.pickup?" · "+shortAddr(ev.pickup):"")):null].filter(Boolean));
@@ -4140,7 +4194,7 @@ function renderWishesView(){
     el("p",{class:"view-intro"},"Une idée de sortie ? Note-la : "+firstName(otherId()||myId)+" la reçoit et te propose un jour."),
     el("div",{class:"brand-add"},inp,el("button",{type:"button",class:"btn primary",onclick:add},"Ajouter")),
     el("button",{type:"button",class:"btn pick-go",onclick:()=>openPick()},el("span",{html:DICE_SVG}),"On fait quoi ?"),
-    bud,alerts,list);
+    giftEntry(),bud,alerts,list);
   drawAll();
 }
 
@@ -4256,7 +4310,7 @@ function openPick(pre){
 function weekendCard(){
   const [sat,sun]=nextWeekend(),today=ymd(new Date());if(sun<today)return null;
   if(!wishList().some(wishOpen))return null;
-  const whole=![...events.values()].some(e=>(e.date===sat||e.date===sun)&&passWho(e));
+  const whole=sat>=today&&![...events.values()].some(e=>(e.date===sat||e.date===sun)&&passWho(e));
   const wd=new Date().getDay();
   // un moment libre ce week-end (dès le mercredi), sinon rien
   const slots=pickSlots(8).filter(s=>(s.date===sat||s.date===sun)&&s.lab!=="Matin");
@@ -4568,7 +4622,7 @@ function pushItems(){
     if(loud.length)out.push({...it,to:loud});
     for(const u of calm){const t7=quietEnd(it.at);if(!it.st||it.st-15*60000>t7)out.push({...it,id:it.id+":q"+u.slice(0,4),to:[u],at:t7});}
   }
-  return out.map(({lv,st,urgent,...x})=>x).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,150);
+  return out.map(({st,urgent,...x})=>x).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(0,150);
 }
 // Icônes des thèmes converties en tracés simples (le widget Scriptable ne sait pas lire le SVG)
 const WICON={};
@@ -4742,14 +4796,16 @@ async function syncPushNow(){
   if(!pushToken()||!coupleId||!myId||firstSnap)return false;
   let items,widget,widgets,cals;try{items=pushItems();widget=widgetData();widgets=widgetsAll();cals=calFeeds();}catch(_){return false;}
   const prefs=Object.fromEntries(memberIds().map(u=>[u,{quiet:prefOf(u).quiet,tz:tzName()}]));
-  const sig=hashStr(JSON.stringify([APP_V,items,widget,widgets,prefs])),csig=hashStr(JSON.stringify(cals));
+  let watch=[];try{watch=trafficWatch();}catch(_){}
+  const own=gifts&&!giftErr?giftPushes(Date.now()):null;
+  const sig=hashStr(JSON.stringify([APP_V,items,widget,widgets,prefs,watch,own])),csig=hashStr(JSON.stringify(cals));
   // les calendriers ne partent que s'ils ont changé (ils sont plus gros que le reste)
   const calNew=lsGet("a2.calSig")!==csig;
   // la photo du widget « Souvenir » ne part qu'une fois : le serveur la garde
   const wi=wImg.k&&wImg.d&&lsGet("a2.wimgK")!==wImg.k?{k:wImg.k,d:wImg.d}:null;
   // sans changement, une fois toutes les 12 h quand même : « Tout marche ? » sait ainsi que ce téléphone est actif
   if(lsGet("a2.pushSig")===sig&&!calNew&&!wi&&Date.now()-(+lsGet("a2.pushBeat")||0)<12*3600000)return true;
-  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,dev:devLabel(),members:memberIds(),items,widget,widgets,prefs,...(calNew?{cals}:{}),...(wi?{wimg:wi}:{})});
+  const r=await pushPost("/api/schedule",{uid:myId,v:APP_V,dev:devLabel(),members:memberIds(),items,watch,...(own?{own}:{}),widget,widgets,prefs,...(calNew?{cals}:{}),...(wi?{wimg:wi}:{})});
   if(r){lsSet("a2.pushSig",sig);lsSet("a2.calSig",csig);if(wi)lsSet("a2.wimgK",wi.k);lsSet("a2.pushBeat",String(Date.now()));}
   return !!r;
 }
@@ -5235,6 +5291,7 @@ function stop(ev,who){
     if(canGoHome(ev))links.prepend(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();startHomeTrip(ev,e.currentTarget);}},"Je rentre : prévenir "+firstName(otherId())));
     else if(lt&&(lt.to===myId||lt.by===myId))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();openTrip(ev.id);}},lt.by===myId?"Voir le trajet":"Suivre en direct"));}
   if(canWrite&&canStartHere(ev)) links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();tripFromHere(ev,e.currentTarget);}},"Partir d'où je suis"));
+  if(tfCan(ev)) links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();tfCheckNow(ev,e.currentTarget);}},"Vérifier le trafic"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openPostpone(ev)},"Reporter"));
   if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
   if(canWrite&&cdAble(ev)) links.append(el("button",{class:"btn"+(ev.countdown?" on":""),type:"button","aria-pressed":String(!!ev.countdown),onclick:e=>{e.stopPropagation();toggleCountdown(ev);}},(ev.countdown?"✓ ":"")+"Compte à rebours"));
@@ -5252,6 +5309,7 @@ function stop(ev,who){
       ev.busy?el("div",{class:"where busy-where"},(isAllDay(ev)?"Toute la journée":"Jusqu'à "+hhmm(endOf(ev)))+(busyName(ev)?" · vu « Occupé » par "+firstName(otherId()||myId):" · détails privés")):
       el("div",{class:"where"},mk?el("span",{class:"motif-chip",html:motifSvg(mk)+"<span>"+MOTIFS[mk].name+"</span>"}):null,[mk?"":(CATS[ev.category]||"Autre"),ev.location].filter(Boolean).join(", ")),
       lateLine(ev),
+      tfLine(ev),
       showReturn(ev)?el("div",{class:"small more-info ret-line"},"Fin vers "+hhmm(endOf(ev))+", retour à la maison vers "+hhmm(returnAt(ev))):null,
       tags.childNodes.length?tags:null,
       links,
@@ -7537,7 +7595,7 @@ function guessCat(t){try{return parseText(t).category||"autre";}catch(_){return 
 
 /* ---------- Vraie alarme dans l'Horloge (via l'app Raccourcis) ---------- */
 const SC_NAME="Alarme Agenda";
-function alarmTime(ev){return hasTrip(ev)?departOf(ev):new Date(startOf(ev).getTime()-15*60000);}
+function alarmTime(ev){return hasTrip(ev)?new Date(departOf(ev).getTime()-tfDelay(ev)*60000):new Date(startOf(ev).getTime()-15*60000);}
 function alarmPossible(ev){if(isAllDay(ev))return false;const t=alarmTime(ev).getTime(),now=Date.now();return t>now+60000&&t-now<24*3600000;}
 function alarmsDone(){try{return JSON.parse(localStorage.getItem("a2.alarms")||"{}");}catch(_){return {};}}
 function alarmDone(ev){const a=alarmsDone()[ev.id];return a&&a===hhmm(alarmTime(ev))+"|"+ev.date;}
@@ -7707,7 +7765,8 @@ const SET_IC={
   save:'<rect x="3.5" y="4" width="17" height="5" rx="1.5"/><path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9M10 13h4"/>',
   secu:'<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/>',
   aide:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.7.3-1 .9-1 1.6v.5"/><circle cx="12" cy="17" r=".7" fill="currentColor"/>',
-  check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.8 2.8 5.4-5.6"/>'
+  check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.8 2.8 5.4-5.6"/>',
+  gifts:'<rect x="3.5" y="9" width="17" height="11.5" rx="2"/><path d="M2.5 9h19M12 9v11.5M12 9c-1.4-3.1-5.4-4.5-6.2-2.4C5.1 8.6 9.6 9 12 9zm0 0c1.4-3.1 5.4-4.5 6.2-2.4C18.9 8.6 14.4 9 12 9z"/>'
 };
 const setSvg=k=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(SET_IC[k]||"")+'</svg>';
 // Les rubriques, dans l'ordre de l'écran. « need » : seulement une fois l'agenda rejoint
@@ -7726,7 +7785,8 @@ const SET_PAGES=[
   {g:"Vos données",id:"aide",t:"Aide et nouveautés",c:"#0284C7",help:"Ce qui a changé à chaque version, et les réponses aux questions les plus courantes."},
 ];
 const SET_CHECK={id:"check",t:"Tout marche ?",c:"#16A34A",need:1,help:"Together vérifie vos deux téléphones : version, notifications, widget, calendrier et Siri. Un toucher règle ce qui coince."};
-const setPage=id=>SET_PAGES.find(p=>p.id===id)||(id==="check"?SET_CHECK:null);
+const SET_GIFTS={id:"gifts",t:"Mes idées cadeaux",c:"#DB2777",need:1};
+const setPage=id=>SET_PAGES.find(p=>p.id===id)||(id==="check"?SET_CHECK:id==="gifts"?SET_GIFTS:null);
 // La recherche : [titre, mots-clés, rubrique, ancre]
 const SET_INDEX=[
   ["Prénom et photo","nom prenom photo avatar profil","nous","nd-me"],
@@ -7737,6 +7797,8 @@ const SET_INDEX=[
   ["Nos lieux","adresse adresses maison domicile travail destination lieu lieux","lieux","pl-h"],
   ["Transport habituel","voiture velo pied transports transport mode trajet","lieux","s-mode"],
   ["Nos enseignes","magasin magasins supermarche enseigne courses","lieux","br-h"],
+  ["Trafic en direct","trafic bouchons bouchon embouteillage tomtom retard route","lieux","tf-h"],
+  ["Mes idées cadeaux","cadeau cadeaux idee idees offrir secret secrete anniversaire noel","gifts",""],
   ["Nos modèles","modele modeles evenement","tpl",""],
   ["Activer les notifications","notification notifications push activer reactiver","notif","nt-h"],
   ["Tester les notifications","test essai notification","notif","nt-h"],
@@ -7784,7 +7846,7 @@ const LOOK_TXT={auto:"comme l'iPhone",light:"clair",dark:"sombre",night:"sombre 
 function setSub(id){try{const today=ymd(new Date());
   switch(id){
   case "nous":{const n=memberIds().map(firstName).join(" et "),s=coupleSince(),y=s?yearsTogether():0;return n+(s?" · "+(y>=1?(y===1?"un an":y+" ans")+" ensemble":"ensemble depuis le "+frDay(s,true)):"");}
-  case "lieux":{const n=places.size;return (n?n+(n>1?" lieux":" lieu"):"Aucun lieu")+" · "+(MODE_IN[settings.mode]||MODE_IN.car);}
+  case "lieux":{const n=places.size;return (n?n+(n>1?" lieux":" lieu"):"Aucun lieu")+" · "+(MODE_IN[settings.mode]||MODE_IN.car)+(tfHas?" · trafic en direct":"");}
   case "tpl":{const n=tplList().length;return n?n+(n>1?" modèles":" modèle"):"Aucun modèle";}
   case "notif":{if(!coupleId)return "Alarme Horloge";const p=prefOf(myId);return (pushOn()?"Activées":"Pas activées sur ce téléphone")+(p.morning?" · résumé à "+p.morning.replace(":"," h "):"")+(p.quiet?" · nuit calme":"");}
   case "vac":{const a=awayCfg();if(!a||a.to<today)return "Désactivé";return a.from<=today?"En pause jusqu'au "+frDay(a.to,true):"Prévu du "+frDay(a.from,true)+" au "+frDay(a.to,true);}
@@ -7807,6 +7869,7 @@ function openSettings(page,anchor){
 function setGo(page,anchor){
   const body=document.querySelector("#sheet-root .set-body");
   if(page==="theme"){openTheme(true);return;}
+  if(page==="gifts"){openGifts();return;}
   if(!body){openSettings(page,anchor);return;}
   placesListRefresh=null;brandsRefresh=null;templatesRefresh=null;
   const P=page==="home"?null:setPage(page);
@@ -7845,7 +7908,8 @@ const SET_BUILD={
       el("div",{class:"pgroup-h",id:"nd-since"},"Ensemble depuis"),
       el("div",{class:"field"},el("label",{for:"nd-since-in"},"Votre anniversaire de couple, pour vous deux"),since),
       el("p",{class:"note"},"Le jour venu : une carte « Joyeux anniversaire à vous deux » en haut de l'agenda, un décor sur l'app et le widget, et une notification à 9 h."),
-      el("div",{class:"pgroup-h",id:"sc-h"},"Installer sur l'iPhone de ta moitié"),shortcutsSection()];
+      el("div",{class:"pgroup-h",id:"sc-h"},"Installer sur l'iPhone de ta moitié"),shortcutsSection(),
+      el("div",{class:"pgroup-h"},"Rien qu'à toi"),setLink("gifts","Une liste chiffrée que "+(otherId()?firstName(otherId()):"ta moitié")+" ne peut pas lire")];
   },
   lieux(){
     const listBox=el("div",{class:"plist",id:"pl-h"});let editing=false;
@@ -7883,6 +7947,7 @@ const SET_BUILD={
     return [listBox,
       el("div",{class:"field"},el("label",{for:"s-mode"},"Transport habituel"),mode),
       el("p",{class:"note"},"Il sert à calculer l'heure de départ. Chaque évènement peut avoir le sien."),
+      el("div",{class:"pgroup-h",id:"tf-h"},"Trafic en direct"),coupleId?trafficSection():el("p",{class:"note"},"Rejoins d'abord votre agenda."),
       el("div",{class:"pgroup-h",id:"br-h"},"Nos enseignes"),
       el("p",{class:"note"},"Coche les magasins où vous allez. En remplissant « Où », touche une enseigne : l'app propose ses magasins les plus proches de chez vous."),
       brandsSection()];
@@ -8225,6 +8290,7 @@ async function backupHead(fresh){
       notif:notifCfg,shop:shopRaw,shortcuts:scLinks,templates:templates?{list:templates}:null,theme:themeCfg};
     for(const [k,v] of Object.entries(C))if(v&&typeof v==="object"&&Object.keys(v).length)B.config[k]=JSON.parse(JSON.stringify(v));
   }
+  try{B.secret=fresh?(await db.collection("secret").get()).docs.map(d=>({id:d.id,...d.data()})):(giftRaw&&giftKid?[{id:giftKid,...giftRaw}]:[]);}catch(_){B.secret=[];}
   const shopN=B.config.shop&&B.config.shop.list?Object.keys(B.config.shop.list).length:0;
   B.counts={events:B.events.length,wishes:B.wishes.length,memories:B.memories.length,places:B.places.length,shop:shopN,media:0};
   return B;
@@ -8330,7 +8396,7 @@ function remapUids(x,map){if(!map||!Object.keys(map).length)return x;
   const f=v=>typeof v==="string"?(v.length<=128&&map[v]?map[v]:v):Array.isArray(v)?v.map(f):v&&typeof v==="object"?Object.fromEntries(Object.entries(v).map(([k,w])=>[map[k]||k,f(w)])):v;
   return f(x);}
 async function restorePlan(B,map){
-  const R=x=>remapUids(x,map),P={events:[],wishes:[],memories:[],places:[],media:[],memPatch:[],config:[]};
+  const R=x=>remapUids(x,map),P={events:[],wishes:[],memories:[],places:[],media:[],memPatch:[],config:[],secret:[]};
   for(const e of B.events||[])if(e&&e.id&&!events.has(e.id))P.events.push(R(e));
   for(const w of B.wishes||[])if(w&&w.id&&!wishes.has(w.id))P.wishes.push(R(w));
   for(const p of B.places||[])if(p&&p.id&&!places.has(p.id))P.places.push(R(p));
@@ -8342,6 +8408,10 @@ async function restorePlan(B,map){
   for(const [k,v] of Object.entries(B.config||{})){if(!CFG_DOCS.includes(k)||!v||typeof v!=="object")continue;
     let has=true;try{has=(await db.doc("config/"+k).get()).exists;}catch(_){}
     if(!has)P.config.push([k,R(v)]);}
+  // les listes secrètes (chiffrées, jamais lues ici) : remises si elles ont disparu
+  for(const x of Array.isArray(B.secret)?B.secret:[]){if(!x||!/^[0-9a-f]{20}$/.test(x.id||"")||!x.ct)continue;
+    let has=true;try{has=(await db.doc("secret/"+x.id).get()).exists;}catch(_){}
+    if(!has)P.secret.push(x);}
   return P;
 }
 const CFG_NAMES={brands:"enseignes",budget:"budget des sorties",calsync:"calendrier de l'iPhone",fr:"jours fériés",home:"transport",notif:"notifications",shop:"liste de courses",shortcuts:"raccourcis",templates:"modèles",theme:"thème"};
@@ -8360,8 +8430,9 @@ async function restorePreview(B,label,pick){
     ["wishes",P.wishes.length,"Envies",P.wishes.slice(0,3).map(w=>w.title).filter(Boolean)],
     ["memories",nMem+P.media.length?nMem:0,"Souvenirs",[...P.memories.slice(0,3).map(m=>m.title).filter(Boolean),P.media.length?P.media.length+" photo"+(P.media.length>1?"s":"")+" et vidéos":""].filter(Boolean)],
     ["places",P.places.length,"Lieux",P.places.slice(0,3).map(p=>p.name).filter(Boolean)],
-    ["config",P.config.length,"Réglages communs",P.config.map(([k])=>CFG_NAMES[k]||k)]];
-  const total=P.events.length+P.wishes.length+P.memories.length+P.media.length+P.memPatch.length+P.places.length+P.config.length;
+    ["config",P.config.length,"Réglages communs",P.config.map(([k])=>CFG_NAMES[k]||k)],
+    ["secret",P.secret.length,"Listes d'idées cadeaux (chiffrées)",[]]];
+  const total=P.events.length+P.wishes.length+P.memories.length+P.media.length+P.memPatch.length+P.places.length+P.config.length+P.secret.length;
   out.append(el("div",{class:"rs-src"},el("strong",{},"Dans "+label),el("span",{},countsTxt(B.counts||{events:(B.events||[]).length,wishes:(B.wishes||[]).length,memories:(B.memories||[]).length,places:(B.places||[]).length})+".")));
   if(!total){out.append(el("p",{class:"rs-none"},"✓ Rien ne manque : tout ce qui est dans cette sauvegarde est déjà dans Together."));return;}
   const sel={};const boxes=el("div",{class:"rs-list"});
@@ -8385,6 +8456,7 @@ async function restoreRun(P,sel,progress){
     for(const [mid,x] of P.media)jobs.push(()=>db.doc("memories/"+mid+"/media/"+x.id).set(strip(x)));
     for(const p of P.memPatch)jobs.push(async()=>{const cur=memories.get(p.id)||{};await db.doc("memories/"+p.id).set({mediaCount:(+cur.mediaCount||0)+p.add,...(p.cover?{cover:p.cover}:{})},{merge:true});});}
   if(sel.config)for(const [k,v] of P.config)jobs.push(()=>db.doc("config/"+k).set(v));
+  if(sel.secret)for(const x of P.secret)jobs.push(()=>db.doc("secret/"+x.id).set(strip(x)));
   const n=jobs.length;let done=0,bad=0;
   const worker=async()=>{while(jobs.length){const j=jobs.shift();try{await j();}catch(_){bad++;}done++;progress&&progress(done,n);}};
   await Promise.all([worker(),worker(),worker(),worker()]);
@@ -8427,6 +8499,7 @@ function icsSection(){
 
 /* ---------- Aide et nouveautés ---------- */
 const NEWS=[
+  {v:"68",d:"2026-10-25",t:"Trafic en direct et idées cadeaux",i:["Trafic en direct : une heure avant chaque départ en voiture, Together recalcule le trajet avec le trafic réel. Si ça bouchonne : « pars à 17:33 », et l'alerte « C'est l'heure de partir » arrive plus tôt.","Une clé TomTom gratuite à coller une fois, dans Lieux et trajets (sans carte bancaire).","Mes idées cadeaux : une liste rien qu'à toi, chiffrée, que l'autre ne peut pas lire. « Idée cadeau : … » marche aussi dans Ajouter et avec Siri.","Une fois ta liste commencée : un rappel discret, rien que pour toi, 3 semaines avant son anniversaire, Noël, la Saint-Valentin et votre anniversaire de couple."],go:"gifts"},
   {v:"67",d:"2026-10-24",t:"Des réglages rangés, et vos données à l'abri",i:["Les réglages sont rangés par rubriques, avec une recherche.","« Tout marche ? » vérifie vos deux téléphones (notifications, version, widget, calendrier, Siri) et règle ce qui coince d'un toucher.","Sauvegarde : une copie automatique chaque semaine, un fichier complet avec les photos, et « Remettre » pour retrouver ce qui a été effacé.","Export de l'agenda pour Google Agenda ou Outlook.","Appareils et sécurité : vos téléphones, retirer un ancien téléphone, verrouiller Together avec Face ID.","Mode vacances : le quotidien en pause pendant un séjour, reprise toute seule au retour."],go:"check"},
   {v:"66",d:"2026-10-24",t:"Thèmes",i:["Essayer un thème avant de l'appliquer, et le même thème pour vous deux.","Clair, sombre, ou sombre le soir, au coucher du soleil chez vous.","Décors de saison et votre anniversaire de couple.","Un thème tiré d'une de vos photos, et un fond d'écran assorti.","Taille du texte, contraste renforcé, moins d'animations."],go:"theme"},
   {v:"65",d:"2026-10-22",t:"Widgets",i:["Nouveaux widgets : courses, compte à rebours, souvenir du jour, « On fait quoi ? ».","Les arrivées et les retards en direct dans le widget.","Jours fériés et vacances scolaires dans la semaine du widget.","La galerie des widgets, dessinés avec vos vraies données."],go:"widgets"},
@@ -8460,7 +8533,7 @@ function newsSection(){
   const box=el("div",{class:"disc-box news-box"});
   NEWS.forEach((x,i)=>{const d=new Date(x.d+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
     box.append(el("details",{class:"nw",open:i===0?true:null},el("summary",{},el("span",{class:"nw-top"},el("span",{class:"nw-v"},"Version "+x.v),el("small",{},d)),el("strong",{},x.t)),
-      el("ul",{},...x.i.map(t=>el("li",{},t))),x.go?el("button",{type:"button",class:"btn quiet",onclick:()=>setGo(x.go)},x.go==="check"?"Ouvrir « Tout marche ? »":"Voir dans les réglages"):null));});
+      el("ul",{},...x.i.map(t=>el("li",{},t))),x.go?el("button",{type:"button",class:"btn quiet",onclick:()=>setGo(x.go)},x.go==="check"?"Ouvrir « Tout marche ? »":x.go==="gifts"?"Ouvrir mes idées cadeaux":"Voir dans les réglages"):null));});
   lsSet("a2.seenV",APP_V);
   return box;
 }
@@ -8476,6 +8549,8 @@ const FAQ=[
   ["Un évènement ou un souvenir effacé par erreur","Sauvegarde et export, « Remettre » : Together remet ce qui manque, sans rien effacer.","save","rs-h"],
   ["Le widget ne bouge plus","Touche-le une fois : il se recharge. « Tout marche ? » dit quand il s'est mis à jour pour la dernière fois.","check",""],
   ["Partir en vacances l'esprit léger","Le mode vacances met le quotidien en pause, et tout reprend au retour.","vac",""],
+  ["Une idée cadeau à garder secrète","Mes idées cadeaux : une liste chiffrée que l'autre ne peut pas lire, avec un rappel discret avant chaque occasion.","gifts",""],
+  ["Les bouchons avant un départ","Le trafic en direct (Lieux et trajets) prévient une heure avant si le trajet s'allonge.","lieux","tf-h"],
 ];
 function faqSection(){return el("div",{class:"disc-box faq-box"},...FAQ.map(([q,a,p,an])=>{const P=setPage(p);if(P&&P.need&&!coupleId)return null;
   return el("details",{class:"faq"},el("summary",{},q),el("p",{},a),el("button",{type:"button",class:"btn quiet",onclick:()=>setGo(p,an)},P?"Ouvrir « "+P.t+" »":"Ouvrir"));}));}
@@ -8488,7 +8563,264 @@ function opt12Init(){
   setTimeout(()=>{autoCopy(false).catch(()=>{});},15000);
 }
 
-const APP_V="67";
+/* ---------- Trafic en direct : une clé gratuite TomTom, le serveur vérifie chaque départ en voiture ---------- */
+// Le serveur garde la clé (jamais l'app) ; l'app lui envoie les trajets à suivre et affiche ce qu'il a trouvé.
+let tfData={},tfHas=null,tfAt=0;
+const tfWait=ev=>Math.max(0,Math.min(60,ev.pickupWait==null?5:+ev.pickupWait||0));
+// au volant : la durée prévue sans les 5 min pour se garer (ni l'attente chez l'autre) ; l'alerte part au-delà de 15 % (5 min au moins)
+function tfThr(ev){const plan=Math.max(1,(+ev.travelMin||0)-5-(hasPickup(ev)?tfWait(ev):0));return Math.max(5,Math.round(plan*.15));}
+function tfOf(ev){const e=ev&&(events.get(ev.id)||ev),r=e&&tfData&&tfData[e.id];if(!r||r.err||!Number.isFinite(+r.d)||!((+e.travelMin||0)>0))return null;
+  const now=Date.now();if(Math.abs((+r.dep||0)-departOf(e).getTime())>90000||now-(+r.at||0)>3*3600000||now>(+r.dep||0)+30*60000)return null;return r;}
+function tfDelay(ev){const e=ev&&(events.get(ev.id)||ev),r=tfOf(e);return r&&r.d>=tfThr(e)?Math.round(r.d):0;}
+function tfLine(ev){const e=ev&&(events.get(ev.id)||ev),r=tfOf(e);if(!r)return null;const d=tfDelay(e);
+  if(d)return el("div",{class:"tf-line bad"},el("span",{class:"tf-ic",html:CAR_IC}),ev.pickedUp?"Trafic : "+firstName(driverOf(e))+" passera vers "+hhmm(new Date(pickupAt(e).getTime()-d*60000))+" (+"+d+" min)":"Trafic : pars à "+hhmm(new Date(departOf(e).getTime()-d*60000))+" (+"+d+" min)");
+  return el("div",{class:"tf-line ok"},el("span",{class:"tf-ic",html:CAR_IC}),r.d<=-5?"Trafic fluide : "+(-Math.round(r.d))+" min de moins que prévu":"Trafic normal, vérifié à "+hhmm(new Date(+r.at)));}
+// Les départs en voiture des 8 prochains jours (l'app n'est pas forcément ouverte la veille), avec ce qu'il faut au serveur pour recalculer le trajet
+function trafficWatch(){
+  const now=Date.now(),out=[];let tz="Europe/Paris";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz;}catch(_){}
+  for(const ev of events.values()){
+    if(ev.busy||isAllDay(ev)||(ev.mode||"car")!=="car"||!((+ev.travelMin||0)>0))continue;
+    const g=ev.routeGeo;if(!g||!g.from||!g.to)continue;
+    const dep=departOf(ev).getTime();if(dep<now-10*60000||dep>now+8*864e5)continue;
+    const w=whoOf(ev),pk=hasPickup(ev)&&g.marks&&g.marks[0]&&g.marks[0].at;
+    out.push({id:ev.id,t:String(ev.title||"").slice(0,60),l:ev.location?String(shortAddr(ev.location)).slice(0,60):"",s:startOf(ev).getTime(),dep,min:+ev.travelMin,
+      f:g.from,d:g.to,to:w==="both"?memberIds().slice(0,2):[w],tz,
+      ...(pk?{v:g.marks[0].at,wt:tfWait(ev),pm:Math.max(0,Math.round(+ev.pickupMin||0)),pw:ev.pickupWho,dn:firstName(driverOf(ev)).slice(0,30)}:{})});
+  }
+  return out.sort((a,b)=>a.dep-b.dep).slice(0,20);
+}
+// Ce que le serveur a trouvé (toutes les 4 min au plus, et seulement avec un départ en voiture dans les 3 h)
+async function tfFetch(force){
+  if(!pushToken()||!coupleId||firstSnap)return;
+  const now=Date.now();
+  if(!force){if(now-tfAt<4*60000)return;if(tfHas===false&&now-tfAt<30*60000)return;if(!trafficWatch().some(x=>x.dep-now<3*3600000))return;}
+  tfAt=now;
+  const r=await pushPost("/api/traffic",{uid:myId});
+  if(r&&r.ok){tfHas=!!r.has;const sig=JSON.stringify(r.tf||{});if(sig!==tfFetch.sig){tfFetch.sig=sig;tfData=r.tf||{};scheduleRender();}}
+  return r;
+}
+function tfCan(ev){if(!tfHas||!ev||ev.busy||isAllDay(ev)||(ev.mode||"car")!=="car"||!((+ev.travelMin||0)>0)||!(ev.routeGeo&&ev.routeGeo.from&&ev.routeGeo.to))return false;
+  const dep=departOf(ev).getTime(),now=Date.now();return dep>now-5*60000&&dep<now+3*3600000;}
+async function tfCheckNow(ev,b){
+  const w=trafficWatch().find(x=>x.id===ev.id);if(!w){toast("Pas de trajet en voiture à vérifier pour l'instant.");return;}
+  if(b){b.disabled=true;b.textContent="Vérification…";}
+  const r=await pushPost("/api/traffic",{uid:myId,id:ev.id,w});
+  if(b){b.disabled=false;b.textContent="Vérifier le trafic";}
+  if(r&&r.tf){tfData=r.tf;tfFetch.sig=JSON.stringify(r.tf);scheduleRender();}
+  if(!r){toast("Le serveur ne répond pas. Réessaie dans un moment.");return;}
+  if(!r.ok){toast(r.error==="tomtom"?"TomTom ne répond pas pour l'instant. Réessaie dans un moment.":"Vérification impossible pour l'instant.");return;}
+  const d=tfDelay(ev),x=tfOf(ev);
+  toast(d?"Trafic : +"+d+" min. Pars à "+hhmm(new Date(departOf(ev).getTime()-d*60000))+".":x&&x.d<=-5?"Trafic fluide : "+(-Math.round(x.d))+" min de moins que prévu.":"Trafic normal pour l'instant.");
+}
+// Réglages communs › Lieux et trajets : coller la clé une fois, pour vous deux
+function trafficSection(){
+  const box=el("div",{class:"disc-box tf-box"});
+  const draw=async()=>{box.textContent="";
+    if(!pushToken()){box.append(el("p",{class:"note"},"Active d'abord les notifications (rubrique Notifications) : le trafic passe par le même serveur."));return;}
+    box.append(el("p",{class:"note"},"Vérification…"));
+    const r=await pushPost("/api/traffic",{uid:myId});box.textContent="";
+    if(r&&r.ok){tfHas=!!r.has;tfData=r.tf||tfData;}
+    box.append(el("p",{class:"note"},"Une heure avant chaque départ en voiture, Together recalcule le trajet avec le trafic réel (TomTom). S'il s'allonge, la personne qui part reçoit « pars à 17:33 », et l'alerte « C'est l'heure de partir » arrive d'autant plus tôt. Une seconde vérification a lieu 20 minutes avant, si ça empire."));
+    if(!r){box.append(el("p",{class:"note"},"Le serveur ne répond pas pour l'instant. Réessaie dans un moment."));return;}
+    if(r.has){
+      const errs=Object.values(r.tf||{}).filter(x=>x&&x.err);
+      box.append(el("div",{class:"tf-on"},el("span",{class:"tf-ic",html:CAR_IC}),el("div",{},el("strong",{},"Trafic en direct activé"),
+          el("span",{},"Clé TomTom …"+(r.last4||"")+(r.at?", ajoutée "+agoTxt(r.at):"")+". Elle sert à vous deux."))),
+        errs.length?el("p",{class:"note tf-err"},"La dernière vérification n'a pas abouti (TomTom : code "+errs[errs.length-1].err+"). Si ça se répète, recolle ta clé."):null,
+        el("div",{class:"pchips"},el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)",onclick:async e=>{e.currentTarget.disabled=true;
+          const x=await pushPost("/api/traffic",{uid:myId,del:1});if(x&&x.ok){tfHas=false;tfData={};toast("Clé retirée : plus de vérification du trafic");scheduleRender();}draw();}},"Retirer la clé")));
+      return;}
+    const inp=el("input",{type:"text",id:"tf-key",placeholder:"Colle ici ta clé TomTom",autocomplete:"off",autocapitalize:"off",spellcheck:"false","aria-label":"Clé TomTom"});
+    const go=el("button",{type:"button",class:"btn primary",id:"tf-go"},"Enregistrer");
+    const st=el("p",{class:"note",role:"status"});
+    go.onclick=async()=>{const k=inp.value.replace(/\s+/g,"");if(!k){inp.focus();return;}go.disabled=true;st.textContent="Essai de la clé sur un vrai trajet…";
+      const x=await pushPost("/api/traffic",{uid:myId,key:k});go.disabled=false;
+      if(x&&x.ok){tfHas=true;toast("Trafic en direct activé pour vous deux");syncPush(true);draw();return;}
+      st.textContent=!x?"Le serveur ne répond pas. Réessaie dans un moment.":x.error==="format"?"Ce n'est pas une clé TomTom : copie la clé entière (une trentaine de lettres et de chiffres).":x.error==="refusée"?"TomTom refuse cette clé : vérifie que tu as copié la bonne, en entier.":"TomTom ne répond pas pour l'instant. Réessaie dans un moment.";};
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go.click();}});
+    box.append(el("div",{class:"lab"},"L'activer (une seule fois, pour vous deux)"),
+      el("ol",{class:"sc-steps"},
+        el("li",{},"Crée un compte gratuit sur ",el("a",{href:"https://developer.tomtom.com/",target:"_blank",rel:"noopener"},"developer.tomtom.com")," : pas de carte bancaire, 20 000 calculs de trajet gratuits par mois. Confirme ton adresse e-mail."),
+        el("li",{},"Dans ton espace (Dashboard, puis Keys), copie la clé d'API."),
+        el("li",{},"Colle-la ici : Together l'essaie sur un vrai trajet, puis la garde sur son serveur.")),
+      el("div",{class:"brand-add"},inp,go),st);
+  };
+  draw();return box;
+}
+
+/* ---------- Idées cadeaux : une liste rien qu'à soi ---------- */
+// Chiffrée sur le téléphone (AES-GCM) avec une clé tirée du code de secours : l'autre ne peut pas la lire, même sur le serveur.
+// Elle se retrouve sur un nouveau téléphone avec ce même code. Document : couples/<id>/secret/<empreinte du code>.
+const GIFT_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="9" width="17" height="11.5" rx="2"/><path d="M2.5 9h19M12 9v11.5M12 9c-1.4-3.1-5.4-4.5-6.2-2.4C5.1 8.6 9.6 9 12 9zm0 0c1.4-3.1 5.4-4.5 6.2-2.4C18.9 8.6 14.4 9 12 9z"/></svg>';
+const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
+const GIFT_OCC={bday:"Son anniversaire",noel:"Noël",valentin:"Saint-Valentin",couple:"Notre anniversaire"};
+let gifts=null,giftRaw=null,giftKid=null,giftKey=null,giftUnsub=null,giftErr="";
+async function giftKeys(){
+  if(giftKey&&giftKid)return true;
+  const code=recNorm(lsGet("a2.rec")||"");if(code.length<24)return false;
+  const te=new TextEncoder(),base=await crypto.subtle.importKey("raw",te.encode(code),"PBKDF2",false,["deriveKey"]);
+  giftKey=await crypto.subtle.deriveKey({name:"PBKDF2",salt:te.encode("together-cadeaux-v1"),iterations:120000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+  const h=new Uint8Array(await crypto.subtle.digest("SHA-256",te.encode("together-cadeaux-id:"+code)));
+  giftKid=[...h.slice(0,10)].map(x=>x.toString(16).padStart(2,"0")).join("");
+  return true;
+}
+const giftEmpty=()=>({v:1,items:[],bday:""});
+async function giftDecrypt(raw){
+  if(!raw||!raw.ct||!raw.iv)return giftEmpty();
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64uBytes(raw.iv)},giftKey,b64uBytes(raw.ct));
+  const o=JSON.parse(new TextDecoder().decode(pt));return {...giftEmpty(),...o,items:Array.isArray(o.items)?o.items:[]};
+}
+async function giftStart(){
+  if(giftUnsub||!db||!coupleId)return false;
+  try{if(!await giftKeys())return false;}catch(_){return false;}
+  giftUnsub=db.doc("secret/"+giftKid).onSnapshot(async snap=>{
+    const raw=snap.exists?snap.data():null;giftRaw=raw;
+    try{gifts=await giftDecrypt(raw);giftErr="";}catch(_){gifts=gifts||giftEmpty();giftErr="lock";}
+    if(openGifts.redraw)openGifts.redraw();drawGiftEntry();scheduleRender();syncPush();
+  },()=>{});
+  return true;
+}
+async function giftReady(){if(gifts)return true;await giftStart();for(let i=0;i<40&&!gifts;i++)await new Promise(r=>setTimeout(r,100));return !!gifts;}
+async function giftSave(){
+  if(!gifts||giftErr||!await giftKeys())return false;
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},giftKey,new TextEncoder().encode(JSON.stringify(gifts))));
+  try{await db.doc("secret/"+giftKid).set({iv:bytesB64u(iv),ct:bytesB64u(ct),at:Date.now(),v:1});drawGiftEntry();syncPush();return true;}
+  catch(_){toast("Non enregistré. Vérifie ta connexion.");return false;}
+}
+function giftOccasions(now){
+  now=now||new Date();const today=ymd(now),y=now.getFullYear(),o=otherId(),on=o?firstName(o):"ta moitié",out=[];
+  const next=md=>{let k=y+"-"+md;if(k<today)k=(y+1)+"-"+md;return k;};
+  if(gifts&&/^\d{2}-\d{2}$/.test(gifts.bday||""))out.push({k:"bday",n:"Anniversaire de "+on,d:next(gifts.bday)});
+  out.push({k:"noel",n:"Noël",d:next("12-25")},{k:"valentin",n:"Saint-Valentin",d:next("02-14")});
+  const s=coupleSince();if(s)out.push({k:"couple",n:"Votre anniversaire de couple",d:next(s.slice(5))});
+  return out.map(x=>({...x,days:dayDiff(today,x.d)})).sort((a,b)=>a.days-b.days);
+}
+const giftOpenItems=()=>((gifts&&gifts.items)||[]).filter(x=>x&&!x.done);
+// Rappels discrets, pour soi seul : 3 semaines puis 4 jours avant chaque occasion, à 19 h (sans dire quelles idées) ; seulement une fois la liste commencée
+function giftPushes(now){
+  if(!gifts||giftErr||!myId||!giftRaw)return [];
+  const out=[],o=otherId(),on=o?firstName(o):"ta moitié",n=giftOpenItems().length;
+  for(const oc of giftOccasions(new Date(now)))for(const before of [21,4]){
+    const d=new Date(oc.d+"T19:00:00");d.setDate(d.getDate()-before);const at=d.getTime();if(at<=now+30000||at>now+35*864e5)continue;
+    out.push({id:"gift:"+oc.k+":"+oc.d+":"+before,to:[myId],at,tag:"gift",title:oc.n+(before===21?" dans 3 semaines":" dans "+before+" jours"),
+      body:n?(n===1?"1 idée cadeau":n+" idées cadeaux")+" pour "+on+" dans ta liste secrète.":"Pas encore d'idée cadeau pour "+on+" : note-les dans Together, ta liste reste secrète."});}
+  return out.slice(0,12);
+}
+// « idée cadeau : le livre de Joël Dicker », « cadeau pour Hajjour : un atelier poterie pour son anniversaire », « lui offrir un bracelet »
+const GIFT_LEAD=[/^\s*(?:une?\s+)?id[ée]e\s+(?:de\s+)?cadeaux?\b(?:\s+pour\s+[^\s:,]+)?\s*[:,-]?\s*/i,/^\s*cadeau\s+pour\s+[^\s:,]+\s*[:,-]?\s*/i,/^\s*(?:à|a)\s+offrir\s*[:,-]\s*/i,/^\s*lui\s+offrir\s+/i];
+const GIFT_TAIL=/\s+(?:(?:à|a|dans)\s+(?:mes|ma\s+liste\s+d['’]\s*)?id[ée]es?\s+cadeaux?|aux\s+id[ée]es\s+cadeaux)\s*[.!]?\s*$/i;
+function giftIntent(text){
+  let s=String(text||"").replace(/\s+/g," ").trim();if(!s||s.length>300)return null;
+  let hit=GIFT_TAIL.test(s);if(hit)s=s.replace(GIFT_TAIL,"").replace(/^\s*(?:ajoute|rajoute|mets|note)\s+/i,"");
+  for(const re of GIFT_LEAD){const m=s.match(re);if(m){s=s.slice(m[0].length);hit=true;break;}}
+  if(!hit)return null;
+  const n=norm(s);let o="";
+  if(/\bnoel\b/.test(n))o="noel";else if(/saint[- ]?valentin/.test(n))o="valentin";else if(/\bnos\s+\d+\s+ans\b|anniversaire\s+de\s+(?:couple|rencontre|mariage)|notre\s+anniversaire/.test(n))o="couple";else if(/\banniv/.test(n))o="bday";
+  s=s.replace(/\s*,?\s*pour\s+(?:(?:son|ton|mon|notre|l['’])\s*anniv(?:ersaire)?(?:\s+de\s+(?:couple|rencontre|mariage))?|no[eë]l|la\s+saint[- ]?valentin|nos\s+\d+\s+ans)\b/i," ").replace(/\s+/g," ");
+  const link=(s.match(/https?:\/\/[^\s<>"]+/)||[])[0]||"";if(link)s=s.replace(link,"");
+  s=s.replace(/[\s.!?,;:]+$/,"").trim();
+  if(!s&&!link)return null;
+  return {t:s?s.charAt(0).toUpperCase()+s.slice(1,120):"",u:link,o};
+}
+async function giftAdd(g,quiet){
+  if(!await giftReady()){toast(lsGet("a2.rec")?"La liste secrète ne s'ouvre pas pour l'instant. Réessaie dans un instant.":"Le code de secours se prépare : réessaie dans un instant.");return false;}
+  if(giftErr){toast("Cette liste a été chiffrée avec un autre code de secours.");return false;}
+  const id="g"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  let t=String(g.t||"").replace(/\s+/g," ").trim().slice(0,120)||(g.u?hostOf(g.u)||"Idée":"Idée");t=t.charAt(0).toUpperCase()+t.slice(1);
+  const it={id,t,at:Date.now()};
+  if(g.u&&/^https?:\/\//.test(g.u))it.u=String(g.u).slice(0,500);if(g.n)it.n=String(g.n).slice(0,300);if(+g.p>0)it.p=Math.round(+g.p*100)/100;if(GIFT_OCC[g.o])it.o=g.o;
+  gifts.items=[it,...gifts.items].slice(0,200);
+  const ok=await giftSave();
+  if(ok&&!quiet)toast("Ajouté à tes idées cadeaux (rien qu'à toi)","Voir",()=>openGifts());
+  return ok;
+}
+// Dans « Nos envies » : l'entrée de la liste secrète (chacun voit la sienne)
+function giftEntry(){if(!coupleId)return "";const b=el("button",{type:"button",class:"gift-entry",id:"gift-entry",onclick:()=>openGifts()});giftEntryFill(b);giftStart();return b;}
+function giftEntryFill(b){const o=otherId(),on=o?firstName(o):"ta moitié",n=gifts?giftOpenItems().length:0,oc=gifts?giftOccasions()[0]:null;b.textContent="";
+  b.append(el("span",{class:"gift-ic",html:GIFT_SVG}),el("span",{class:"set-t"},el("strong",{},"Mes idées cadeaux pour "+on),
+    el("small",{},el("span",{class:"gift-lk",html:LOCK_SVG}),"Rien qu'à toi"+(gifts&&!giftErr?" · "+(n?n+(n>1?" idées":" idée"):"aucune idée pour l'instant")+(oc&&oc.days<=60?" · "+oc.n+(oc.days===0?" aujourd'hui":" dans "+oc.days+" j"):""):""))),
+    el("span",{class:"set-chev","aria-hidden":"true"},"›"));}
+function drawGiftEntry(){const b=document.getElementById("gift-entry");if(b)giftEntryFill(b);}
+// L'agenda (ce téléphone seulement) : trois semaines avant une occasion, une fois la liste commencée
+function giftCard(){
+  if(!gifts||giftErr||!coupleId||!giftRaw)return null;const oc=giftOccasions()[0];if(!oc||oc.days>21)return null;
+  if(lsGet("a2.giftHide")===oc.k+":"+oc.d)return null;
+  const o=otherId(),on=o?firstName(o):"ta moitié",n=giftOpenItems().length;
+  return el("section",{class:"gift-card"},el("span",{class:"gift-ic",html:GIFT_SVG}),
+    el("div",{class:"gc-tx"},el("small",{},el("span",{class:"gift-lk",html:LOCK_SVG}),"Rien qu'à toi"),el("strong",{},oc.n+(oc.days===0?" aujourd'hui":oc.days===1?" demain":" dans "+oc.days+" jours")),
+      el("span",{},n?(n===1?"1 idée cadeau":n+" idées cadeaux")+" pour "+on+" dans ta liste.":"Pas encore d'idée cadeau pour "+on+".")),
+    el("div",{class:"pchips"},el("button",{type:"button",class:"btn primary",onclick:()=>openGifts()},n?"Mes idées":"Noter une idée"),
+      el("button",{type:"button",class:"btn quiet",onclick:()=>{lsSet("a2.giftHide",oc.k+":"+oc.d);scheduleRender();}},"Plus tard")));
+}
+function openGifts(){
+  if(typeof leavePending==="function")leavePending();
+  const root=$("#sheet-root");root.textContent="";
+  const o=otherId(),on=o?firstName(o):"ta moitié";
+  const body=el("div",{class:"gift-body"});
+  root.append(sheetShell("Idées cadeaux",[el("div",{class:"sheet-h"},el("h2",{},"Idées cadeaux"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),body]));
+  let occ="",editing="";
+  const save=async()=>{const ok=await giftSave();draw();return ok;};
+  const draw=()=>{if(!body.isConnected){openGifts.redraw=null;return;}body.textContent="";
+    body.append(el("div",{class:"gift-lock"},el("span",{class:"gift-lk",html:LOCK_SVG}),el("span",{},el("strong",{},"Rien qu'à toi. "),"La liste est chiffrée avec ton code de secours : "+on+" ne peut pas la lire, même sur son téléphone. Sur un nouveau téléphone, ton code de secours la retrouve.")));
+    if(!lsGet("a2.rec")){body.append(el("p",{class:"note"},"Le code de secours se prépare. Rouvre cette page dans un instant."));return;}
+    if(!gifts){body.append(el("p",{class:"note"},"Ouverture de ta liste…"));return;}
+    if(giftErr){body.append(el("p",{class:"note"},"Cette liste a été chiffrée avec un autre code de secours : elle ne peut pas s'ouvrir ici."));return;}
+    // ajouter une idée
+    const inp=el("input",{type:"text",id:"gift-in",class:"pair-in",placeholder:"Une idée pour "+on+" : un livre, un atelier…","aria-label":"Nouvelle idée cadeau",autocomplete:"off"});
+    const chips=el("div",{class:"pchips gift-occ"});
+    const drawChips=()=>{chips.textContent="";for(const [k,t] of [["","Sans occasion"],...Object.entries(GIFT_OCC)]){if(k==="couple"&&!coupleSince())continue;
+      chips.append(el("button",{type:"button",class:"pchip"+(occ===k?" on":""),"aria-pressed":String(occ===k),onclick:()=>{occ=k;drawChips();}},k==="bday"?"Anniversaire de "+on:t));}};drawChips();
+    const add=async()=>{const v=inp.value.trim();if(!v)return;const g=giftIntent(v)||giftIntent("idée cadeau : "+v)||{t:v};const url=(v.match(/https?:\/\/[^\s<>"]+/)||[])[0]||"";
+      if(url&&!g.u){g.u=url;g.t=String(g.t||"").replace(url,"").trim();}if(!g.o&&occ)g.o=occ;inp.value="";if(await giftAdd(g,true))draw();};
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add();}});
+    body.append(el("div",{class:"brand-add"},inp,el("button",{type:"button",class:"btn primary",id:"gift-add",onclick:add},"Ajouter")),chips);
+    // les idées à offrir
+    const open=giftOpenItems(),done=((gifts&&gifts.items)||[]).filter(x=>x&&x.done);
+    const occs=giftOccasions(),dOf=k=>{const x=occs.find(y=>y.k===k);return x?x.days:999;};
+    open.sort((a,b)=>dOf(a.o)-dOf(b.o)||(b.at||0)-(a.at||0));
+    if(!open.length)body.append(el("p",{class:"note"},"Pas encore d'idée. Note ici ce que "+on+" a aimé ou a dit vouloir : tu les retrouveras le moment venu. Tu peux aussi dire « idée cadeau : … » dans Ajouter ou à Siri."));
+    const list=el("div",{class:"gift-list"});
+    for(const x of open){
+      if(editing===x.id){list.append(giftEditRow(x,()=>{editing="";draw();},save));continue;}
+      const facts=[x.o&&GIFT_OCC[x.o]?(x.o==="bday"?"Anniversaire de "+on:GIFT_OCC[x.o]):"",+x.p>0?String(x.p).replace(".",",")+" €":"",x.u?hostOf(x.u):"",x.n?String(x.n).slice(0,60):""].filter(Boolean);
+      list.append(el("div",{class:"gift-row"},
+        el("div",{class:"gift-t"},x.u?el("a",{href:x.u,target:"_blank",rel:"noopener"},x.t):el("strong",{},x.t),facts.length?el("small",{},facts.join(" · ")):null),
+        el("div",{class:"gift-act"},
+          el("button",{type:"button",class:"btn",onclick:async()=>{x.done=Date.now();if(await save())toast("« "+x.t+" » : offert. Bravo !");}},"Offert"),
+          el("button",{type:"button",class:"btn quiet",onclick:()=>{editing=x.id;draw();}},"Modifier"),
+          el("button",{type:"button",class:"btn quiet","aria-label":"Retirer « "+x.t+" »",onclick:async()=>{const keep=gifts.items.slice();gifts.items=gifts.items.filter(y=>y.id!==x.id);
+            if(await save())toast("Idée retirée","Annuler",async()=>{gifts.items=keep;await save();});}},"Retirer"))));}
+    if(open.length)body.append(list);
+    // les occasions
+    const oc=el("div",{class:"gift-occs"});
+    for(const x of occs)oc.append(el("div",{class:"gift-oc"},el("strong",{},x.n),el("span",{},frDay(x.d,true)+(x.days===0?" · aujourd'hui":x.days===1?" · demain":" · dans "+x.days+" jours"))));
+    const bd=el("input",{type:"date",id:"gift-bday",value:gifts.bday?(new Date().getFullYear()+"-"+gifts.bday):""});
+    bd.onchange=async()=>{const m=/^\d{4}-(\d{2}-\d{2})$/.exec(bd.value||"");gifts.bday=m?m[1]:"";if(await save())toast(m?"Date gardée (rien qu'à toi) : un rappel discret 3 semaines avant":"Date retirée");};
+    body.append(el("div",{class:"pgroup-h"},"Les prochaines occasions"),oc,
+      el("div",{class:"field"},el("label",{for:"gift-bday"},"Anniversaire de "+on+(gifts.bday?"":" (pour le rappel)")),bd),
+      el("p",{class:"note"},"Un rappel discret, rien que pour toi, 3 semaines puis 4 jours avant chaque occasion, à 19 h. Il ne dit jamais quelles idées tu as notées."));
+    if(done.length)body.append(el("details",{class:"gift-done"},el("summary",{},"Déjà offerts ("+done.length+")"),
+      ...done.sort((a,b)=>b.done-a.done).map(x=>el("div",{class:"gift-row done"},el("div",{class:"gift-t"},el("strong",{},x.t),el("small",{},"Offert le "+new Date(x.done).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}))),
+        el("div",{class:"gift-act"},el("button",{type:"button",class:"btn quiet",onclick:async()=>{delete x.done;await save();}},"Remettre"))))));
+  };
+  const giftEditRow=(x,done,saveFn)=>{const t=el("input",{type:"text",value:x.t,"aria-label":"Idée"}),u=el("input",{type:"url",value:x.u||"",placeholder:"Lien (facultatif)","aria-label":"Lien"});
+    const p=el("input",{type:"number",inputmode:"decimal",min:"0",step:"0.01",value:+x.p>0?String(x.p):"",placeholder:"Prix","aria-label":"Prix"}),n=el("input",{type:"text",value:x.n||"",placeholder:"Une note (taille, couleur…)","aria-label":"Note"});
+    const sel=el("select",{"aria-label":"Occasion"},el("option",{value:""},"Sans occasion"),...Object.entries(GIFT_OCC).map(([k,v])=>el("option",{value:k,selected:x.o===k},k==="bday"?"Anniversaire de "+on:v)));
+    return el("div",{class:"gift-row edit"},el("div",{class:"gift-form"},t,n,el("div",{class:"grid2"},p,sel),u),
+      el("div",{class:"gift-act"},el("button",{type:"button",class:"btn primary",onclick:async()=>{x.t=t.value.trim().slice(0,120)||x.t;x.n=n.value.trim().slice(0,300);
+          x.u=/^https?:\/\//.test(u.value.trim())?u.value.trim().slice(0,500):"";x.p=+p.value>0?Math.round(+p.value*100)/100:0;x.o=sel.value||"";
+          for(const k of ["n","u","p","o"])if(!x[k])delete x[k];await saveFn();done();}},"Enregistrer"),el("button",{type:"button",class:"btn quiet",onclick:done},"Annuler")));};
+  openGifts.redraw=draw;
+  draw();
+  if(!gifts)giftStart();
+}
+
+/* ---------- Au démarrage (version 68) ---------- */
+function opt13Init(){giftStart();tfFetch(true).catch(()=>{});}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(()=>{tfFetch(false).catch(()=>{});},800);});
+
+const APP_V="68";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -8803,6 +9135,8 @@ function sharedText(t){
 async function prepareText(text,b,label,opts){
   // « envie d'aller au zoo » : une envie de sortie ; « ajoute du lait et des œufs » : la liste de courses, pas l'agenda
   try{const p0=parseText(text,{places:[]});
+    const g0=giftIntent(text);
+    if(g0){closeSheet();if(await giftAdd(g0))openGifts();return;}
     const w0=wishIntent(text,p0);
     if(w0){closeSheet();if(!w0.title&&w0.link){openSharedChoice(w0.link);return;}
       const id=await addWish({title:w0.title,link:w0.link});if(id){toast("Envie ajoutée : "+w0.title);openWishes();}return;}
@@ -9399,11 +9733,11 @@ function tripHero(n,t){
     el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.stale&&!here?" · dernière position "+agoShort(S.age):"")),b);
 }
 /* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
-let pendingLink=/[?&](trip|ev|add|shop|wishes|mem|check|set|news)=/.test(location.search)?location.search:null;
+let pendingLink=/[?&](trip|ev|add|shop|wishes|mem|check|set|news|gifts)=/.test(location.search)?location.search:null;
 function runPendingLink(){
   if(!pendingLink||firstSnap||!tripsReady)return;
   const q=pendingLink;pendingLink=null;
-  try{if(/[?&](trip|ev|add|shop|wishes|mem|check|set|news)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
+  try{if(/[?&](trip|ev|add|shop|wishes|mem|check|set|news|gifts)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
   setTimeout(()=>{if(!handleDeepLink(q))toast("Cet évènement n'existe plus.");},150);
 }
 function handleDeepLink(q){
@@ -9415,6 +9749,7 @@ function handleDeepLink(q){
   if(p.has("check")){openSettings("check");return true;}
   if(p.has("set")){openSettings(p.get("set")||"");return true;}
   if(p.has("news")){openSettings("aide","qn-h");return true;}
+  if(p.has("gifts")){openGifts();return true;}
   if(p.has("mem")){const id=p.get("mem")||"";closeSheet();setView("mem");
     if(id&&events.has(id))openMemory(events.get(id));else if(id&&memories.has(id)){const m=memories.get(id);openMemory({id,title:m.title,date:m.date,time:m.time,location:m.place||"",motif:m.motif||"",category:"sortie"});}
     return true;}
@@ -9653,7 +9988,7 @@ function bootFromCache(){
     }
     const wasFirst=firstSnap;firstSnap=false;
     events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
-    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);calSyncSoon(2500);setTimeout(opt12Init,2000);}
+    if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);calSyncSoon(2500);setTimeout(opt12Init,2000);setTimeout(opt13Init,2500);}
     if(shopRefresh)shopRefresh();
     migrateShop(shopRaw);
     saveBoot();

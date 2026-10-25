@@ -565,7 +565,7 @@ function inlineText(){
   if(MODE==="sv")return SV?cap(svKick().toLowerCase())+" : "+SV.t:"Together : vos souvenirs";
   if(MODE==="idea")return IDEA&&IDEA.sl?IDEA.sl+(IDEA.t?" : "+IDEA.t+" ?":" libre"):"On fait quoi ? Rien de libre";
   if(LIVE)return LIVE.a;
-  return next?(dep?"Départ "+hm(next.d):next.a?short(next.s):hm(next.s))+" · "+next.t:"Together : rien de prévu";}
+  return next?(dep?"Départ "+hm(next.d)+(next.tf?" (trafic)":""):next.a?short(next.s):hm(next.s))+" · "+next.t:"Together : rien de prévu";}
 
 // ---------- lancé depuis l'app Scriptable (toucher le widget, ou ▶) : aperçu au style de Together ----------
 function svgIcon(key,col,size,sw){const src=ICONS[key];if(!src)return "";let o="";
@@ -736,7 +736,8 @@ function carWidget(w){
     w.addSpacer();w.refreshAfterDate=refreshAt();return;}
   // l'étape du moment : partir, passer chez l'autre, arriver
   const x=up[0],pkAt=x.pk&&x.d?x.d+(+x.pm||0)*6e4:0;let st;
-  if(x.d&&T<x.d)st={k:x.pk?"PARTIR · "+String(x.pw||"").toUpperCase():"PARTIR",ic:"car.fill",at:x.d,a:x.t,b:x.pk?"Chez "+x.pw+" à "+hm(pkAt):x.l,dest:x.pk||x.to};
+  // (tf : le trafic a avancé le départ ; le serveur Together l'a recalculé)
+  if(x.d&&T<x.d)st={k:x.pk?"PARTIR · "+String(x.pw||"").toUpperCase():"PARTIR",ic:"car.fill",at:x.d,a:x.t,b:(x.tf?"Trafic +"+x.tf+" min · ":"")+(x.pk?"Chez "+x.pw+" à "+hm(pkAt):(x.l||"")),dest:x.pk||x.to};
   else if(pkAt&&T<pkAt+5*6e4)st={k:"CHEZ "+String(x.pw||"").toUpperCase(),ic:"figure.wave",at:pkAt,a:x.pkl||x.pw,b:"Puis "+x.t+" à "+hm(x.s),dest:x.pk};
   else st={k:"ARRIVÉE",ic:"flag.checkered",at:x.s,a:x.t,b:x.l,dest:x.to};
   head(st.k,st.ic);

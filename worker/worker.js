@@ -1,5 +1,5 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
-// Déploiement : 2026-10-25 (« Tout marche ? », appareils : santé, retirer un ancien téléphone, dernière utilisation du widget et de Siri)
+// Déploiement : 2026-10-25 (trafic en direct avec une clé TomTom, rappels privés des idées cadeaux)
 // Envoie les notifications Web Push aux iPhone, garde les rappels programmés
 // et publie pour chacun un calendrier .ics auquel l'iPhone s'abonne.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
@@ -184,6 +184,95 @@ async function epHash(ep) {
   const h = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode("together-ep:" + ep)));
   let s = ""; for (const x of h.slice(0, 6)) s += x.toString(16).padStart(2, "0"); return s;
 }
+// ---------- Trafic en direct : une clé gratuite TomTom, collée une fois dans l'app (clé tk:<couple>) ----------
+// Une heure avant chaque départ en voiture, le trajet est recalculé avec le trafic réel ; 20 min avant, une seconde fois.
+// S'il s'allonge, ceux qui partent sont prévenus, et l'alerte « C'est l'heure de partir » arrive d'autant plus tôt.
+const TT_TEST = [{ lat: 43.6086, lon: 3.8797 }, { lat: 43.6117, lon: 3.8767 }];
+const ptOf = (p) => (p && Number.isFinite(+p.lat) && Number.isFinite(+p.lon) && Math.abs(+p.lat) <= 90 && Math.abs(+p.lon) <= 180 ? { lat: +(+p.lat).toFixed(5), lon: +(+p.lon).toFixed(5) } : null);
+async function ttDrive(key, pts, dep, now) {
+  const loc = pts.map((p) => p.lat.toFixed(5) + "," + p.lon.toFixed(5)).join(":");
+  const when = dep && dep > now + 60000 ? new Date(dep).toISOString().replace(/\.\d{3}Z$/, "Z") : "now";
+  const u = "https://api.tomtom.com/routing/1/calculateRoute/" + loc + "/json?key=" + encodeURIComponent(key) +
+    "&traffic=true&travelMode=car&routeType=fastest&routeRepresentation=summaryOnly&computeTravelTimeFor=all&departAt=" + encodeURIComponent(when);
+  let r; try { r = await fetch(u, { headers: { Accept: "application/json" } }); } catch (_) { return { ok: false, st: 0 }; }
+  if (!r.ok) return { ok: false, st: r.status };
+  let j = null; try { j = await r.json(); } catch (_) {}
+  const sm = j && j.routes && j.routes[0] && j.routes[0].summary;
+  if (!sm || !(+sm.travelTimeInSeconds > 0)) return { ok: false, st: 0 };
+  return { ok: true, min: sm.travelTimeInSeconds / 60, free: (+sm.noTrafficTravelTimeInSeconds || 0) / 60, km: (+sm.lengthInMeters || 0) / 1000 };
+}
+// un trajet suivi, tel que l'app l'envoie (départ, durée prévue, coordonnées, qui part, qui est récupéré en chemin)
+function cleanWatch(x, now) {
+  if (!x || typeof x !== "object") return null;
+  const w = { id: clean(x.id, 60), t: clean(x.t, 60), l: clean(x.l, 60), s: +x.s || 0, dep: +x.dep || 0, min: Math.max(0, Math.min(600, +x.min || 0)),
+    wt: Math.max(0, Math.min(60, +x.wt || 0)), pm: Math.max(0, Math.min(600, +x.pm || 0)), f: ptOf(x.f), d: ptOf(x.d), v: ptOf(x.v),
+    to: (Array.isArray(x.to) ? x.to : []).map((u) => clean(u, 80)).filter((u) => UID_RE.test(u)).slice(0, 2),
+    pw: clean(x.pw, 80), dn: clean(x.dn, 30), tz: clean(x.tz, 40) };
+  return w.id && w.f && w.d && w.dep > now - 3600000 && w.dep < now + 9 * 86400000 && w.min > 0 && w.to.length ? w : null;
+}
+// la durée prévue au volant (sans les 5 min pour se garer ni l'attente chez l'autre), et le seuil d'alerte
+const ttPlan = (x) => Math.max(1, x.min - 5 - (x.v ? x.wt : 0));
+const ttThr = (x) => Math.max(5, Math.round(ttPlan(x) * 0.15));
+async function ttCheck(key, x, now) {
+  const r = await ttDrive(key, x.v ? [x.f, x.v, x.d] : [x.f, x.d], x.dep, now);
+  if (!r.ok) return r;
+  return { ok: true, drive: r.min, d: Math.round(r.min - ttPlan(x)) };
+}
+function ttDue(x, r, now) {
+  const rr = r && r.dep === x.dep ? r : null, k = rr ? +rr.k || 0 : 0;
+  if (now > x.dep - 3 * 60000) return false;
+  if (k === 0) return now >= x.dep - 65 * 60000;
+  if (k === 1) return now >= x.dep - 25 * 60000 && now - (+rr.at || 0) >= 15 * 60000;
+  return false;
+}
+const hmTz = (ms, tz) => { try { return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: tz || "Europe/Paris" }).format(new Date(ms)).replace(/\s/g, ""); } catch (_) { return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }).format(new Date(ms)).replace(/\s/g, ""); } };
+// Ce que reçoit chacun quand ça bouchonne
+function ttMsgs(x, d, drive) {
+  const out = [], tz = x.tz || "Europe/Paris", dep2 = x.dep - d * 60000, what = x.t ? " pour « " + x.t + " »" : "";
+  for (const u of x.to) {
+    if (x.v && x.pw && u === x.pw) {
+      const pk = x.dep + x.pm * 60000;
+      out.push({ to: [u], title: (x.dn || "On") + " passera te prendre vers " + hmTz(pk - d * 60000, tz), body: "Trafic : +" + d + " min. Au lieu de " + hmTz(pk, tz) + (x.t ? ", pour « " + x.t + " »" : "") + ". Prépare-toi un peu plus tôt.", tag: "tf-" + x.id, url: "./?ev=" + x.id });
+    } else {
+      out.push({ to: [u], title: "Trafic : pars à " + hmTz(dep2, tz) + what, body: "Le trajet prend " + Math.round(drive) + " min au lieu de " + Math.round(ttPlan(x)) + " (+" + d + " min)" + (x.l ? ", vers " + x.l : "") + ".", tag: "tf-" + x.id, url: "./?ev=" + x.id });
+    }
+  }
+  return out;
+}
+// Chaque minute : les trajets à vérifier maintenant
+async function trafficTick(env, id, c, now) {
+  const W = Array.isArray(c.watch) ? c.watch : [];
+  if (!W.some((x) => now >= x.dep - 65 * 60000 && now <= x.dep - 3 * 60000)) return;
+  const TF = (await env.KV.get("tf:" + id, "json")) || {};
+  const dueW = W.filter((x) => ttDue(x, TF[x.id], now)).slice(0, 3);
+  if (!dueW.length) return;
+  const K = await env.KV.get("tk:" + id, "json"); if (!K || !K.k) return;
+  let subs = null, subsChanged = false; const codes = [];
+  for (const x of dueW) {
+    const prev = TF[x.id] && TF[x.id].dep === x.dep ? TF[x.id] : null, k = (prev ? +prev.k || 0 : 0) + 1;
+    const r = await ttCheck(K.k, x, now);
+    if (!r.ok) { TF[x.id] = { ...(prev || {}), dep: x.dep, s: x.s, k, at: now, err: r.st || 1 }; continue; }
+    const rec = { dep: x.dep, s: x.s, d: r.d, m: Math.round(r.drive), k, at: now, sent: prev ? +prev.sent || 0 : 0, al: r.d >= ttThr(x) ? 1 : 0 };
+    if (rec.al && r.d >= rec.sent + 5) {
+      if (!subs) subs = await getSubs(env, id, c);
+      for (const m of ttMsgs(x, r.d, r.drive)) { const s2 = await sendTo(env, subs, m.to, m); subsChanged = subsChanged || s2.changed; for (const cd of s2.codes) codes.push({ ...cd, tag: m.tag }); }
+      rec.sent = r.d;
+    }
+    TF[x.id] = rec;
+  }
+  for (const k of Object.keys(TF)) if (!(+TF[k].dep > now - 3 * 3600000)) delete TF[k];
+  await env.KV.put("tf:" + id, JSON.stringify(TF));
+  if (subsChanged) await putSubs(env, id, subs);
+  if (codes.length) { try { await logSends(env, id, "t", codes); } catch (_) {} }
+}
+// Le widget et Siri en voiture voient l'heure de départ avancée quand ça bouchonne
+async function tfShift(env, id, items) {
+  if (!Array.isArray(items) || !items.length) return items;
+  const TF = await env.KV.get("tf:" + id, "json"); if (!TF) return items;
+  const now = Date.now(); let any = false;
+  const out = items.map((x) => { const r = x && TF[x.id]; if (!r || !r.al || !(+x.d > 0) || r.s !== x.s || now > r.dep + 30 * 60000) return x; any = true; return { ...x, d: x.d - r.d * 60000, tf: r.d }; });
+  return any ? out : items;
+}
 // Les anciens téléphones retirés dans l'app (« Appareils et sécurité ») : leurs liens (widget, Siri, voiture) ne répondent plus
 const goneOf = (c) => (c && Array.isArray(c.gone) ? c.gone : []);
 // Dernière utilisation du widget (w), de Siri (a) et des raccourcis de la voiture (c), pour « Tout marche ? ».
@@ -207,6 +296,9 @@ function addMsg(t) {
   const recipe = isRecipeUrl(t) || (/^\s*(?:les\s+)?ingr[ée]dients?\b/im.test(t) && t.split("\n").length >= 3);
   const wish = /^\s*(?:(?:j['’]ai|on a|j['’]aurais|on aurait)\s+)?(?:bien\s+|trop\s+)?envie\s+d|\b(?:aux|à nos|dans nos|dans les)\s+envies\b|^\s*(?:une\s+)?id[ée]e\s+de\s+sortie/i.test(t);
   const bareLink = !recipe && /^\s*https?:\/\/\S+\s*$/.test(t) && !/maps\.apple|google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i.test(t);
+  // une idée cadeau (liste secrète) : la notification ne part que sur le téléphone de la personne qui l'a dite
+  const gift = /^\s*(?:une?\s+)?id[ée]e\s+(?:de\s+)?cadeaux?\b|^\s*cadeau\s+pour\s|^\s*(?:à|a)\s+offrir\s*[:,-]|^\s*lui\s+offrir\s|\b(?:à|a|dans)\s+(?:mes|ma\s+liste\s+d['’]\s*)?id[ée]es?\s+cadeaux?\s*[.!]?\s*$/i.test(t);
+  if (gift) return { title: "Idée cadeau reçue", body: "Touche pour la ranger dans ta liste secrète." };
   if (recipe) return { title: "Recette reçue" + (first === "Lieu partagé" ? "" : " : " + first.slice(0, 50)), body: "Touche pour choisir les ingrédients à mettre sur la liste de courses." };
   if (wish) return { title: "Nouvelle envie : " + first.replace(/^\s*(?:(?:j['’]ai|on a|j['’]aurais|on aurait)\s+)?(?:bien\s+|trop\s+)?envie\s+(?:d['’]|de\s+)/i, "").replace(/^\s*(?:ajoute|rajoute|mets|note)\s+/i, "").replace(/\s+(?:aux|à nos|dans nos|dans les)\s+envies\s*$/i, "").slice(0, 60), body: "Touche pour l'ajouter à vos envies." };
   if (bareLink) return { title: "Lien reçu", body: "Touche pour en faire une envie de sortie ou un évènement." };
@@ -411,7 +503,7 @@ export default {
       const me = clean(D.me, 30) || "Together";
       // nos moments à deux et les miens (pas ceux de l'autre seul), sauf avec une ancienne version de l'app
       const mine = (x) => !x.wu || x.wu === uid;
-      const all = (Array.isArray(D.items) ? D.items : []).filter((x) => x && +x.s > 0).sort((p, q) => p.s - q.s);
+      const all = (await tfShift(env, id, Array.isArray(D.items) ? D.items : [])).filter((x) => x && +x.s > 0).sort((p, q) => p.s - q.s);
       const items = all.filter((x) => !x.a && mine(x));
       const ids = Array.isArray(D.ids) ? D.ids.map((x) => clean(x, 80)) : [], names = Array.isArray(D.names) ? D.names.map((x) => clean(x, 30)) : [];
       const nameOf = (u) => (ids.indexOf(u) >= 0 && names[ids.indexOf(u)]) || "";
@@ -436,6 +528,7 @@ export default {
           : (mins <= 1 ? "C'est maintenant" : "Dans " + mins + " minutes");
         say += " pour « " + clean(ax.t, 60) + " », à " + hs(ax.s) + ".";
         if (ax.pk) say += " On passe d'abord récupérer " + clean(ax.pw, 20) + ".";
+        if (+ax.tf > 0) say += " Trafic chargé : " + ax.tf + " minutes de plus que prévu.";
         if (dep && mins < -4) say += " Dis « je suis en retard » pour prévenir " + (clean(ax.pw, 20) || nameOf(ids.find((u) => u !== uid)) || "l'autre") + ".";
         return txt(say);
       }
@@ -514,7 +607,8 @@ export default {
       if (u && goneOf(c).includes(u)) return json(req, { gone: 1, data: null });
       // (le diagnostic passe aussi par ici : il ne compte pas comme une utilisation du widget)
       if (!url.searchParams.has("diag")) { try { await noteUse(env, ctx, id, u, "w", clean(url.searchParams.get("wv"), 8)); } catch (_) {} }
-      const data = (W.map[u] || Object.values(W.map)[0]) || null;
+      let data = (W.map[u] || Object.values(W.map)[0]) || null;
+      if (data && Array.isArray(data.items)) { const it2 = await tfShift(env, id, data.items); if (it2 !== data.items) data = { ...data, items: it2 }; }
       // « Dis Siri, je suis en retard » : le retard annoncé par l'autre (depuis moins de 3 h) arrive tout de suite dans le widget
       if (data) {
         const now = Date.now(), ids = Array.isArray(data.ids) ? data.ids : [], names = Array.isArray(data.names) ? data.names : [];
@@ -574,7 +668,7 @@ export default {
     }
     if (path === "/api/schedule") {
       const now = Date.now(), done = new Set(await getDone(env, id, c));
-      c.sched = (Array.isArray(b.items) ? b.items : []).slice(0, 200).map((x) => ({ id: clean(x.id, 120), to: (Array.isArray(x.to) ? x.to : [x.to]).map((u) => clean(u, 80)).slice(0, 2), at: +x.at || 0, title: clean(x.title, 120), body: clean(x.body, 300), tag: clean(x.tag, 60) }))
+      c.sched = (Array.isArray(b.items) ? b.items : []).slice(0, 200).map((x) => ({ id: clean(x.id, 120), to: (Array.isArray(x.to) ? x.to : [x.to]).map((u) => clean(u, 80)).slice(0, 2), at: +x.at || 0, title: clean(x.title, 120), body: clean(x.body, 300), tag: clean(x.tag, 60), ...(x.lv ? { lv: 1 } : {}) }))
         .filter((x) => x.id && x.at > now - 60000 && x.at < now + 40 * 86400000 && !done.has(x.id));
       // dernière synchronisation de chaque téléphone, avec la version de l'app (aide au diagnostic)
       const who = clean(b.uid, 80);
@@ -583,6 +677,14 @@ export default {
       // retiré par erreur ? Il revient dès que l'autre téléphone le compte encore parmi vous deux
       if (Array.isArray(b.members) && goneOf(c).length) { const mem = b.members.slice(0, 4).map((x) => clean(x, 80)); const back = c.gone.filter((u) => mem.includes(u) && u !== who); if (back.length) c.gone = c.gone.filter((u) => !back.includes(u)); }
       if (who) { c.seen = c.seen && typeof c.seen === "object" ? c.seen : {}; c.seen[who] = { v: clean(b.v, 12) || "<51", at: now, ...(b.dev ? { dev: clean(b.dev, 40) } : {}) }; }
+      // les trajets en voiture à vérifier (trafic en direct) ; une ancienne version de l'app n'en envoie pas : on garde les précédents
+      if (Array.isArray(b.watch)) c.watch = b.watch.slice(0, 20).map((x) => cleanWatch(x, now)).filter(Boolean);
+      // rappels privés (idées cadeaux) : envoyés par ce téléphone seulement, pour lui seul ; l'autre téléphone ne les remplace pas
+      if (who && Array.isArray(b.own)) {
+        c.own = c.own && typeof c.own === "object" ? c.own : {};
+        c.own[who] = b.own.slice(0, 20).map((x) => ({ id: clean(x.id, 120), to: [who], at: +x.at || 0, title: clean(x.title, 120), body: clean(x.body, 300), tag: clean(x.tag, 60) }))
+          .filter((x) => x.id && x.at > now - 60000 && x.at < now + 40 * 86400000 && !done.has(x.id));
+      }
       // ne pas déranger la nuit (choix de chacun) : le serveur en a besoin pour garder les nouveautés jusqu'à 7 h
       if (b.prefs && typeof b.prefs === "object") { const P = {};
         for (const [k, v] of Object.entries(b.prefs).slice(0, 4)) if (UID_RE.test(k)) P[k] = { quiet: !!(v && v.quiet), tz: clean(v && v.tz, 40) || "Europe/Paris" };
@@ -646,6 +748,32 @@ export default {
       const r = await fetchPage(u.toString());
       return json(req, r ? { ok: true, ...r } : { ok: false });
     }
+    if (path === "/api/traffic") {
+      const now = Date.now();
+      if (b.del) { await env.KV.delete("tk:" + id); return json(req, { ok: true, has: false }); }
+      if (typeof b.key === "string" && b.key.trim()) {
+        const k = b.key.trim();
+        if (!/^[A-Za-z0-9_-]{16,80}$/.test(k)) return json(req, { ok: false, error: "format" });
+        const r = await ttDrive(k, TT_TEST, 0, now);
+        if (!r.ok) return json(req, { ok: false, error: r.st === 401 || r.st === 403 ? "refusée" : "injoignable", st: r.st });
+        await env.KV.put("tk:" + id, JSON.stringify({ k, at: now, by: clean(b.uid, 80) }));
+        return json(req, { ok: true, has: true, last4: k.slice(-4), at: now, test: Math.round(r.min * 10) / 10 });
+      }
+      const K = await env.KV.get("tk:" + id, "json"), TF = (await env.KV.get("tf:" + id, "json")) || {};
+      if (b.id && K && K.k) {
+        const x = cleanWatch(b.w, now);
+        if (!x || x.id !== clean(b.id, 60)) return json(req, { ok: false, error: "watch" }, 400);
+        const prev = TF[x.id] && TF[x.id].dep === x.dep ? TF[x.id] : null;
+        // au plus une vérification toutes les 2 minutes par trajet
+        if (prev && now - (+prev.at || 0) < 120000 && !prev.err) return json(req, { ok: true, has: true, tf: TF });
+        const r = await ttCheck(K.k, x, now);
+        if (!r.ok) return json(req, { ok: false, has: true, error: "tomtom", st: r.st, tf: TF });
+        TF[x.id] = { dep: x.dep, s: x.s, d: r.d, m: Math.round(r.drive), k: prev ? +prev.k || 0 : 0, at: now, sent: prev ? +prev.sent || 0 : 0, al: r.d >= ttThr(x) ? 1 : 0 };
+        await env.KV.put("tf:" + id, JSON.stringify(TF));
+        return json(req, { ok: true, has: true, tf: TF });
+      }
+      return json(req, { ok: true, has: !!(K && K.k), last4: K && K.k ? K.k.slice(-4) : "", at: K ? +K.at || 0 : 0, tf: TF });
+    }
     // « Tout marche ? » : ce que le serveur sait de chaque téléphone (version, notifications, widget, calendrier, Siri)
     if (path === "/api/health") {
       const now = Date.now(), gone = goneOf(c);
@@ -676,6 +804,7 @@ export default {
       for (const k of ["ks:", "us:"]) { const o = (await env.KV.get(k + id, "json")) || {}; if (o[u] != null) { delete o[u]; await env.KV.put(k + id, JSON.stringify(o)); } }
       if (c.seen) delete c.seen[u];
       if (c.prefs) delete c.prefs[u];
+      if (c.own) delete c.own[u];
       c.gone = [...goneOf(c).filter((x) => x !== u), u].slice(-20);
       c.sched = (Array.isArray(c.sched) ? c.sched : []).map((x) => ({ ...x, to: (x.to || []).filter((t) => t !== u) })).filter((x) => x.to.length);
       await putCouple(env, id, c);
@@ -701,15 +830,25 @@ export default {
     for (const id of idx) {
       const c0 = await getCouple(env, id);
       if (c0) { try { await flushHeld(env, id, c0, now); } catch (_) {} }
-      const c = c0; if (!c || !c.sched || !c.sched.length) continue;
+      const c = c0; if (!c) continue;
+      try { await trafficTick(env, id, c, now); } catch (_) {}
+      const list = [...(Array.isArray(c.sched) ? c.sched : []), ...Object.values(c.own && typeof c.own === "object" ? c.own : {}).flat()];
+      if (!list.length) continue;
+      // l'alerte « C'est l'heure de partir » avance quand le trafic allonge le trajet (vérifié moins de 3 h avant)
+      let TF = null;
+      if (list.some((x) => x.lv) && Array.isArray(c.watch) && c.watch.some((w) => w.dep > now - 3600000 && w.dep < now + 4 * 3600000)) TF = (await env.KV.get("tf:" + id, "json")) || {};
+      const shift = (x) => { if (!TF || !x.lv) return 0; const m = /^ev-(.+)$/.exec(x.tag || ""), r = m && TF[m[1]], w = m && c.watch.find((y) => y.id === m[1]);
+        return r && w && r.al && r.dep === w.dep && r.d > 0 ? r.d * 60000 : 0; };
       // Le cron n'écrit jamais la fiche du couple : il note seulement ce qui est parti (clé à part)
       const doneList = await getDone(env, id, c), done = new Set(doneList);
-      const due = c.sched.filter((x) => x.at <= now + 20000 && !done.has(x.id));
+      const due = list.filter((x) => x.at - shift(x) <= now + 20000 && !done.has(x.id));
       if (!due.length) continue;
       const subs = await getSubs(env, id, c);
       let changed = false;
       const sentCodes = [];
-      for (const x of due) { if (now - x.at < 15 * 60000) { const r = await sendTo(env, subs, x.to, { title: x.title, body: x.body, tag: x.tag }); changed = changed || r.changed; for (const cd of r.codes) sentCodes.push({ ...cd, tag: x.tag }); } doneList.push(x.id); done.add(x.id); }
+      for (const x of due) { const sh = shift(x), at = x.at - sh;
+        if (now - at < 15 * 60000) { const r = await sendTo(env, subs, x.to, { title: x.title, body: sh ? clean(x.body + " Trafic : +" + Math.round(sh / 60000) + " min.", 300) : x.body, tag: x.tag }); changed = changed || r.changed; for (const cd of r.codes) sentCodes.push({ ...cd, tag: x.tag }); }
+        doneList.push(x.id); done.add(x.id); }
       try { await logSends(env, id, "s", sentCodes); } catch (_) {}
       await putDone(env, id, doneList);
       if (changed) await putSubs(env, id, subs);

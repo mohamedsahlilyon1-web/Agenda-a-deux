@@ -38,13 +38,16 @@ jobs:
             KS=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/ks:$id"); echo "$KS" | jq -e 'type=="object" and (has("errors")|not)' >/dev/null 2>&1 || KS='{}'
             LG=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/l:$id"); echo "$LG" | jq -e 'type=="array"' >/dev/null 2>&1 || LG='[]'
             AD=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/a:$id"); echo "$AD" | jq -e 'type=="array"' >/dev/null 2>&1 || AD='[]'
+            # trafic en direct (version 68) : la clé TomTom est-elle là (jamais la clé elle-même), et les dernières vérifications (nombres seulement)
+            TK=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/tk:$id" | jq -c '{has:((.k//"")|length>0),agoMin:(if (.at//0)>0 then ((now*1000-.at)/60000|floor) else null end)}' 2>/dev/null || echo '{"has":false}')
+            TF=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/tf:$id" | jq -c 'if type=="object" and (has("errors")|not) then {n:length,checks:[.[]|{agoMin:((now*1000-(.at//0))/60000|floor),depInMin:(((.dep//0)-now*1000)/60000|floor),k,d,al,sent,err}]} else {n:0} end' 2>/dev/null || echo '{"n":0}')
             CK=$(printf 'together-cal:%s' "$TOK" | sha256sum | cut -c1-32)
             CH=""
             for u in $(echo "$KC" | jq -r '.map|keys[]'); do
               CH="$CH$(curl -s -o /dev/null -I -w "%{http_code}" "$URL/cal/$id/$CK/$u.ics"),"
             done
             CAL=$(jq -nc --argjson kc "$KC" --argjson ks "$KS" --arg ch "${CH%,}" '{at:($kc.at//0),feeds:($kc.map|[.[]|{bytes:length,events:([scan("BEGIN:VEVENT")]|length)}]),http:($ch|split(",")),readAgoMin:($ks|[.[]|((now*1000-.)/60000|floor)])}')
-            S=$(jq -nc --argjson v "$V" --argjson sb "$SB" --argjson wd "$WD" --argjson dn "$DN" --argjson cal "$CAL" --argjson lg "$LG" --argjson ad "$AD" '{adds:($ad|length),seen:(($v.seen//{})|to_entries|map({u:(.key[0:4]),v:.value.v,agoMin:((now*1000-.value.at)/60000|floor)})),log:($lg|.[-15:]|map({agoMin:((now*1000-.at)/60000|floor),k,t,to:((.to//"")[0:4]),st,rs})),subs:($sb|length),subsPer:($sb|[.[]|length]),subsBy:($sb|to_entries|map({u:(.key[0:4]),n:(.value|length)})),sched:(($v.sched//[])|length),nextAt:(($v.sched//[])|map(.at)|min),done:($dn|length),wAt:($wd.at//0),widgets:(($wd.map//{})|[.[]|{items:((.items//[])|length),wishes,fb}]),cal:$cal}')
+            S=$(jq -nc --argjson v "$V" --argjson sb "$SB" --argjson wd "$WD" --argjson dn "$DN" --argjson cal "$CAL" --argjson lg "$LG" --argjson ad "$AD" '{adds:($ad|length),seen:(($v.seen//{})|to_entries|map({u:(.key[0:4]),v:.value.v,agoMin:((now*1000-.value.at)/60000|floor)})),log:($lg|.[-15:]|map({agoMin:((now*1000-.at)/60000|floor),k,t,to:((.to//"")[0:4]),st,rs})),subs:($sb|length),subsPer:($sb|[.[]|length]),subsBy:($sb|to_entries|map({u:(.key[0:4]),n:(.value|length)})),sched:(($v.sched//[])|length),nextAt:(($v.sched//[])|map(.at)|min),watch:(($v.watch//[])|length),own:(($v.own//{})|[.[]|length]),done:($dn|length),wAt:($wd.at//0),widgets:(($wd.map//{})|[.[]|{items:((.items//[])|length),wishes,fb}]),cal:$cal}')
             W=""
             for u in $(echo "$SB" | jq -r 'keys[]'); do
               WJ=$(curl -s "$URL/api/w?c=$id&t=$TOK&u=$u&diag=1")
@@ -69,7 +72,7 @@ jobs:
             # « Tout marche ? » vu du serveur (option 12) : versions, notifications, widget, calendrier, Siri ; prénoms et identifiants jamais écrits
             HL=$(curl -s -X POST -H "Content-Type: application/json" -H "Origin: https://mohamedsahlilyon1-web.github.io" --max-time 20 -d "$(jq -nc --arg c "$id" --arg t "$TOK" '{couple:$c,token:$t}')" "$URL/api/health" | jq -c '{ok:(.ok//false),gone:(.gone//0),phones:((.u//{})|to_entries|map({u:(.key[0:4]),v:.value.v,agoMin:(if .value.at>0 then ((now*1000-.value.at)/60000|floor) else null end),dev:(.value.dev//""),subs:(.value.subs|length),subsDev:(.value.subs|map(.dev)),w:(if .value.w then {agoMin:((now*1000-.value.w.at)/60000|floor),v:.value.w.v} else null end),calAgoMin:(if .value.cal>0 then ((now*1000-.value.cal)/60000|floor) else null end),addAgoMin:(if .value.add>0 then ((now*1000-.value.add)/60000|floor) else null end),carAgoMin:(if .value.car>0 then ((now*1000-.value.car)/60000|floor) else null end),pushOkAgoMin:(if .value.ok>0 then ((now*1000-.value.ok)/60000|floor) else null end),pushBad:(.value.bad.st//null)}))}' 2>/dev/null || echo '{"ok":"err"}')
             [ $first = 1 ] || echo "," >> diag/result.json; first=0
-            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"health\":$HL,\"recipe\":[${RP%,}],\"page\":[${PG%,}],\"widgetApi\":{${W%,}}}" >> diag/result.json
+            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"traffic\":{\"key\":$TK,\"tf\":$TF},\"health\":$HL,\"recipe\":[${RP%,}],\"page\":[${PG%,}],\"widgetApi\":{${W%,}}}" >> diag/result.json
           done
           echo "]}" >> diag/result.json
           cat diag/result.json
