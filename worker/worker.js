@@ -1,5 +1,5 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
-// Déploiement : 2026-10-25 (trafic en direct avec une clé TomTom, rappels privés des idées cadeaux)
+// Déploiement : 2026-10-26 (carte 3D : l'itinéraire avec les bouchons)
 // Envoie les notifications Web Push aux iPhone, garde les rappels programmés
 // et publie pour chacun un calendrier .ics auquel l'iPhone s'abonne.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
@@ -200,6 +200,27 @@ async function ttDrive(key, pts, dep, now) {
   const sm = j && j.routes && j.routes[0] && j.routes[0].summary;
   if (!sm || !(+sm.travelTimeInSeconds > 0)) return { ok: false, st: 0 };
   return { ok: true, min: sm.travelTimeInSeconds / 60, free: (+sm.noTrafficTravelTimeInSeconds || 0) / 60, km: (+sm.lengthInMeters || 0) / 1000 };
+}
+// l'itinéraire complet avec ses portions de trafic (pour colorer les bouchons sur la carte de l'app)
+async function ttRoute(key, pts, now) {
+  const loc = pts.map((p) => p.lat.toFixed(5) + "," + p.lon.toFixed(5)).join(":");
+  const u = "https://api.tomtom.com/routing/1/calculateRoute/" + loc + "/json?key=" + encodeURIComponent(key) +
+    "&traffic=true&travelMode=car&routeType=fastest&routeRepresentation=polyline&sectionType=traffic&computeTravelTimeFor=all&departAt=now";
+  let r; try { r = await fetch(u, { headers: { Accept: "application/json" } }); } catch (_) { return { ok: false, st: 0 }; }
+  if (!r.ok) return { ok: false, st: r.status };
+  let j = null; try { j = await r.json(); } catch (_) {}
+  const R = j && j.routes && j.routes[0], sm = R && R.summary;
+  if (!R || !sm || !(+sm.travelTimeInSeconds > 0)) return { ok: false, st: 0 };
+  const all = [];
+  for (const L of R.legs || []) for (const q of L.points || []) if (Number.isFinite(+q.latitude) && Number.isFinite(+q.longitude)) all.push([Math.round(q.longitude * 1e5) / 1e5, Math.round(q.latitude * 1e5) / 1e5]);
+  if (all.length < 2) return { ok: false, st: 0 };
+  // au plus 600 points (un sur k), les portions de trafic suivent la même réduction
+  const k = Math.max(1, Math.ceil(all.length / 600)), pts2 = all.filter((_, i) => i % k === 0 || i === all.length - 1);
+  const ix = (i) => Math.min(pts2.length - 1, Math.round(Math.max(0, +i || 0) / k));
+  const sec = (R.sections || []).filter((x) => x && x.sectionType === "TRAFFIC").slice(0, 80)
+    .map((x) => ({ a: ix(x.startPointIndex), b: ix(x.endPointIndex), m: Math.max(0, Math.min(4, Math.round(+x.magnitudeOfDelay || 0))), c: String(x.simpleCategory || "").slice(0, 16), d: Math.round(+x.delayInSeconds || 0) }))
+    .filter((x) => x.b > x.a);
+  return { ok: true, pts: pts2, sec, min: Math.round(sm.travelTimeInSeconds / 6) / 10, free: Math.round((+sm.noTrafficTravelTimeInSeconds || sm.travelTimeInSeconds) / 6) / 10, km: Math.round((+sm.lengthInMeters || 0) / 100) / 10 };
 }
 // un trajet suivi, tel que l'app l'envoie (départ, durée prévue, coordonnées, qui part, qui est récupéré en chemin)
 function cleanWatch(x, now) {
@@ -747,6 +768,24 @@ export default {
       if (!u || !/^https?:$/.test(u.protocol) || !u.hostname.includes(".") || /^(?:localhost|[\d.]+|\[.*\])$/i.test(u.hostname) || /\.(?:local|internal|lan)$/i.test(u.hostname)) return json(req, { ok: false, error: "url" }, 400);
       const r = await fetchPage(u.toString());
       return json(req, r ? { ok: true, ...r } : { ok: false });
+    }
+    // L'itinéraire avec le trafic, pour la carte (gardé 5 min ; au plus 60 calculs par jour et par couple)
+    if (path === "/api/route") {
+      const K = await env.KV.get("tk:" + id, "json");
+      if (!K || !K.k) return json(req, { ok: false, error: "nokey" });
+      const pts = (Array.isArray(b.pts) ? b.pts : []).map(ptOf).filter(Boolean).slice(0, 3);
+      if (pts.length < 2) return json(req, { ok: false, error: "pts" }, 400);
+      const now = Date.now(), sig = pts.map((p) => p.lat.toFixed(4) + "," + p.lon.toFixed(4)).join(";"), C = (await env.KV.get("rt:" + id, "json")) || {};
+      const hit = C.r && C.r[sig];
+      if (hit && now - hit.at < 5 * 60000) return json(req, { ok: true, cached: 1, ...hit });
+      const day = new Date(now).toISOString().slice(0, 10), n = C.d === day ? +C.n || 0 : 0;
+      if (n >= 60) return json(req, { ok: false, error: "quota" });
+      const r = await ttRoute(K.k, pts, now);
+      if (!r.ok) return json(req, { ok: false, error: "tomtom", st: r.st });
+      const out = { at: now, pts: r.pts, sec: r.sec, min: r.min, free: r.free, km: r.km };
+      const keep = Object.entries(C.r || {}).filter(([k, v]) => k !== sig && v && now - v.at < 3 * 3600000).sort((x, y) => y[1].at - x[1].at).slice(0, 4);
+      await env.KV.put("rt:" + id, JSON.stringify({ d: day, n: n + 1, r: { ...Object.fromEntries(keep), [sig]: out } }));
+      return json(req, { ok: true, ...out });
     }
     if (path === "/api/traffic") {
       const now = Date.now();

@@ -26,7 +26,22 @@ jobs:
           IDX=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/index")
           # vacances scolaires lues par le serveur (données publiques : noms et dates)
           VAC=$(curl -s --max-time 30 "$URL/api/vacances?z=C&fresh=1" | jq -c '{ok:(.ok//false),zone,stale,error,n:((.list//[])|length),first:((.list//[])[0]//null),next:((.list//[])[1]//null)}' 2>/dev/null || echo '{"ok":"err"}')
-          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"calProbe\":$CAL_PROBE,\"addProbe\":$ADD_PROBE,\"carProbe\":$CAR_PROBE,\"wimgProbe\":$WIMG_PROBE,\"vacances\":$VAC,\"couples\":[" > diag/result.json
+          # carte 3D (version 69) : la bibliothèque MapLibre, les tuiles et les polices d'OpenFreeMap répondent-elles depuis Internet (codes, tailles, noms des couches)
+          O="Origin: https://mohamedsahlilyon1-web.github.io"; T="${RUNNER_TEMP:-/tmp}"
+          MLJ=$(curl -s -L --max-time 30 -o /dev/null -w "%{http_code}:%{size_download}" "https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"; true)
+          MLC=$(curl -s -L --max-time 30 -o /dev/null -w "%{http_code}:%{size_download}" "https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css"; true)
+          TJ=$(curl -s --max-time 20 -H "$O" -D "$T/tj.h" "https://tiles.openfreemap.org/planet" || echo '{}')
+          TJC=$(grep -i '^access-control-allow-origin' "$T/tj.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
+          TT=$(echo "$TJ" | jq -r '.tiles[0]//""' 2>/dev/null || true)
+          XY=$(python3 -c "import math;n=2**14;la,lo=43.7384,7.4246;print(int((lo+180)/360*n),int((1-math.asinh(math.tan(math.radians(la)))/math.pi)/2*n))")
+          TU=$(echo "$TT" | sed "s/{z}/14/;s/{x}/${XY% *}/;s/{y}/${XY#* }/")
+          TL=$( [ -n "$TT" ] && curl -s --max-time 20 -H "$O" -D "$T/tl.h" -o "$T/tl.bin" -w "%{http_code}:%{size_download}" "$TU"; true)
+          TLC=$(grep -i '^access-control-allow-origin' "$T/tl.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
+          TLK=$(python3 -c "import gzip,json,sys;d=open(sys.argv[1],'rb').read();d=gzip.decompress(d) if d[:2]==b'\x1f\x8b' else d;print(json.dumps({k:(k.encode() in d) for k in ['building','transportation','transportation_name','water','landuse','landcover','park','place','render_height','render_min_height','brunnel','name:fr','name:latin']}))" "$T/tl.bin" 2>/dev/null || echo '{}')
+          GL=""
+          for f in "Noto%20Sans%20Regular" "Noto%20Sans%20Bold" "Noto%20Sans%20Italic"; do GL="$GL\"$(curl -s --max-time 20 -H "$O" -o /dev/null -w "%{http_code}:%{size_download}" "https://tiles.openfreemap.org/fonts/$f/0-255.pbf"; true)\","; done
+          MAP=$(echo "$TJ" | jq -c --arg mlj "$MLJ" --arg mlc "$MLC" --arg tjc "$TJC" --arg tl "$TL" --arg tlc "$TLC" --arg tt "$TT" --argjson tlk "$TLK" --argjson gl "[${GL%,}]" '{lib:{js:$mlj,css:$mlc},tilejson:{cors:$tjc,tiles:$tt,swCache:($tt|test("^https://tiles[.]openfreemap[.]org/planet/[0-9]{8}_[^/]+/[{]z[}]/[{]x[}]/[{]y[}][.]pbf$")),attribution:((.attribution//"")|length>0),minzoom,maxzoom,layers:[(.vector_layers//[])[]|.id]},tile:{z14:$tl,cors:$tlc,has:$tlk},glyphs:$gl}' 2>/dev/null || echo '{"err":1}')
+          echo "{\"now\":$(date +%s)000,\"keyStatus\":$KEY_STATUS,\"calProbe\":$CAL_PROBE,\"addProbe\":$ADD_PROBE,\"carProbe\":$CAR_PROBE,\"wimgProbe\":$WIMG_PROBE,\"vacances\":$VAC,\"map\":$MAP,\"couples\":[" > diag/result.json
           first=1
           for id in $(echo "$IDX" | jq -r '.[]?'); do
             V=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/c:$id")
@@ -41,6 +56,8 @@ jobs:
             # trafic en direct (version 68) : la clé TomTom est-elle là (jamais la clé elle-même), et les dernières vérifications (nombres seulement)
             TK=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/tk:$id" | jq -c '{has:((.k//"")|length>0),agoMin:(if (.at//0)>0 then ((now*1000-.at)/60000|floor) else null end)}' 2>/dev/null || echo '{"has":false}')
             TF=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/tf:$id" | jq -c 'if type=="object" and (has("errors")|not) then {n:length,checks:[.[]|{agoMin:((now*1000-(.at//0))/60000|floor),depInMin:(((.dep//0)-now*1000)/60000|floor),k,d,al,sent,err}]} else {n:0} end' 2>/dev/null || echo '{"n":0}')
+            # carte 3D (version 69) : les itinéraires avec le trafic demandés aujourd'hui (nombres seulement)
+            RT=$(curl -s -H "$AUTH" "$API/accounts/$ACC/storage/kv/namespaces/$KV/values/rt:$id" | jq -c 'if type=="object" and (has("errors")|not) then {day:.d,n:.n,routes:((.r//{})|length)} else {n:0} end' 2>/dev/null || echo '{"n":0}')
             CK=$(printf 'together-cal:%s' "$TOK" | sha256sum | cut -c1-32)
             CH=""
             for u in $(echo "$KC" | jq -r '.map|keys[]'); do
@@ -72,7 +89,7 @@ jobs:
             # « Tout marche ? » vu du serveur (option 12) : versions, notifications, widget, calendrier, Siri ; prénoms et identifiants jamais écrits
             HL=$(curl -s -X POST -H "Content-Type: application/json" -H "Origin: https://mohamedsahlilyon1-web.github.io" --max-time 20 -d "$(jq -nc --arg c "$id" --arg t "$TOK" '{couple:$c,token:$t}')" "$URL/api/health" | jq -c '{ok:(.ok//false),gone:(.gone//0),phones:((.u//{})|to_entries|map({u:(.key[0:4]),v:.value.v,agoMin:(if .value.at>0 then ((now*1000-.value.at)/60000|floor) else null end),dev:(.value.dev//""),subs:(.value.subs|length),subsDev:(.value.subs|map(.dev)),w:(if .value.w then {agoMin:((now*1000-.value.w.at)/60000|floor),v:.value.w.v} else null end),calAgoMin:(if .value.cal>0 then ((now*1000-.value.cal)/60000|floor) else null end),addAgoMin:(if .value.add>0 then ((now*1000-.value.add)/60000|floor) else null end),carAgoMin:(if .value.car>0 then ((now*1000-.value.car)/60000|floor) else null end),pushOkAgoMin:(if .value.ok>0 then ((now*1000-.value.ok)/60000|floor) else null end),pushBad:(.value.bad.st//null)}))}' 2>/dev/null || echo '{"ok":"err"}')
             [ $first = 1 ] || echo "," >> diag/result.json; first=0
-            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"traffic\":{\"key\":$TK,\"tf\":$TF},\"health\":$HL,\"recipe\":[${RP%,}],\"page\":[${PG%,}],\"widgetApi\":{${W%,}}}" >> diag/result.json
+            echo "{\"id\":\"${id:0:4}…\",\"state\":$S,\"traffic\":{\"key\":$TK,\"tf\":$TF,\"rt\":$RT},\"health\":$HL,\"recipe\":[${RP%,}],\"page\":[${PG%,}],\"widgetApi\":{${W%,}}}" >> diag/result.json
           done
           echo "]}" >> diag/result.json
           cat diag/result.json

@@ -1,10 +1,12 @@
 // Garde l'app disponible même avec une connexion faible. Les données restent synchronisées par Firebase.
-const CACHE = "agenda-a-deux-v68";
+const CACHE = "agenda-a-deux-v69";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})); self.skipWaiting(); });
 // Bibliothèques externes à version fixe (Firebase, Leaflet) : gardées sur le téléphone, chargées instantanément
 const LIBS = "together-libs-v1";
-self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE && k !== LIBS).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
+// Carte 3D : les tuiles et les polices d'OpenFreeMap (adresses datées, qui ne changent jamais), les 800 dernières
+const TILES = "together-tiles-v1";
+self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE && k !== LIBS && k !== TILES).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", (e) => {
   const u = new URL(e.request.url);
   // Fichier calendrier fabriqué à la volée : agenda.ics?d=<contenu>
@@ -24,6 +26,13 @@ self.addEventListener("fetch", (e) => {
   }
   if (u.hostname === "fonts.gstatic.com" || (u.hostname === "www.gstatic.com" && u.pathname.startsWith("/firebasejs/")) || (u.hostname === "unpkg.com" && /@\d+\.\d+\.\d+/.test(u.pathname))) {
     e.respondWith(caches.open(LIBS).then((c) => c.match(e.request).then((hit) => hit || fetch(e.request).then((r) => { if (r.ok || r.type === "opaque") c.put(e.request, r.clone()); return r; }))));
+    return;
+  }
+  if (u.hostname === "tiles.openfreemap.org" && /^\/(planet\/\d{8}_[^/]+\/\d+\/\d+\/\d+\.pbf|fonts\/)/.test(u.pathname)) {
+    e.respondWith(caches.open(TILES).then((c) => c.match(e.request).then((hit) => hit || fetch(e.request).then((r) => {
+      if (r.ok) { c.put(e.request, r.clone()); if (Math.random() < 0.05) c.keys().then((ks) => { for (const k of ks.slice(0, Math.max(0, ks.length - 800))) c.delete(k); }); }
+      return r;
+    }))));
     return;
   }
   if (u.origin !== location.origin) return;
