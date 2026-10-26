@@ -9030,9 +9030,11 @@ function tgmGrad(o,p,done){const a=tgmMix(o.col,"#ffffff",.45),T="rgba(0,0,0,0)"
   if(done>0){const q=Math.min(.998,done);return ["interpolate",["linear"],["line-progress"],0,g,q,g,q+.001,tgmMix(a,o.col,q),1,o.col];}
   if(p>=1)return ["interpolate",["linear"],["line-progress"],0,a,1,o.col];
   const q=Math.max(.0005,Math.min(.998,p));return ["interpolate",["linear"],["line-progress"],0,a,q,tgmMix(a,o.col,q),q+.001,T,1,T];}
-function tgmDraw(map,id,p,o){if(!map.getLayer(id+"-line"))return;const T="rgba(0,0,0,0)",cut=c=>p>=1?["interpolate",["linear"],["line-progress"],0,c,1,c]:["interpolate",["linear"],["line-progress"],0,c,Math.max(.0005,Math.min(.998,p)),c,Math.min(.999,p+.001),T,1,T];
+// une carte fermée entre-temps (vue 3D refermée pendant que le tracé se dessine) : rien à faire
+const tgmHas=(map,id)=>{try{return !!(map&&map.style&&map.getLayer(id));}catch(_){return false;}};
+function tgmDraw(map,id,p,o){if(!tgmHas(map,id+"-line"))return;const T="rgba(0,0,0,0)",cut=c=>p>=1?["interpolate",["linear"],["line-progress"],0,c,1,c]:["interpolate",["linear"],["line-progress"],0,c,Math.max(.0005,Math.min(.998,p)),c,Math.min(.999,p+.001),T,1,T];
   try{map.setPaintProperty(id+"-line","line-gradient",tgmGrad(o,p,0));map.setPaintProperty(id+"-glow","line-gradient",cut(o.col));map.setPaintProperty(id+"-case","line-gradient",cut(o.dark?"#04070b":"#ffffff"));}catch(_){}}
-function tgmAnimDraw(map,id,o,ms){const t0=performance.now(),step=t=>{if(!map.getLayer||!map.getLayer(id+"-line"))return;const k=Math.min(1,(t-t0)/ms);tgmDraw(map,id,1-Math.pow(1-k,3),o);if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}
+function tgmAnimDraw(map,id,o,ms){const t0=performance.now(),step=t=>{if(!tgmHas(map,id+"-line"))return;const k=Math.min(1,(t-t0)/ms);tgmDraw(map,id,1-Math.pow(1-k,3),o);if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}
 function tgmMk(map,html,ll,o){const w=document.createElement("div");w.innerHTML=html;const e=w.firstElementChild;
   return new maplibregl.Marker({element:e,anchor:(o&&o.anchor)||"center",...(o&&o.flat?{pitchAlignment:"map",rotationAlignment:"map"}:{})}).setLngLat(ll).addTo(map);}
 function tgmPinHtml(uid,name){const a=avatar(uid||myId,"tgm-av");return '<div class="tgm-pin">'+a.outerHTML+'<span>'+htmlEsc(name||firstName(uid||myId))+'</span></div>';}
