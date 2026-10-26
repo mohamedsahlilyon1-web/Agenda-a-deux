@@ -8698,7 +8698,7 @@ function trafficSection(){
       const errs=Object.values(r.tf||{}).filter(x=>x&&x.err);
       box.append(el("div",{class:"tf-on"},el("span",{class:"tf-ic",html:CAR_IC}),el("div",{},el("strong",{},"Trafic en direct activé"),
           el("span",{},"Clé TomTom …"+(r.last4||"")+(r.at?", ajoutée "+agoTxt(r.at):"")+". Elle sert à vous deux."))),
-        errs.length?el("p",{class:"note tf-err"},"La dernière vérification n'a pas abouti (TomTom : code "+errs[errs.length-1].err+"). Si ça se répète, recolle ta clé."):null,
+        ...(errs.length?[el("p",{class:"note tf-err"},"La dernière vérification n'a pas abouti (TomTom : code "+errs[errs.length-1].err+"). Si ça se répète, recolle ta clé.")]:[]),
         el("div",{class:"pchips"},el("button",{type:"button",class:"btn quiet",style:"color:var(--danger)",onclick:async e=>{e.currentTarget.disabled=true;
           const x=await pushPost("/api/traffic",{uid:myId,del:1});if(x&&x.ok){tfHas=false;tfData={};toast("Clé retirée : plus de vérification du trafic");scheduleRender();}draw();}},"Retirer la clé")));
       return;}
