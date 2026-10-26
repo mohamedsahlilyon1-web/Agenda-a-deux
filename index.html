@@ -1456,6 +1456,21 @@ html.locked .lock{display:flex;position:fixed;inset:0;z-index:2147483000;backgro
 .tgm-card .maplibregl-ctrl-attrib,.tp-map .maplibregl-ctrl-attrib,.tgm-full .maplibregl-ctrl-attrib{font-size:10px}
 .tgm-full .maplibregl-ctrl-bottom-right{bottom:auto;top:calc(10px + env(safe-area-inset-top,0px))}
 @media (prefers-reduced-motion:reduce){.tgm-card .tgm-gl{transition:none}}
+/* Version 70 : sur la grande carte du prochain départ, l'heure et le titre vont ensemble.
+   Le titre de l'évènement passe juste sous l'heure, en grand, dans la même écriture ; « C'est l'heure de partir » suit, plus petit ; l'heure du rendez-vous rejoint la destination. */
+.sign .big{font-size:4.7rem;margin:8px 0 4px}
+.sign .what{font-family:var(--fd,var(--f));font-size:1.62rem;line-height:1.1;font-weight:700;letter-spacing:-.025em;color:var(--hero-ink);font-variation-settings:"wdth" 86;
+  margin:2px 0 10px;overflow-wrap:anywhere;text-wrap:pretty;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.sign .in{font-size:1.02rem;font-weight:650;letter-spacing:0;color:var(--hero-soft)}
+.trip-to .trip-at{flex:none;font-weight:650;color:var(--hero-soft);white-space:nowrap}
+/* la destination et son heure gardent la place qu'il leur faut ; le pointillé se resserre (24 px au moins) */
+.sign .trip{grid-template-columns:auto minmax(24px,1fr) minmax(0,auto)}
+.sign .trip-to{max-width:none}
+.sign.soon .in,.sign.trip-live .in{color:var(--sun)}
+:root[data-skin="jardin"] .sign .what,:root[data-skin="velours"] .sign .what{font-size:1.8rem;font-style:italic;font-weight:500;letter-spacing:-.01em;font-variation-settings:"SOFT" 100,"opsz" 72}
+/* avec un décor de saison (à droite, en haut), le titre lui laisse sa place */
+:root[data-season] #next .what{margin-right:40px}
+@media (max-width:380px){.sign .big{font-size:4.2rem}.sign .what{font-size:1.5rem}:root[data-skin="jardin"] .sign .what,:root[data-skin="velours"] .sign .what{font-size:1.66rem}}
 </style>
 <script>(function(){try{var R=document.documentElement,L=localStorage;if(!L.getItem('a2.look2')){L.setItem('a2.look2','1');L.removeItem('a2.skin');}var _sk=L.getItem('a2.skin');if(/^(lavande|ocean|corail|graphite)$/.test(_sk||'')){L.removeItem('a2.skin');_sk=null;}
 var cc=L.getItem('a2.customCss');if(cc){var st=document.createElement('style');st.id='skin-perso';st.textContent=cc;document.head.appendChild(st);}else if(_sk==='perso')_sk=null;
@@ -1778,11 +1793,11 @@ function renderNext(upcoming){
   n.append(...[
     el("div",{class:"k"},(ev.pickedUp?firstName(driverOf(ev))+" passe te prendre":trip?"Prochain départ":"Prochain moment à deux")+(hk?", "+MOTIFS[hk].name.toLowerCase():"")),
     el("div",{class:"big num"},hhmm(ref)),
+    el("div",{class:"what"},ev.title||"Évènement"),
     el("div",{class:"in"},when),
-    el("div",{class:"what"},ev.title+(trip?", rendez-vous à "+ev.time:"")),
     lateLine(ev),
     trip?tfLine(ev):null,
-    trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||ev.title))):null,
+    trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||"Rendez-vous"),el("b",{class:"trip-at"},"à "+ev.time))):null,
     trip?el("div",{class:"trip-meta"},ev.pickedUp?"Prépare-toi pour "+hhmm(ref)+(ev.pickup?", "+shortAddr(ev.pickup):"")+". Arrivée à "+ev.time+".":fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null,
     trip&&hasPickup(ev)&&!ev.pickedUp?el("div",{class:"pk-hero"},el("b",{class:"num"},hhmm(pickupAt(ev))),"Récupérer "+firstName(ev.pickupWho)+(ev.pickup?" · "+shortAddr(ev.pickup):"")):null].filter(Boolean));
   if(canStartTrip(ev)&&hasPickup(ev)){const b=el("button",{type:"button",class:"btn sign-btn go-live"},"Je pars : prévenir "+firstName(ev.pickupWho));b.onclick=e=>{e.stopPropagation();startTrip(ev.id,b);};n.append(b);}
@@ -8553,6 +8568,7 @@ function icsSection(){
 
 /* ---------- Aide et nouveautés ---------- */
 const NEWS=[
+  {v:"70",d:"2026-10-26",t:"Le titre de l'évènement en grand",i:["Sur la grande carte du prochain départ, le titre de l'évènement passe juste sous l'heure, en grand, dans la même écriture.","« C'est l'heure de partir » et l'heure du rendez-vous suivent juste en dessous, en doré quand le départ approche."]},
   {v:"69",d:"2026-10-26",t:"Une carte en 3D",i:["Nouvelle carte : les bâtiments en relief, sombre le soir et claire le jour, l'itinéraire lumineux qui se dessine.","Touche la carte d'un trajet : la vue 3D plein écran survole le trajet jusqu'à la destination.","Trajet en direct : la carte suit la voiture comme un GPS, dans le sens de la route. « Vue d'ensemble » montre tout le trajet.","Avec la clé TomTom, les bouchons s'affichent en orange et en rouge sur l'itinéraire, avec le retard.","Corrigé : sur l'écran du trajet en direct, le bloc « Afficher dans la voiture » ne chevauche plus le texte."],go:"lieux"},
   {v:"68",d:"2026-10-25",t:"Trafic en direct et idées cadeaux",i:["Trafic en direct : une heure avant chaque départ en voiture, Together recalcule le trajet avec le trafic réel. Si ça bouchonne : « pars à 17:33 », et l'alerte « C'est l'heure de partir » arrive plus tôt.","Une clé TomTom gratuite à coller une fois, dans Lieux et trajets (sans carte bancaire).","Mes idées cadeaux : une liste rien qu'à toi, chiffrée, que l'autre ne peut pas lire. « Idée cadeau : … » marche aussi dans Ajouter et avec Siri.","Une fois ta liste commencée : un rappel discret, rien que pour toi, 3 semaines avant son anniversaire, Noël, la Saint-Valentin et votre anniversaire de couple."],go:"gifts"},
   {v:"67",d:"2026-10-24",t:"Des réglages rangés, et vos données à l'abri",i:["Les réglages sont rangés par rubriques, avec une recherche.","« Tout marche ? » vérifie vos deux téléphones (notifications, version, widget, calendrier, Siri) et règle ce qui coince d'un toucher.","Sauvegarde : une copie automatique chaque semaine, un fichier complet avec les photos, et « Remettre » pour retrouver ce qui a été effacé.","Export de l'agenda pour Google Agenda ou Outlook.","Appareils et sécurité : vos téléphones, retirer un ancien téléphone, verrouiller Together avec Face ID.","Mode vacances : le quotidien en pause pendant un séjour, reprise toute seule au retour."],go:"check"},
@@ -9281,7 +9297,7 @@ function mapSection(){
 /* ---------- Au démarrage (version 69) ---------- */
 function opt14Init(){try{const now=Date.now();if(tgmOn()&&!tgmReady()&&[...events.values()].some(e=>e.routeGeo&&startOf(e).getTime()>now&&startOf(e).getTime()<now+7*864e5))tgmLib().catch(()=>{});}catch(_){}}
 
-const APP_V="69";
+const APP_V="70";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -10203,8 +10219,8 @@ function tripHero(n,t){
   const b=el("button",{type:"button",class:"btn sign-btn"},S.mine?"Voir le trajet":"Suivre en direct");
   b.onclick=e=>{e.stopPropagation();openTrip(t.id);if(!S.mine&&lsGet("a2.lockFollow")!=="0")lockStart(t.id,true);};
   n.append(el("div",{class:"k"},el("span",{class:"tl-live"+(S.stale?" stale":""),"aria-hidden":"true"}),k),
-    el("div",{class:"big num"},big),el("div",{class:"in"},inT),
-    el("div",{class:"what"},(t.title||(S.ev&&S.ev.title)||"")+(S.stale&&!here?" · dernière position "+agoShort(S.age):"")),b);
+    el("div",{class:"big num"},big),el("div",{class:"what"},t.title||(S.ev&&S.ev.title)||"Trajet"),
+    el("div",{class:"in"},[inT,S.stale&&!here?"dernière position "+agoShort(S.age):""].filter(Boolean).join(" · ")),b);
 }
 /* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
 let pendingLink=/[?&](trip|ev|add|shop|wishes|mem|check|set|news|gifts)=/.test(location.search)?location.search:null;
