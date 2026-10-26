@@ -1471,6 +1471,39 @@ html.locked .lock{display:flex;position:fixed;inset:0;z-index:2147483000;backgro
 /* avec un décor de saison (à droite, en haut), le titre lui laisse sa place */
 :root[data-season] #next .what{margin-right:40px}
 @media (max-width:380px){.sign .big{font-size:4.2rem}.sign .what{font-size:1.5rem}:root[data-skin="jardin"] .sign .what,:root[data-skin="velours"] .sign .what{font-size:1.66rem}}
+/* Version 71 : la surprise et les départs séparés */
+.sur-line{display:grid;grid-template-columns:18px 1fr;align-items:start;column-gap:8px;row-gap:6px;margin-top:6px;font-size:.9rem;font-weight:600;color:var(--sur,#C026D3)}
+.sur-line .sur-ic{display:inline-flex;width:18px;height:18px;margin-top:2px}
+.sur-line .sur-ic svg{width:18px;height:18px}
+.sur-line .sur-open{grid-column:2;justify-self:start;padding:4px 10px;font-size:.84rem}
+.sign .sur-line{color:var(--sun);font-size:.95rem;margin-top:8px}
+.sep-line{color:var(--muted);margin-top:2px}
+.sur-field .grid2{margin-top:8px}
+/* Version 72 : météo du départ, voiture garée, mi-chemin, bilan du mois */
+.sign .wx-hero{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:.9rem;color:var(--hero-soft,var(--muted));line-height:1.3}
+.sign .wx-hero b{color:var(--hero-ink,inherit);font-size:1rem}
+.sign .wx-hero .wx-ic{width:28px;height:28px;border-radius:9px}
+.sign .wx-hero .wx-ic svg{width:17px;height:17px}
+.park-line{display:grid;grid-template-columns:22px 1fr;align-items:center;column-gap:8px;row-gap:4px;margin-top:6px;font-size:.9rem;font-weight:600}
+.park-ic{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:#2563EB;color:#fff;font-weight:800;font-size:.8rem;flex:none;font-family:var(--f)}
+.park-line .park-go{grid-column:2;justify-self:start;padding:4px 10px;font-size:.84rem}
+.park-bar{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border-radius:18px;background:var(--surface);border:1px solid color-mix(in oklab,#2563EB 30%,transparent)}
+.park-bar .park-ic{width:34px;height:34px;border-radius:10px;font-size:1.05rem}
+.park-bar .park-t{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}
+.park-bar .park-t small{color:var(--muted);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.park-bar .btn{padding:7px 14px}
+.park-x{border:0;background:none;color:var(--muted);font-size:1.3rem;padding:4px 6px;cursor:pointer}
+.mid-box{margin-top:8px}
+.mid-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.mid-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--line-soft,rgba(127,127,127,.25));background:var(--bg);color:inherit;font:inherit;cursor:pointer}
+.mid-row small{color:var(--muted);font-size:.82rem}
+.mid-row .mid-km{font-size:.84rem;font-weight:650;color:var(--accent,inherit)}
+.fix.learn{background:color-mix(in oklab,#2563EB 12%,var(--surface))}
+.month-card{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 14px;padding:12px 14px;border-radius:18px;border:0;background:var(--surface);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.month-card .mt-ic{margin:0}
+.month-card .mc-t{display:flex;flex-direction:column;line-height:1.3}
+.month-card small{color:var(--muted)}
+.bl-per{margin-bottom:6px}
 </style>
 <script>(function(){try{var R=document.documentElement,L=localStorage;if(!L.getItem('a2.look2')){L.setItem('a2.look2','1');L.removeItem('a2.skin');}var _sk=L.getItem('a2.skin');if(/^(lavande|ocean|corail|graphite)$/.test(_sk||'')){L.removeItem('a2.skin');_sk=null;}
 var cc=L.getItem('a2.customCss');if(cc){var st=document.createElement('style');st.id='skin-perso';st.textContent=cc;document.head.appendChild(st);}else if(_sk==='perso')_sk=null;
@@ -1539,7 +1572,7 @@ const ICON = {
 };
 
 let db=null, user=null, sample=null, myId=null;
-let events=new Map(), places=new Map(), settings={home:"",mode:"car"};
+let events=new Map(), eventsRaw=new Map(), places=new Map(), settings={home:"",mode:"car"};
 let firstSnap=true, showPast=false, canWrite=true;
 const expanded=new Set();
 
@@ -1761,7 +1794,7 @@ function hintShown(){try{const v=localStorage.getItem("ad-hint")||"0";localStora
 let heroShown=false;
 function renderNext(upcoming){
   const n=$("#next"),now=Date.now();
-  renderToday();renderWeek();
+  renderToday();renderWeek();parkBar();
   n.classList.remove("trip-live");
   {const lt=myLiveTrip();if(lt){tripHero(n,lt);return;}}
   const ev0=upcoming.filter(e=>!isAllDay(e)&&!e.busy).map(e=>viewFor(e,myId)).find(e=>(hasTripEv(e)?departOf(e):startOf(e)).getTime()>now-15*60000);
@@ -1796,9 +1829,11 @@ function renderNext(upcoming){
     el("div",{class:"what"},ev.title||"Évènement"),
     el("div",{class:"in"},when),
     lateLine(ev),
+    surpriseLine(ev,true),
     trip?tfLine(ev):null,
     trip?el("div",{class:"trip"},from,el("span",{class:"trip-line"},el("b",{style:"width:"+pct+"%"})),el("span",{class:"trip-to"},el("span",{},shortAddr(ev.location)||"Rendez-vous"),el("b",{class:"trip-at"},"à "+ev.time))):null,
     trip?el("div",{class:"trip-meta"},ev.pickedUp?"Prépare-toi"+(ev.pickup?" à "+shortAddr(ev.pickup):"")+", "+firstName(driverOf(ev))+" arrive à "+hhmm(ref)+".":fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode]+", "+(ev.marginMin||0)+" min de marge comprises"):null,
+    heroWx(ev),
     trip&&hasPickup(ev)&&!ev.pickedUp?el("div",{class:"pk-hero"},el("b",{class:"num"},hhmm(pickupAt(ev))),"Récupérer "+firstName(ev.pickupWho)+(ev.pickup?" · "+shortAddr(ev.pickup):"")):null].filter(Boolean));
   if(canStartTrip(ev)&&hasPickup(ev)){const b=el("button",{type:"button",class:"btn sign-btn go-live"},"Je pars : prévenir "+firstName(ev.pickupWho));b.onclick=e=>{e.stopPropagation();startTrip(ev.id,b);};n.append(b);}
   else if(trip&&IS_IOS&&canWrite){const b=alarmButton(ev,"sign-btn");if(b)n.append(b);}
@@ -1864,6 +1899,7 @@ function gcalUrl(ev){
 
 /* ---------- Thèmes selon l'évènement : couleur et dessin choisis d'après le titre ---------- */
 const MOTIFS={
+  surprise:{name:"Surprise",c:"#C026D3",re:/\bsurprise\b/,svg:'<path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'},
   dent:{name:"Dentiste",c:"#0EA5A0",re:/\bdent|orthodont|detartr|carie|implant/,svg:'<path d="M7.5 3.5c-2.4 0-4 1.9-4 4.6 0 2.2.8 3.6 1.4 5.5.6 1.9.8 4.4 1.4 6.2.4 1.1 1.8 1.2 2.2.1.5-1.6.9-4.4 2.1-4.4h2.8c1.2 0 1.6 2.8 2.1 4.4.4 1.1 1.8 1 2.2-.1.6-1.8.8-4.3 1.4-6.2.6-1.9 1.4-3.3 1.4-5.5 0-2.7-1.6-4.6-4-4.6-1.8 0-2.6 1-4.5 1s-2.7-1-4.5-1z"/><path d="M9 7.5c1 .5 2 .7 3 .7"/>'},
   soin:{name:"Santé",c:"#2F7BEA",re:/medecin|docteur|\bdr\b|kine|osteo|pharma|hopital|clinique|analyse|prise de sang|vaccin|ophtalmo|dermato|gyneco|\bradio|\birm\b|\becho|sante|generaliste|pediatre|\bpsy|infirmi|sage-femme/,svg:'<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/>'},
   amour:{name:"En amoureux",c:"#E11D48",re:/erotique|romanti|amoureu|saint[- ]valentin|valentin|tete[- ]a[- ]tete|galant|soiree a deux|nuit a deux|moment a deux|en couple|calin|sexy|coquin|lune de miel|anniversaire de (mariage|rencontre)|notre anniversaire|bisou|love/,svg:'<path d="M12 20.5s-7.5-4.4-7.5-10.2C4.5 7.4 6.6 5.5 9 5.5c1.3 0 2.4.6 3 1.6.6-1 1.7-1.6 3-1.6 2.4 0 4.5 1.9 4.5 4.8 0 5.8-7.5 10.2-7.5 10.2z"/><path d="M8 10c.3-1 1-1.5 1.8-1.6"/>'},
@@ -2779,6 +2815,7 @@ function renderMemView(){
   const box=$("#view-mem");if(!box)return;box.textContent="";
   box.append(el("h2",{class:"view-h"},"Nos souvenirs"));
   {const an=annivCard();if(an)box.append(an);}
+  {const mc=monthCard();if(mc)box.append(mc);}
   const due=feedbackDue();
   if(due.length){box.append(el("div",{class:"pgroup-h"},"À raconter"));for(const e of due.slice(0,4))box.append(feedbackCard(e));}
   const list=memList(),outs=outingItems(),yr=String(new Date().getFullYear());
@@ -2972,7 +3009,7 @@ function bilanFilmStats(S){return [{n:S.n,label:S.n>1?"sorties à deux":"sortie 
 function yearMems(y){return memList().filter(m=>m.date.startsWith(String(y))).reverse();}
 function yearFilm(y){y=+y;const S=coupleStats(new Date(y,0,1).getTime(),new Date(y+1,0,1).getTime());
   openFilm(yearMems(y),{title:"Notre année "+y,sub:S.n+(S.n>1?" sorties à deux":" sortie à deux"),kind:"bilan",per:2,stats:bilanFilmStats(S),end:"À l'année prochaine"});}
-function openBilan(y){
+function openBilanV71(y){
   const root=$("#sheet-root");root.textContent="";
   y=+y||new Date().getFullYear();
   const years=[...new Set(outingItems().map(x=>+String(x.date).slice(0,4)).filter(Boolean))].sort((a,b)=>b-a);if(!years.includes(y))years.unshift(y);
@@ -4643,7 +4680,7 @@ async function enablePush(btn){
   finally{if(btn){btn.disabled=false;}}
 }
 // Rappels programmés (envoyés par le serveur, même app fermée)
-function pushItems(){
+function pushItemsBase(){
   const now=Date.now(),items=[],mem=memberIds();
   for(const ev of events.values()){
     const st=startOf(ev).getTime();if(st<now-6*3600000||st>now+35*86400000)continue;
@@ -4680,6 +4717,7 @@ function pushItems(){
   {const nd=outingNudge(events.values(),now);if(nd&&nd.at>now+30000&&!mem.some(u=>awayOn(u,ymd(new Date(nd.at)))))items.push({id:"nudge:"+ymd(new Date(nd.at)),to:mem,at:nd.at,tag:"nudge",title:nd.title,body:nd.body});}
   items.push(...annivPushes(now,mem));
   items.push(...couplePushes(now,mem));
+  items.push(...bilanPushes(now,mem));
   // ne pas déranger (22 h à 7 h) : un rappel tombant la nuit attend 7 h, ou disparaît si le moment est déjà passé.
   // Les départs (« c'est l'heure de partir ») et le résumé du matin passent toujours.
   const out=[];
@@ -4846,7 +4884,7 @@ function widgetData(){
 }
 // Widget de chacun : calculé par n'importe quel téléphone, pour que l'ajout de l'un apparaisse aussi chez l'autre
 function widgetsAll(){const out={},me=myId;
-  for(const uid of memberIds()){if(uid===me)continue;try{myId=uid;out[uid]=widgetData();delete out[uid].th;}catch(_){}finally{myId=me;}}
+  for(const uid of memberIds()){if(uid===me)continue;const ke=events;try{myId=uid;events=personalAll(uid);out[uid]=widgetData();delete out[uid].th;}catch(_){}finally{myId=me;events=ke;}}
   return out;}
 let pushSyncT=null;
 function syncPush(now){
@@ -5194,7 +5232,7 @@ function calFeed(uid){
   L.push("END:VCALENDAR");
   return L.map(icsFold).join("\r\n")+"\r\n";
 }
-function calFeeds(){const o={};for(const uid of memberIds()){try{o[uid]=calFeed(uid);}catch(_){}}return o;}
+function calFeeds(){const o={},ke=events;for(const uid of memberIds()){try{events=personalAll(uid);o[uid]=calFeed(uid);}catch(_){}finally{events=ke;}}return o;}
 function calSubOn(){return lsGet("a2.calSub")==="1";}
 function inMyCal(ev){const w=whoOf(ev);return calSubOn()&&(w==="both"||w===myId)&&!((ev.calendarAdded||{})[myId]>=(ev.updatedAt||0));}
 async function calFeedUrl(base,uid){
@@ -5322,6 +5360,7 @@ function pickupLine(ev){
     el("span",{},me?dn+" passe te prendre":"Récupérer "+pn),el("small",{},shortAddr(ev.pickup)));
 }
 function stop(ev,who){
+  const cw=canWrite&&!ev._masked;
   const hasTrip=(+ev.travelMin||0)>0;
   const mk=motifOf(ev);
   const ov=ovMap.get(ev.id),ovTxt=ov?"Même créneau que « "+(ov.title||"un évènement")+" » ("+(isAllDay(ov)?"toute la journée":ov.time)+")":"";
@@ -5334,6 +5373,7 @@ function stop(ev,who){
     el("div",{class:"body"},
       el("div",{class:"dep-line"},el("span",{class:"pill"},"Départ"),ev.origin?"de "+shortAddr(ev.origin):""),
       hasPickup(ev)?pickupLine(ev):null,
+      sepLine(ev),
       el("div",{class:"small"},fmtDur(ev.travelMin)+" "+MODE_IN[ev.mode],el("span",{class:"more-info"},", "+(ev.marginMin||0)+" min de marge"+(placeExtra(ev.location)?", "+placeExtra(ev.location)+" min sur place":""))))));
 
   const tags=el("div",{class:"tags more-info"});
@@ -5357,16 +5397,17 @@ function stop(ev,who){
     if(canStartTrip(ev))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();startTrip(ev.id,e.currentTarget);}},(hasPickup(ev)?"Je pars : prévenir ":"J'y vais : prévenir ")+firstName(hasPickup(ev)?ev.pickupWho:otherId())));
     if(canGoHome(ev))links.prepend(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();startHomeTrip(ev,e.currentTarget);}},"Je rentre : prévenir "+firstName(otherId())));
     else if(lt&&(lt.to===myId||lt.by===myId))links.prepend(el("button",{class:"btn primary",type:"button",onclick:e=>{e.stopPropagation();openTrip(ev.id);}},lt.by===myId?"Voir le trajet":"Suivre en direct"));}
-  if(canWrite&&canStartHere(ev)) links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();tripFromHere(ev,e.currentTarget);}},"Partir d'où je suis"));
+  if(canPark(ev)&&!parkOn(ev))links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();parkHere(ev.id,e.currentTarget);}},"Garé ici"));
+  if(cw&&canStartHere(ev)) links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();tripFromHere(ev,e.currentTarget);}},"Partir d'où je suis"));
   if(tfCan(ev)) links.append(el("button",{class:"btn",type:"button",onclick:e=>{e.stopPropagation();tfCheckNow(ev,e.currentTarget);}},"Vérifier le trafic"));
-  if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openPostpone(ev)},"Reporter"));
-  if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
-  if(canWrite&&cdAble(ev)) links.append(el("button",{class:"btn"+(ev.countdown?" on":""),type:"button","aria-pressed":String(!!ev.countdown),onclick:e=>{e.stopPropagation();toggleCountdown(ev);}},(ev.countdown?"✓ ":"")+"Compte à rebours"));
-  if(canWrite) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
+  if(cw) links.append(el("button",{class:"btn",type:"button",onclick:()=>openPostpone(ev)},"Reporter"));
+  if(cw) links.append(el("button",{class:"btn",type:"button",onclick:()=>openMotif(ev)},"Thème"));
+  if(cw&&cdAble(ev)) links.append(el("button",{class:"btn"+(ev.countdown?" on":""),type:"button","aria-pressed":String(!!ev.countdown),onclick:e=>{e.stopPropagation();toggleCountdown(ev);}},(ev.countdown?"✓ ":"")+"Compte à rebours"));
+  if(cw) links.append(el("button",{class:"btn",type:"button",onclick:()=>openEditor(draftFromEvent(ev),"Copie de « "+(ev.title||"l'évènement")+" » : choisis le jour et l'heure.")},"Refaire"));
 
   if(ev.busy){links.textContent="";tags.textContent="";}
   const author=who(ev.createdBy), editor=ev.updatedBy&&ev.updatedBy!==ev.createdBy?who(ev.updatedBy):null;
-  const moreBtn=canWrite?el("button",{class:"more",type:"button","aria-label":"Modifier ou supprimer",html:ICON.more,onclick:()=>setOpen(front,!front.dataset.open)}):null;
+  const moreBtn=cw?el("button",{class:"more",type:"button","aria-label":"Modifier ou supprimer",html:ICON.more,onclick:()=>setOpen(front,!front.dataset.open)}):null;
 
   front.append(el("div",{class:"leg "+(hasTrip?"last":"solo")},
     isAllDay(ev)?el("div",{class:"t allday"},"Toute la journée"):el("div",{class:"t num"},ev.time||""),
@@ -5376,7 +5417,9 @@ function stop(ev,who){
       ev.busy?el("div",{class:"where busy-where"},(isAllDay(ev)?"Toute la journée":"Jusqu'à "+hhmm(endOf(ev)))+(busyName(ev)?" · vu « Occupé » par "+firstName(otherId()||myId):" · détails privés")):
       el("div",{class:"where"},mk?el("span",{class:"motif-chip",html:motifSvg(mk)+"<span>"+MOTIFS[mk].name+"</span>"}):null,[mk?"":(CATS[ev.category]||"Autre"),ev.location].filter(Boolean).join(", ")),
       lateLine(ev),
+      surpriseLine(ev),
       tfLine(ev),
+      parkLine(ev),
       showReturn(ev)?el("div",{class:"small more-info ret-line"},"Fin vers "+hhmm(endOf(ev))+", retour à la maison vers "+hhmm(returnAt(ev))):null,
       tags.childNodes.length?tags:null,
       links,
@@ -5406,7 +5449,7 @@ function stop(ev,who){
     toggle();
   });
   front.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target===front){e.preventDefault();toggle();}});
-  if(canWrite){
+  if(cw){
     wrap.append(el("div",{class:"behind"},
       el("button",{class:"b-edit",type:"button",html:ICON.edit+"<span>Modifier</span>",onclick:()=>{closeOpen();openEditor({...ev});}}),
       el("button",{class:"b-del",type:"button",html:ICON.del+"<span>Supprimer</span>",onclick:()=>removeEvent(ev)})));
@@ -6209,6 +6252,12 @@ function overlapText(x){
   const {e,ppl}=o[0],who=ppl.length>1&&memberIds().length>1?"vous avez déjà":ppl[0]===myId?"tu as déjà":firstName(ppl[0])+" a déjà";
   return "Attention : "+who+" « "+(e.title||"un évènement")+" » "+dayWord(startOf(e))+" à "+e.time+" sur ce créneau."+(o.length>1?" Et "+(o.length-1)+" autre"+(o.length>2?"s":"")+".":"");
 }
+// départs séparés : le trajet de chacun (le sien vient des champs du formulaire)
+function sepClean(y){const o={},mem=memberIds();
+  for(const [u,v] of Object.entries(y.sep||{})){if(!mem.includes(u)||!v||typeof v!=="object")continue;
+    o[u]={origin:String(v.origin||"").slice(0,200),travelMin:Math.max(0,Math.round(+v.travelMin||0)),routeGeo:cleanGeo(v.routeGeo)||null,mode:v.mode||y.mode||"car"};}
+  if(myId&&o[myId])o[myId]={origin:String(y.origin||"").slice(0,200),travelMin:Math.max(0,Math.round(+y.travelMin||0)),routeGeo:cleanGeo(y.routeGeo)||null,mode:y.mode||"car"};
+  return o;}
 function buildBody(x,d,overrides){
   const now=Date.now();
   const y={...x,...(overrides||{})};
@@ -6220,6 +6269,8 @@ function buildBody(x,d,overrides){
     ...(d.seriesId||y.seriesId?{seriesId:d.seriesId||y.seriesId}:{}),
     ...((y.motif||d.motif)?{motif:y.motif||d.motif}:{}),
     who:(y.who||d.who||"both"),
+    ...(y.surprise&&y.surprise.by&&(y.who||d.who||"both")!==y.surprise.by?{surprise:{by:y.surprise.by,hint:String(y.surprise.hint||"").slice(0,120),cover:String(y.surprise.cover||"").slice(0,60),...(y.surprise.open?{open:y.surprise.open}:{})}}:{}),
+    ...(y.sep&&typeof y.sep==="object"&&(y.who||d.who||"both")==="both"&&!y.pickup?{sep:sepClean(y)}:{}),
     ...((+y.cost||0)>0?{cost:+y.cost}:{}),
     ...(Array.isArray(y.items)||Array.isArray(d.items)?{items:(y.items||d.items).slice(0,200)}:{}),
     ...(y.shopDone||d.shopDone?{shopDone:true}:{}),
@@ -6251,11 +6302,13 @@ async function saveEventDraft(x,d,repeat,opts){
       const extra=repeat==="year"&&!(x.reminders||[]).some(r=>+r.day===7)?{reminders:[...(x.reminders||[]),{day:7,at:"18:00",label:"Dans une semaine : "+(x.title||"date importante")}]}:{};
       for(const dt of dates) await db.doc("events/"+db.collection("events").doc().id).set(buildBody(x,d,{date:ymd(dt),seriesId,...extra}));
       const how=repeatText(x,repeat).replace(/\s*\([^)]*\)$/,"").toLowerCase();
-      if(!quiet){toast(dates.length+" évènements créés ("+how+")");
+      if(!quiet&&surpriseOut(x,true)){}
+      else if(!quiet){toast(dates.length+" évènements créés ("+how+")");
         pushOther("Nouveau : "+x.title,firstName(myId)+" a ajouté « "+x.title+" » ("+how+").","ev",{k:"add",t:x.title,when:"("+how+")"});}
     }else{
       await db.doc("events/"+(d.id||db.collection("events").doc().id)).set(buildBody(x,d));
-      if(!quiet){pushOther((isNew?"Nouveau : ":"Modifié : ")+x.title,isNew?firstName(myId)+" a ajouté « "+x.title+" », "+dayParts(startOf(x))[0].toLowerCase()+" à "+x.time+".":changeText(d,x),"ev",{k:isNew?"add":"edit",t:x.title,when:dayWord(startOf(x))+(isAllDay(x)?"":" à "+x.time)});
+      if(!quiet&&surpriseOut(x,isNew)){}
+      else if(!quiet){pushOther((isNew?"Nouveau : ":"Modifié : ")+x.title,isNew?firstName(myId)+" a ajouté « "+x.title+" », "+dayParts(startOf(x))[0].toLowerCase()+" à "+x.time+".":changeText(d,x),"ev",{k:isNew?"add":"edit",t:x.title,when:dayWord(startOf(x))+(isAllDay(x)?"":" à "+x.time)});
         toast(isNew?"Enregistré, visible sur vos deux téléphones":"Modifications enregistrées pour vous deux");}
     }
     $("#input").value="";
@@ -6428,18 +6481,31 @@ function openEditor(d,info){
   let repeat=isNew&&REPEATS[d.repeat]?d.repeat:"none",who=whoOf(d);
   // L'un passe prendre l'autre : départs de deux endroits différents
   let pickOn=!!(d.pickup&&who==="both"),pkWho=d.pickupWho||otherId(),pickupMin=+d.pickupMin||0;
+  // une surprise pour l'autre ; ou chacun part de son côté pour arriver ensemble
+  let surOn=!!(d.surprise&&d.surprise.by===myId&&!d.surprise.open),sepOn=!!(d.sep&&!d.pickup&&who==="both"&&otherId()),sepOther=sepOn?sepOf(d,otherId()):null;
+  const surHint=inp("e-sur-hint",(d.surprise&&d.surprise.hint)||"","text",{placeholder:"Ex. : tenue élégante",maxlength:"120"});
+  const surCover=inp("e-sur-cover",(d.surprise&&d.surprise.cover)||"","text",{placeholder:"Surprise de "+firstName(myId),maxlength:"60"});
+  const surBox=el("div",{class:"field sur-field"});
+  const sepInp=inp("e-sep",sepOther?sepOther.origin||"":"","text",{placeholder:"Adresse de départ"});
+  const surRead=()=>surOn&&otherId()&&who!==myId?{by:myId,hint:surHint.value.trim().slice(0,120),cover:surCover.value.trim().slice(0,60)}:null;
+  const sepRead=()=>sepOn&&who==="both"&&otherId()&&sepOther?{[myId]:{origin:origin.value.trim(),travelMin:Math.max(0,+travel.value||0),routeGeo:routeGeo||null,mode:mode.value},[otherId()]:sepOther}:null;
+  function drawSur(){surBox.textContent="";const o=otherId(),show=!!o&&who!==myId;surBox.hidden=!show;if(!show)return;const onm=firstName(o);
+    surBox.append(el("span",{class:"lab"},"Surprise"),
+      el("div",{class:"pchips"},el("button",{type:"button",id:"e-sur",class:"pchip"+(surOn?" on":""),"aria-pressed":String(surOn),onclick:()=>{surOn=!surOn;drawSur();}},(surOn?"✓ ":"")+"C'est une surprise pour "+onm)));
+    if(surOn)surBox.append(el("div",{class:"grid2"},f("e-sur-cover","Ce que "+onm+" voit",surCover),f("e-sur-hint","Indice (facultatif)",surHint)),
+      el("p",{class:"note"},onm+" voit l'heure de départ, l'indice et un compte à rebours, mais ni le titre, ni le lieu, ni la carte : même dans les notifications, le widget et son calendrier. Tout se dévoile à l'heure du rendez-vous, ou au moment de partir si "+onm+" s'y rend par ses propres moyens. Tu peux aussi le dévoiler plus tôt depuis la fiche."));}
   const pickupWait=d.pickupWait==null?5:+d.pickupWait;
   const pkInp=inp("e-pickup",d.pickup||"","text",{placeholder:"Adresse où passer"});
   const pkBox=el("div",{class:"field pk-field"});
   let route=cleanRoute(d.route), routeVia=d.routeVia||"", routeGeo=d.routeGeo||null;
-  const mapBox=el("div"),fixBox=el("div",{class:"fixes"});
+  const mapBox=el("div"),fixBox=el("div",{class:"fixes"}),learnBox=el("div",{class:"fixes learn-box"});let learnUse=false;
 
   const warnBox=el("div",{class:"cf-warn",role:"status",hidden:true});
   const read=()=>({...d,title:title.value.trim(),category:cat.value,date:date.value,time:time.value,durationMin:+dur.value||60,
     location:loc.value.trim(),origin:origin.value.trim(),mode:mode.value,travelMin:Math.max(0,+travel.value||0),marginMin:Math.max(0,+margin.value||0),
     travelNote:tripNote.textContent,notes:(time.value!==d.time&&/^toute la journ/i.test(notes.value.trim()))?"":notes.value.trim(),reminders,route,routeVia,routeGeo,who,cost:Math.max(0,Math.round((+cost.value||0)*100)/100),
     allDay:!!(isAllDay(d)&&time.value===d.time),
-    pickup:pickOn&&who==="both"&&otherId()?pkInp.value.trim():"",pickupWho:pkWho,driver:memberIds().find(m=>m!==pkWho)||myId,pickupMin:pickOn?pickupMin:0,pickupWait});
+    pickup:pickOn&&who==="both"&&otherId()?pkInp.value.trim():"",pickupWho:pkWho,driver:memberIds().find(m=>m!==pkWho)||myId,pickupMin:pickOn?pickupMin:0,pickupWait,surprise:surRead(),sep:sepRead()});
 
   function updateCalc(){
     if(remAuto) reminders=suggestReminders(read());
@@ -6448,8 +6514,16 @@ function openEditor(d,info){
     if(!x.date||!x.time){depOut.textContent="";depOut.className="dep";depMeta.textContent="Indique la date et l'heure";renderRems();return;}
     if(x.travelMin>0){depOut.textContent="Partir à "+hhmm(departOf(x));depOut.className="dep num has";
       depMeta.textContent=hasPickup(x)&&x.pickupMin?(pkWho===myId?firstName(x.driver)+" part à "+hhmm(departOf(x))+", te récupère à "+hhmm(pickupAt(x))+", arrivée à "+x.time:"récupérer "+firstName(pkWho)+" à "+hhmm(pickupAt(x))+", arrivée à "+x.time):"pour arriver à "+x.time;
-      if(hasPickup(x)&&pkWho===myId)depOut.textContent=firstName(x.driver)+" arrive à "+hhmm(pickupAt(x));}
+      if(hasPickup(x)&&pkWho===myId)depOut.textContent=firstName(x.driver)+" arrive à "+hhmm(pickupAt(x));
+      if(sepOn&&who==="both"&&otherId()){const on=firstName(otherId());depOut.textContent="Tu pars à "+hhmm(departOf(x));
+        depMeta.textContent=sepOther&&(+sepOther.travelMin||0)>0?on+" part à "+hhmm(departOf({...x,origin:sepOther.origin,travelMin:sepOther.travelMin}))+" : vous arrivez ensemble à "+x.time:"Indique d'où part "+on+" pour calculer son départ";}}
     else{depOut.textContent="Pas de trajet";depOut.className="dep";depMeta.textContent="Choisis un lieu pour calculer le départ";}
+    learnBox.textContent="";
+    {const L=x.travelMin>0?learnedFor(x):null;
+      if(L&&Math.abs(L.min-x.travelMin)>=4)learnBox.append(el("div",{class:"fix learn"},el("div",{},el("strong",{},"D'habitude : "+fmtDur(L.min)),
+        el("div",{class:"small"},"C'est ce que ce trajet vous prend en général ("+L.n+" trajets suivis avec Together), au lieu des "+fmtDur(x.travelMin)+" estimées.")),
+        el("div",{class:"fix-act"},el("button",{class:"btn primary",type:"button",id:"e-learn",onclick:()=>{learnUse=true;travel.value=L.min;updateCalc();}},"Utiliser "+fmtDur(L.min)))));
+      else if(L&&learnUse)learnBox.append(el("p",{class:"note"},"Durée apprise de vos trajets : "+fmtDur(L.min)+"."));}
     mapBox.textContent="";
     if(routeGeo&&x.location&&x.travelMin>0) mapBox.append(routeMap(routeGeo,x));
     renderRems();
@@ -6490,7 +6564,7 @@ function openEditor(d,info){
   date.addEventListener("input",()=>{const ds=repDaysOf(d);if(ds&&date.value&&!ds.includes(new Date(date.value+"T12:00:00").getDay())){delete d.repeatDays;drawRepeat();}});
 
   // Le trajet est recalculé dès qu'une adresse ou le transport change, et au plus tard avant d'enregistrer
-  const tripKey=x=>JSON.stringify([norm(x.location),norm(x.origin),x.pickup?norm(x.pickup):"",x.mode||"car"]);
+  const tripKey=x=>JSON.stringify([norm(x.location),norm(x.origin),x.pickup?norm(x.pickup):"",x.mode||"car",sepOn?norm(sepInp.value):""]);
   let lastOkKey=((+d.travelMin||0)>0||d.routeGeo)?tripKey(d):"",recalcP=null;
   recalc.onclick=()=>(recalcP=doRecalc());
   async function doRecalc(){
@@ -6504,6 +6578,8 @@ function openEditor(d,info){
         if(tripKey(x)!==lastOkKey){travel.value=0;pickupMin=0;}
         fixBox.append(el("div",{class:"fix"},el("strong",{},"Trajet non calculé"),el("div",{class:"small"},pb)));}
       else if(r&&Number.isFinite(+r.travelMin)){lastOkKey=tripKey(x);travel.value=Math.round(+r.travelMin);pickupMin=+r.pickupMin||0;tripNote.textContent=r.travelNote||"";route=cleanSteps(r.route);routeVia=String(r.routeVia||"").slice(0,80);routeGeo=cleanGeo(r.geo);
+        await sepEstimate(x);
+        {const L=learnUse&&learnedFor(read());if(L)travel.value=L.min;}
         const fx=fixesFrom(r,x);
         for(const [key,val] of Object.entries(fx)){const target=key==="origin"?origin:loc;
           fixBox.append(el("div",{class:"fix"},el("div",{},el("strong",{},key==="origin"?"Départ complété":"Arrivée complétée"),el("div",{class:"small"},"Tu voulais dire : "+val+" ?")),
@@ -6567,10 +6643,10 @@ function openEditor(d,info){
     const o2=origin.value.trim(),away=!!o2&&norm(o2)!==norm(homeAddr());
     pkBox.classList.toggle("ask",away&&!pickOn);
     const chip=(label,active,fn)=>el("button",{type:"button",class:"pchip"+(active?" on":""),onclick:fn},label);
-    const set=(on2,w)=>{pickOn=on2;if(w)pkWho=w;if(pickOn&&!pkInp.value.trim()){const l=(lastPickups()[pkWho]||[])[0];if(l)pkInp.value=l;}drawPk();updateCalc();if(loc.value.trim()&&(!pickOn||pkInp.value.trim()))autoTrip();};
+    const set=(on2,w)=>{sepOn=false;pickOn=on2;if(w)pkWho=w;if(pickOn&&!pkInp.value.trim()){const l=(lastPickups()[pkWho]||[])[0];if(l)pkInp.value=l;}drawPk();updateCalc();if(loc.value.trim()&&(!pickOn||pkInp.value.trim()))autoTrip();};
     pkBox.append(...[el("span",{class:"lab"},"Vous partez du même endroit ?"),
       away&&!pickOn?el("p",{class:"pk-hint"},"Tu pars de « "+shortAddr(o2)+" » : si "+onm+" est ailleurs, l'itinéraire passera la chercher."):null,
-      el("div",{class:"pchips"},chip("Oui, ensemble",!pickOn,()=>set(false)),chip("Je passe prendre "+onm,pickOn&&pkWho===on,()=>set(true,on)),chip(onm+" passe me prendre",pickOn&&pkWho===myId,()=>set(true,myId)))].filter(Boolean));
+      el("div",{class:"pchips"},chip("Oui, ensemble",!pickOn&&!sepOn,()=>set(false)),chip("Je passe prendre "+onm,pickOn&&pkWho===on,()=>set(true,on)),chip(onm+" passe me prendre",pickOn&&pkWho===myId,()=>set(true,myId)),chip("Chacun de son côté",sepOn,()=>setSep()))].filter(Boolean));
     if(pickOn){
       const recent=(lastPickups()[pkWho]||[]).filter(a=>norm(a)!==norm(pkInp.value));
       pkBox.append(...[el("label",{for:"e-pickup",class:"lab"},pkWho===myId?"Où "+onm+" te récupère ?":"Où récupérer "+onm+" ?"),
@@ -6578,10 +6654,25 @@ function openEditor(d,info){
         recent.length?el("div",{class:"pchips"},...recent.slice(0,3).map(a=>el("button",{type:"button",class:"pchip",onclick:()=>{pkInp.value=a;pkInp.dispatchEvent(new Event("change"));autoTrip();}},shortAddr(a)))):null,
         el("p",{class:"note"},(pkWho===myId?onm+" part de « Départ de », passe te chercher, puis vous allez au rendez-vous.":"Tu pars de « Départ de », tu récupères "+onm+", puis vous allez au rendez-vous.")+" "+pickupWait+" min d'attente sur place comprises.")].filter(Boolean));
     }
+    if(sepOn)drawSep();
   }
+  function setSep(){sepOn=true;pickOn=false;
+    if(!sepInp.value.trim()){const on=norm(firstName(otherId())),w=placesSorted({work:0,place:1,home:2}).find(p=>p.address&&norm(p.name).includes(on));if(w)sepInp.value=w.address;}
+    drawPk();updateCalc();if(loc.value.trim())autoTrip();}
+  function drawSep(){const onm=firstName(otherId());
+    pkBox.append(el("label",{for:"e-sep",class:"lab"},"D'où part "+onm+" ?"),autocomplete(sepInp,autoTrip),placeChips(sepInp,true,autoTrip),
+      el("p",{class:"note"},"Together calcule l'heure de départ de chacun, depuis son point de départ, pour que vous arriviez ensemble. Chacun reçoit son propre « C'est l'heure de partir », et le trafic est surveillé sur les deux trajets."),
+      (()=>{const mb=el("div",{class:"mid-box"});return el("div",{},el("button",{type:"button",class:"btn",id:"e-mid",onclick:()=>midFind(origin.value.trim()||homeAddr(),sepInp.value.trim(),mb,v=>{loc.value=v;loc.dispatchEvent(new Event("change"));if(tripKey(read())===lastOkKey)autoTrip();})},"Trouver un lieu à mi-chemin"),mb);})());}
+  async function sepEstimate(x){
+    if(!(sepOn&&who==="both"&&otherId()&&sepInp.value.trim()))return;
+    const r2=await estimateTrip({...x,origin:sepInp.value.trim(),pickup:""}).catch(()=>null);
+    if(r2&&r2.ok!==false&&Number.isFinite(+r2.travelMin))sepOther={origin:sepInp.value.trim(),travelMin:Math.round(+r2.travelMin),routeGeo:cleanGeo(r2.geo),mode:mode.value};
+    else{sepOther=null;fixBox.append(el("div",{class:"fix"},el("strong",{},"Trajet de "+firstName(otherId())+" non calculé"),el("div",{class:"small"},String((r2&&r2.problem)||"Vérifie son adresse de départ."))));}}
+  sepInp.addEventListener("change",()=>{if(loc.value.trim())autoTrip();});
   pkInp.addEventListener("change",()=>{if(loc.value.trim())autoTrip();});
-  origin.addEventListener("change",drawPk);
-  drawPk();
+  origin.addEventListener("change",()=>setTimeout(drawPk,260));
+  drawPk();drawSur();
+  learnLoad().then(()=>{if(learnBox.isConnected)updateCalc();});
   const remsLine=el("span",{class:"rem-line"});
   const wc=whenChips(date,time);
 
@@ -6605,7 +6696,8 @@ function openEditor(d,info){
     el("div",{class:"sheet-h"},el("h2",{},isNew?"Nouvel évènement":"Modifier l'évènement"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
     info?el("div",{class:"notice"},info):null,
     title,
-    otherId()?el("div",{class:"field"},el("span",{class:"lab"},"Qui vient"),whoChips(who,v=>{const had=pickOn&&who==="both";who=v;drawPk();updateCalc();if(had&&v!=="both"&&loc.value.trim())autoTrip();})):null,
+    otherId()?el("div",{class:"field"},el("span",{class:"lab"},"Qui vient"),whoChips(who,v=>{const had=pickOn&&who==="both";who=v;drawPk();drawSur();updateCalc();if(had&&v!=="both"&&loc.value.trim())autoTrip();})):null,
+    surBox,
     el("div",{class:"field"},el("span",{class:"lab"},"Quel jour"),wc.days),
     el("div",{class:"field"},el("span",{class:"lab"},"À quelle heure"),wc.hours),
     el("div",{class:"grid2 when-exact"},f("e-date","Autre date",date),f("e-time","Heure précise",time)),
@@ -6617,7 +6709,7 @@ function openEditor(d,info){
     el("div",{class:"calc"},
       el("div",{class:"out"},depOut,depMeta),
       el("div",{class:"from-row"},fromLine),
-      fixBox,mapBox),
+      fixBox,learnBox,mapBox),
     el("div",{class:"rem-simple-wrap"},
       el("div",{class:"rem-head"},el("div",{class:"rem-head-l"},el("span",{class:"lab"},"Rappels"),remsLine),remsToggle),
       remsMore),
@@ -8568,6 +8660,8 @@ function icsSection(){
 
 /* ---------- Aide et nouveautés ---------- */
 const NEWS=[
+  {v:"72",d:"2026-10-27",t:"Météo, voiture garée, et vos vrais temps de trajet",i:["La météo du rendez-vous s'affiche sur la grande carte du prochain départ.","« Garé ici » note où est la voiture ; vous la retrouvez tous les deux, à pied, depuis l'accueil.","Together apprend la durée réelle de vos trajets suivis en direct et la propose quand elle diffère de l'estimation.","Chacun de son côté : « Trouver un lieu à mi-chemin » propose restaurants, cafés et sorties entre vous deux.","Le bilan existe aussi pour chaque mois, et se partage en un geste."],go:null},
+  {v:"71",d:"2026-10-27",t:"Surprise, et arriver ensemble",i:["Rendez-vous surprise : l'autre ne voit que l'heure de départ, un indice et un compte à rebours. Tout se dévoile à l'heure dite.","Chacun de son côté : deux points de départ, deux heures de départ, et vous arrivez ensemble. Chacun reçoit son « C'est l'heure de partir »."],go:null},
   {v:"70",d:"2026-10-26",t:"Le titre de l'évènement en grand",i:["Sur la grande carte du prochain départ, le titre de l'évènement passe juste sous l'heure, en grand, dans la même écriture.","« C'est l'heure de partir » suit, en doré quand le départ approche ; l'heure du rendez-vous est au bout du trajet, à côté de la destination."]},
   {v:"69",d:"2026-10-26",t:"Une carte en 3D",i:["Nouvelle carte : les bâtiments en relief, sombre le soir et claire le jour, l'itinéraire lumineux qui se dessine.","Touche la carte d'un trajet : la vue 3D plein écran survole le trajet jusqu'à la destination.","Trajet en direct : la carte suit la voiture comme un GPS, dans le sens de la route. « Vue d'ensemble » montre tout le trajet.","Avec la clé TomTom, les bouchons s'affichent en orange et en rouge sur l'itinéraire, avec le retard.","Corrigé : sur l'écran du trajet en direct, le bloc « Afficher dans la voiture » ne chevauche plus le texte."],go:"lieux"},
   {v:"68",d:"2026-10-25",t:"Trafic en direct et idées cadeaux",i:["Trafic en direct : une heure avant chaque départ en voiture, Together recalcule le trajet avec le trafic réel. Si ça bouchonne : « pars à 17:33 », et l'alerte « C'est l'heure de partir » arrive plus tôt.","Une clé TomTom gratuite à coller une fois, dans Lieux et trajets (sans carte bancaire).","Mes idées cadeaux : une liste rien qu'à toi, chiffrée, que l'autre ne peut pas lire. « Idée cadeau : … » marche aussi dans Ajouter et avec Siri.","Une fois ta liste commencée : un rappel discret, rien que pour toi, 3 semaines avant son anniversaire, Noël, la Saint-Valentin et votre anniversaire de couple."],go:"gifts"},
@@ -8641,14 +8735,14 @@ let tfData={},tfHas=null,tfAt=0;
 const tfWait=ev=>Math.max(0,Math.min(60,ev.pickupWait==null?5:+ev.pickupWait||0));
 // au volant : la durée prévue sans les 5 min pour se garer (ni l'attente chez l'autre) ; l'alerte part au-delà de 15 % (5 min au moins)
 function tfThr(ev){const plan=Math.max(1,(+ev.travelMin||0)-5-(hasPickup(ev)?tfWait(ev):0));return Math.max(5,Math.round(plan*.15));}
-function tfOf(ev){const e=ev&&(events.get(ev.id)||ev),r=e&&tfData&&tfData[e.id];if(!r||r.err||!Number.isFinite(+r.d)||!((+e.travelMin||0)>0))return null;
+function tfOf(ev){const e=ev&&(events.get(ev.id)||ev),r=e&&tfData&&tfData[tfKey(e)];if(!r||r.err||!Number.isFinite(+r.d)||!((+e.travelMin||0)>0))return null;
   const now=Date.now();if(Math.abs((+r.dep||0)-departOf(e).getTime())>90000||now-(+r.at||0)>3*3600000||now>(+r.dep||0)+30*60000)return null;return r;}
 function tfDelay(ev){const e=ev&&(events.get(ev.id)||ev),r=tfOf(e);return r&&r.d>=tfThr(e)?Math.round(r.d):0;}
 function tfLine(ev){const e=ev&&(events.get(ev.id)||ev),r=tfOf(e);if(!r)return null;const d=tfDelay(e);
   if(d)return el("div",{class:"tf-line bad"},el("span",{class:"tf-ic",html:CAR_IC}),ev.pickedUp?"Trafic : "+firstName(driverOf(e))+" passera vers "+hhmm(new Date(pickupAt(e).getTime()-d*60000))+" (+"+d+" min)":"Trafic : pars à "+hhmm(new Date(departOf(e).getTime()-d*60000))+" (+"+d+" min)");
   return el("div",{class:"tf-line ok"},el("span",{class:"tf-ic",html:CAR_IC}),r.d<=-5?"Trafic fluide : "+(-Math.round(r.d))+" min de moins que prévu":"Trafic normal, vérifié à "+hhmm(new Date(+r.at)));}
 // Les départs en voiture des 8 prochains jours (l'app n'est pas forcément ouverte la veille), avec ce qu'il faut au serveur pour recalculer le trajet
-function trafficWatch(){
+function trafficWatchV70(){
   const now=Date.now(),out=[];let tz="Europe/Paris";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz;}catch(_){}
   for(const ev of events.values()){
     if(ev.busy||isAllDay(ev)||(ev.mode||"car")!=="car"||!((+ev.travelMin||0)>0))continue;
@@ -9297,7 +9391,322 @@ function mapSection(){
 /* ---------- Au démarrage (version 69) ---------- */
 function opt14Init(){try{const now=Date.now();if(tgmOn()&&!tgmReady()&&[...events.values()].some(e=>e.routeGeo&&startOf(e).getTime()>now&&startOf(e).getTime()<now+7*864e5))tgmLib().catch(()=>{});}catch(_){}}
 
-const APP_V="70";
+/* ---------- Version 71 : le rendez-vous surprise, et partir chacun de son côté pour arriver ensemble ----------
+   Chacun voit l'agenda à sa façon : son propre trajet quand vous partez de deux endroits, et une surprise reste cachée
+   à la personne pour qui elle est prévue jusqu'au moment de la dévoiler. Cette vue s'applique dès la réception des
+   données ; les notifications, le widget et le calendrier de chacun sont calculés avec sa propre vue. */
+const SUR_IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>';
+function sepOf(ev,uid){const s=ev&&ev.sep&&ev.sep[uid];return s&&typeof s==="object"?s:null;}
+function sepActive(ev){return !!(ev&&ev.sep&&typeof ev.sep==="object"&&whoOf(ev)==="both"&&!ev.pickup);}
+function surpriseOn(ev){const s=ev&&ev.surprise;return !!(s&&s.by&&!s.open);}
+// y va par ses propres moyens : la destination se dévoile au moment de partir, sinon à l'heure du rendez-vous
+function surpriseAlone(ev,uid){return whoOf(ev)===uid||(sepActive(ev)&&!!sepOf(ev,uid))||(hasPickup(ev)&&driverOf(ev)===uid);}
+function surpriseRevealAt(ev,uid){const st=startOf(ev).getTime();if(!surpriseAlone(ev,uid))return st;
+  const v=personal(ev,uid,true);return (+v.travelMin||0)>0?Math.min(st,departOf(v).getTime()-10*60000):st;}
+function surpriseFor(ev,uid){return surpriseOn(ev)&&ev.surprise.by!==uid&&(whoOf(ev)==="both"||whoOf(ev)===uid)&&Date.now()<surpriseRevealAt(ev,uid);}
+function surpriseCover(ev){const s=(ev&&ev.surprise)||{};return String(s.cover||"").trim()||("Surprise de "+firstName(s.by));}
+function personal(ev,uid,noMask){
+  let v=ev;const s=sepActive(ev)?sepOf(ev,uid):null;
+  if(s)v={...ev,origin:String(s.origin||""),travelMin:Math.max(0,+s.travelMin||0),routeGeo:s.routeGeo||null,route:[],routeVia:"",mode:s.mode||ev.mode||"car",sepOwn:uid};
+  if(!noMask&&surpriseFor(ev,uid))v=surpriseMask(v,ev,uid);
+  return v;
+}
+// ce que voit la personne surprise : l'heure, le départ, l'indice ; ni titre, ni lieu, ni itinéraire, ni notes
+function surpriseMask(v,ev,uid){const s=ev.surprise,ex=(+v.travelMin||0)>0?placeExtra(ev.location):0;
+  return {id:v.id,date:v.date,time:v.time,durationMin:v.durationMin,startTs:v.startTs,who:v.who,category:"autre",motif:"surprise",
+    title:surpriseCover(ev),location:"",notes:"",origin:v.origin||"",mode:v.mode||"car",travelMin:+v.travelMin||0,marginMin:(+v.marginMin||0)+ex,travelNote:"",
+    route:[],routeVia:"",routeGeo:null,reminders:(v.reminders||[]).filter(r=>presetOf(r)).map(r=>{const o={...r};delete o.label;return o;}),
+    ...(v.pickup?{pickup:v.pickup,pickupWho:v.pickupWho,driver:v.driver,pickupMin:v.pickupMin,pickupWait:v.pickupWait}:{}),
+    ...(v.countdown?{countdown:v.countdown}:{}),...(v.parked?{parked:v.parked}:{}),
+    createdBy:v.createdBy,createdAt:v.createdAt,updatedBy:v.updatedBy,updatedAt:v.updatedAt,calendarAdded:v.calendarAdded||{},
+    ...(v.sepOwn?{sepOwn:v.sepOwn}:{}),surprise:{by:s.by,hint:String(s.hint||"").slice(0,120),at:surpriseRevealAt(ev,uid)},_masked:true};}
+function personalAll(uid){const m=new Map();for(const [id,e] of eventsRaw)m.set(id,personal(e,uid));return m;}
+let maskSig="";
+function maskSigOf(uid){let s="";for(const e of eventsRaw.values())if(surpriseFor(e,uid))s+=e.id+",";return s;}
+function personalize(){events=personalAll(myId);maskSig=maskSigOf(myId);}
+// une surprise qui se dévoile à l'heure dite : l'agenda se met à jour tout seul
+setInterval(()=>{if(!myId||!eventsRaw.size)return;const sg=maskSigOf(myId);if(sg!==maskSig){personalize();scheduleRender();try{syncPush();}catch(_){}}},30000);
+// la clé du trafic : un trajet par personne quand vous partez chacun de votre côté
+function tfKey(e){return e&&e.sepOwn?e.id+"~"+String(e.sepOwn).slice(0,6):(e&&e.id);}
+
+// Les notifications : quand une surprise ou des départs séparés sont en jeu, chacun reçoit les siennes, calculées avec sa vue
+function pushItems(){
+  const now=Date.now(),mem=memberIds();
+  const win=e=>{const st=startOf(e).getTime();return st>=now-6*3600000&&st<=now+35*86400000;};
+  if(![...eventsRaw.values()].some(e=>win(e)&&(sepActive(e)||surpriseOn(e))))return pushItemsBase();
+  const out=[],ke=events;
+  try{for(const uid of mem){events=personalAll(uid);
+    for(const it of pushItemsBase()){if(!(it.to||[]).includes(uid))continue;out.push({...it,to:[uid],id:String(it.id)+"~"+uid.slice(0,6)});}}}
+  finally{events=ke;}
+  // le moment où la surprise se dévoile : une notification pour la personne qui l'attend
+  for(const e of eventsRaw.values()){if(!win(e)||!surpriseOn(e))continue;
+    for(const uid of mem){if(uid===e.surprise.by||!(whoOf(e)==="both"||whoOf(e)===uid))continue;
+      const at=surpriseRevealAt(e,uid);if(at<=now+30000)continue;
+      out.push({id:e.id+":sr:"+uid.slice(0,6)+":"+at,to:[uid],at,tag:"ev-"+e.id,title:"La surprise est dévoilée",
+        body:(e.title||"Surprise")+(e.location?" · "+shortAddr(e.location):"")+(isAllDay(e)?"":", à "+e.time)+"."});}}
+  return out;
+}
+// Le trafic : un trajet surveillé par personne pour les départs séparés ; une surprise garde son secret dans la notification
+function trafficWatch(){
+  const now=Date.now(),out=[],mem=memberIds();let tz="Europe/Paris";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz;}catch(_){}
+  for(const raw of eventsRaw.values()){
+    if(raw.busy||isAllDay(raw))continue;
+    const per=sepActive(raw)?mem.filter(u=>sepOf(raw,u)):[null];
+    for(const uid of per){
+      const ev=uid?personal(raw,uid,true):raw;
+      if((ev.mode||"car")!=="car"||!((+ev.travelMin||0)>0))continue;
+      const g=ev.routeGeo;if(!g||!g.from||!g.to)continue;
+      const dep=departOf(ev).getTime();if(dep<now-10*60000||dep>now+8*864e5)continue;
+      const w=whoOf(ev),pk=hasPickup(ev)&&g.marks&&g.marks[0]&&g.marks[0].at,to=uid?[uid]:(w==="both"?mem.slice(0,2):[w]);
+      const hide=to.some(u=>surpriseFor(raw,u));
+      out.push({id:uid?raw.id+"~"+uid.slice(0,6):raw.id,t:String(hide?surpriseCover(raw):(ev.title||"")).slice(0,60),l:hide?"":(ev.location?String(shortAddr(ev.location)).slice(0,60):""),
+        s:startOf(ev).getTime(),dep,min:+ev.travelMin,f:g.from,d:g.to,to,tz,
+        ...(pk?{v:g.marks[0].at,wt:tfWait(ev),pm:Math.max(0,Math.round(+ev.pickupMin||0)),pw:ev.pickupWho,dn:firstName(driverOf(ev)).slice(0,30)}:{})});
+    }
+  }
+  return out.sort((a,b)=>a.dep-b.dep).slice(0,20);
+}
+function whenTxt(t){const d=new Date(t);return (ymd(d)===ymd(new Date())?"à ":dayWord(d)+" à ")+hhmm(d);}
+// la ligne « surprise » : chez la personne surprise (indice et heure du dévoilement), chez celle qui l'organise (et « Dévoiler maintenant »)
+function surpriseLine(ev,hero){
+  if(ev&&ev._masked){const s=ev.surprise;
+    return el("div",{class:"sur-line"},el("span",{class:"sur-ic",html:SUR_IC}),el("span",{},(s.hint?"Indice : "+s.hint+" · ":"")+"Tout se dévoile "+whenTxt(s.at)));}
+  const raw=ev&&(eventsRaw.get(ev.id)||ev);
+  if(!raw||!surpriseOn(raw)||raw.surprise.by!==myId)return null;
+  const o=otherId();if(!o||!surpriseFor(raw,o))return null;
+  return el("div",{class:"sur-line own"},el("span",{class:"sur-ic",html:SUR_IC}),
+    el("span",{},"Surprise pour "+firstName(o)+" : "+(raw.surprise.hint?"indice « "+raw.surprise.hint+" », ":"")+"tout se dévoile "+whenTxt(surpriseRevealAt(raw,o))),
+    hero?null:el("button",{type:"button",class:"btn quiet sur-open",onclick:e=>{e.stopPropagation();surpriseReveal(raw,e.currentTarget);}},"Dévoiler maintenant"));
+}
+async function surpriseReveal(raw,btn){
+  if(!raw||!db)return;if(btn)btn.disabled=true;
+  try{await db.doc("events/"+raw.id).update({surprise:{...raw.surprise,open:Date.now()},updatedBy:myId,updatedAt:Date.now()});
+    pushOther("La surprise est dévoilée",(raw.title||"Surprise")+(raw.location?" · "+shortAddr(raw.location):"")+(isAllDay(raw)?"":", "+dayWord(startOf(raw))+" à "+raw.time)+".","ev-"+raw.id);
+    toast("Surprise dévoilée à "+firstName(otherId()));}
+  catch(_){toast("Impossible pour l'instant. Réessaie.");if(btn)btn.disabled=false;}
+}
+// à l'enregistrement : la personne surprise reçoit « une surprise se prépare », jamais le titre ni le lieu
+function surpriseOut(x,isNew){
+  const s=x&&x.surprise;if(!s||!s.by||s.open||s.by!==myId)return false;
+  const o=otherId();if(!o)return false;
+  const when=dayWord(startOf(x))+(isAllDay(x)?"":" à "+x.time);
+  pushOther(isNew?"Une surprise se prépare":"La surprise change",firstName(myId)+(isNew?" te prépare une surprise, ":" a modifié la surprise : ")+when+"."+(s.hint?" Indice : "+s.hint:""),"ev",{k:isNew?"add":"edit",t:surpriseCover(x),when});
+  toast(isNew?"Surprise enregistrée : "+firstName(o)+" ne voit que l'heure et l'indice":"Surprise modifiée, toujours secrète");
+  return true;
+}
+// départs séparés : l'heure de départ de l'autre, sur la fiche
+function sepLine(ev){
+  if(!ev||!ev.sepOwn)return null;const raw=eventsRaw.get(ev.id)||ev,o=memberIds().find(u=>u!==ev.sepOwn);
+  const so=o&&sepOf(raw,o);if(!so||!((+so.travelMin||0)>0))return null;
+  const v=personal(raw,o,true);
+  return el("div",{class:"small sep-line"},firstName(o)+" part à "+hhmm(departOf(v))+(so.origin?" de "+shortAddr(so.origin):"")+" : vous arrivez ensemble");
+}
+
+/* ---------- Version 72 : la météo du prochain départ, la voiture garée, les temps de trajet appris, le lieu à mi-chemin, le bilan du mois ---------- */
+
+/* La météo sur la grande carte du prochain départ (dans les 5 jours) : une ligne, sans faire sauter la carte à chaque rafraîchissement */
+const wxKnown=new Map();
+function heroWx(ev){
+  if(!ev||ev._masked||ev.busy||!ev.location||isAllDay(ev))return null;
+  const d=(startOf(ev)-Date.now())/86400000;if(d<-0.2||d>5)return null;
+  const key=ev.id+"|"+ev.date+"|"+ev.time+"|"+norm(ev.location);
+  const line=el("div",{class:"wx-hero"});
+  const fill=w=>{line.textContent="";const out=OUTDOOR.has(motifOf(ev)),tip=w.tip&&(out||w.tip!=="Beau temps pour sortir")?w.tip:"";
+    line.append(el("span",{class:"wx-ic wx-"+w.kind,html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+WX_SVG[w.kind]+'</svg>'}),
+      el("span",{},el("b",{class:"num"},w.t+"°"),", "+WX_TXT[w.kind].toLowerCase()+(w.rain>=20&&!/rain|storm|snow/.test(w.kind)?", "+w.rain+" % de pluie":"")+(tip?" · "+tip:"")));};
+  if(wxKnown.has(key)){const w=wxKnown.get(key);if(!w)return null;fill(w);return line;}
+  line.hidden=true;
+  weatherFor(ev).then(w=>{wxKnown.set(key,w||null);if(w&&line.isConnected){fill(w);line.hidden=false;}}).catch(()=>wxKnown.set(key,null));
+  return line;
+}
+
+/* La voiture garée : sa position (celle du téléphone, au moment où tu touches), partagée avec l'autre, pour la retrouver ensuite */
+function parkOn(ev){const p=ev&&ev.parked;return !!(p&&Number.isFinite(+p.lat)&&Number.isFinite(+p.lon)&&!p.done&&Date.now()-(+p.at||0)<14*3600000);}
+function canPark(ev){
+  if(!ev||ev.busy||!db||isAllDay(ev)||(ev.mode||"car")!=="car"||!((+ev.travelMin||0)>0))return false;
+  const w=whoOf(ev);if(!(w==="both"||w===myId))return false;
+  const now=Date.now();return now>=departOf(ev).getTime()-10*60000&&now<=endOf(ev).getTime()+60*60000;
+}
+function parkUrl(p){return "https://maps.apple.com/?daddr="+(+p.lat).toFixed(6)+","+(+p.lon).toFixed(6)+"&dirflg=w";}
+async function parkHere(id,btn){
+  const ev=eventsRaw.get(id)||events.get(id);if(!ev||!db)return false;
+  if(!navigator.geolocation){toast("Ce téléphone ne donne pas sa position.");return false;}
+  const lbl=btn?btn.textContent:"";if(btn){btn.disabled=true;btn.textContent="Position…";}
+  try{const fix=await getFix(20000);
+    if(fix==="denied"){toast("Position refusée. Pour l'autoriser : Réglages de l'iPhone, Confidentialité, Service de localisation.");return false;}
+    if(!fix){toast("Position introuvable pour l'instant. Réessaie dans un instant.");return false;}
+    const p={lat:fix.lat,lon:fix.lon,acc:fix.acc||0,at:Date.now(),by:myId};
+    // seulement ce champ : l'autre ne reçoit pas « a modifié »
+    await db.doc("events/"+id).update({parked:p});
+    toast("C'est noté : la voiture est garée ici"+(otherId()?". "+firstName(otherId())+" la retrouvera aussi.":"."));
+    return true;}
+  catch(_){toast("Impossible pour l'instant. Réessaie.");return false;}
+  finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=lbl;}}
+}
+function parkDone(id){const ev=eventsRaw.get(id);if(!ev||!ev.parked||!db)return;db.doc("events/"+id).update({parked:{...ev.parked,done:Date.now()}}).catch(()=>{});}
+function parkLine(ev){
+  if(!parkOn(ev))return null;const p=ev.parked;
+  return el("div",{class:"park-line"},el("span",{class:"park-ic","aria-hidden":"true"},"P"),
+    el("span",{class:"park-t"},"Voiture garée à "+hhmm(new Date(+p.at))+(p.by&&p.by!==myId?" par "+firstName(p.by):"")),
+    el("a",{class:"btn quiet park-go",href:parkUrl(p),target:"_blank",rel:"noopener",onclick:e=>e.stopPropagation()},"Retrouver la voiture"));
+}
+// sur l'accueil : la voiture garée pour un rendez-vous qui commence ou qui vient de finir
+function parkBar(){
+  const now=Date.now();let best=null;
+  for(const e of events.values()){if(!parkOn(e))continue;const end=endOf(e).getTime();if(now>end+6*3600000)continue;if(!best||+e.parked.at>+best.parked.at)best=e;}
+  let b=document.getElementById("park-bar");
+  if(!best){if(b)b.remove();return;}
+  if(!b){b=el("div",{id:"park-bar",class:"park-bar"});const n=$("#next");if(n&&n.parentNode)n.parentNode.insertBefore(b,n);else return;}
+  const sig=best.id+":"+best.parked.at;if(b.dataset.sig===sig)return;b.dataset.sig=sig;b.textContent="";
+  b.append(el("span",{class:"park-ic","aria-hidden":"true"},"P"),
+    el("span",{class:"park-t"},el("strong",{},"Votre voiture"),el("small",{},"Garée à "+hhmm(new Date(+best.parked.at))+" pour « "+(best.title||"le rendez-vous")+" »")),
+    el("a",{class:"btn primary",href:parkUrl(best.parked),target:"_blank",rel:"noopener"},"Y aller"),
+    el("button",{type:"button",class:"park-x","aria-label":"C'est bon, la voiture est retrouvée",onclick:()=>{parkDone(best.id);b.remove();}},"×"));
+}
+
+/* Les temps de trajet appris : chaque trajet suivi en direct (« J'y vais ») donne la durée réelle, gardée pour vous deux */
+let learnC=null,learnP=null;
+function learnLoad(force){if(learnP&&!force)return learnP;
+  learnP=(db?db.doc("config/learn").get().then(s=>(s&&s.exists&&s.data())||{}).catch(()=>({})):Promise.resolve({})).then(d=>(learnC=d||{}));return learnP;}
+function learnKey(o,l,m){const s=norm(o)+"|"+norm(l)+"|"+(m||"car");let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return "k"+(h>>>0).toString(36);}
+function learnedFor(x){
+  if(!learnC||!x||!x.location)return null;const o=x.origin||homeAddr();if(!o)return null;
+  const r=learnC[learnKey(o,x.location,x.mode)];if(!r||!Array.isArray(r.v))return null;
+  const v=r.v.map(Number).filter(n=>n>0).sort((a,b)=>a-b);if(v.length<2)return null;
+  return {min:Math.round(v[Math.floor(v.length/2)]),n:v.length};
+}
+async function learnAdd(o,l,m,min){
+  if(!db||!o||!l||!(min>0))return;await learnLoad();
+  const k=learnKey(o,l,m),cur=(learnC[k]&&Array.isArray(learnC[k].v)?learnC[k].v:[]),v=[...cur,Math.round(min)].slice(-8),at=Date.now();
+  learnC[k]={v,at};try{await db.doc("config/learn").set({[k]:{v,at}},{merge:true});}catch(_){}
+}
+// au départ : le trajet ne compte que s'il part bien du point de départ prévu, à peu près à l'heure prévue
+function learnTag(ev,fix,now,kind){
+  try{if(kind!=="meet"||!ev||!((+ev.travelMin||0)>0)||!ev.location)return {};
+    const o=ev.origin||homeAddr(),g=ev.routeGeo&&ev.routeGeo.from;if(!o||!g||!Number.isFinite(+g.lat)||!fix||!Number.isFinite(+fix.lat))return {};
+    if(kmBetween({lat:+fix.lat,lon:+fix.lon},{lat:+g.lat,lon:+g.lon})>1.5)return {};
+    if(Math.abs(now-departOf(ev).getTime())>60*60000)return {};
+    return {lk:{o:String(o).slice(0,200),l:String(ev.location).slice(0,200),m:ev.mode||"car"}};}
+  catch(_){return {};}
+}
+function tripArrived(t){
+  const was=!!(t&&t.stage==="go");tripArrivedV71(t);if(!was)return;
+  if(t.by===myId&&t.lk&&+t.startedAt>0){const min=(Date.now()-t.startedAt)/60000;if(min>=3&&min<=300)learnAdd(t.lk.o,t.lk.l,t.lk.m,min);}
+  if(t.by===myId&&tripKind(t)==="meet"&&(t.mode||"car")==="car"){const ev=eventsRaw.get(t.ev||t.id);
+    if(ev&&!parkOn(ev))setTimeout(()=>inNote("Tu y es","Touche ici pour noter où la voiture est garée : vous la retrouverez facilement.",()=>parkHere(ev.id),20000),4500);}
+}
+
+/* Un lieu à mi-chemin : entre vos deux points de départ, des restaurants, cafés et bars (OpenStreetMap) */
+async function midOverpass(q){
+  const o={method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}};
+  try{return await getJson("https://overpass-api.de/api/interpreter",null,25000,o);}
+  catch(_){return await getJson("https://overpass.kumi.systems/api/interpreter",null,25000,o);}
+}
+const MID_KINDS={resto:{n:"Restaurants",q:'["amenity"~"^(restaurant)$"]'},cafe:{n:"Cafés et bars",q:'["amenity"~"^(cafe|bar|pub)$"]'},sortie:{n:"Sorties",q:'["amenity"~"^(cinema|theatre)$"]'}};
+const MID_LAB={restaurant:"Restaurant",cafe:"Café",bar:"Bar",pub:"Bar",cinema:"Cinéma",theatre:"Théâtre"};
+async function midFind(a,b,box,pick,kind){
+  kind=MID_KINDS[kind]?kind:"resto";box.textContent="";const onm=firstName(otherId());
+  if(!a||!b){box.append(el("p",{class:"note"},"Indique d'abord vos deux points de départ."));return;}
+  const chips=el("div",{class:"pchips mid-k"},...Object.entries(MID_KINDS).map(([k,v])=>el("button",{type:"button",class:"pchip"+(k===kind?" on":""),onclick:()=>midFind(a,b,box,pick,k)},v.n)));
+  const list=el("div",{class:"mid-list"},el("div",{class:"ac-load"},el("span",{class:"spinner"}),"Recherche entre vous deux…"));
+  box.append(chips,list);
+  try{
+    const [p,q]=await Promise.all([geocode(a),geocode(b)]);if(!okPt(p)||!okPt(q))throw new Error("adresse");
+    const c={lat:(+p.lat+ +q.lat)/2,lon:(+p.lon+ +q.lon)/2},d=kmBetween(p,q);
+    let rows=[];
+    for(const r of [Math.min(6000,Math.max(1200,d*150)),Math.min(12000,Math.max(3000,d*300))]){
+      const j=await midOverpass(`[out:json][timeout:20];nwr${MID_KINDS[kind].q}["name"](around:${Math.round(r)},${c.lat.toFixed(5)},${c.lon.toFixed(5)});out center tags 80;`);
+      rows=((j&&j.elements)||[]).map(e=>{const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon),t=e.tags||{};return {t,lat:+lat,lon:+lon};})
+        .filter(x=>x.t.name&&Number.isFinite(x.lat)&&Number.isFinite(x.lon)).map(x=>({...x,da:kmBetween(p,x)*1.3,db:kmBetween(q,x)*1.3}));
+      if(rows.length>=3)break;
+    }
+    const seen=new Set();rows=rows.filter(x=>{const k=norm(x.t.name);if(seen.has(k))return false;seen.add(k);return true;})
+      .sort((x,y)=>(Math.abs(x.da-x.db)+.5*(x.da+x.db))-(Math.abs(y.da-y.db)+.5*(y.da+y.db))).slice(0,6);
+    list.textContent="";
+    if(!rows.length){list.append(el("p",{class:"note"},"Rien trouvé à mi-chemin pour l'instant. Essaie une autre catégorie."));return;}
+    const km=v=>v<10?String(Math.round(v*10)/10).replace(".",","):String(Math.round(v));
+    for(const x of rows){const t=x.t;
+      const street=[t["addr:housenumber"],t["addr:street"]].filter(Boolean).join(" "),city=[t["addr:postcode"],t["addr:city"]].filter(Boolean).join(" ");
+      list.append(el("button",{type:"button",class:"mid-row",onclick:async e=>{const bt=e.currentTarget;bt.disabled=true;
+          let addr=street&&city?street+", "+city:"";
+          if(!addr){try{const r=await getJson(`${BAN}/reverse/?lon=${x.lon}&lat=${x.lat}`,null,8000);const f=(r.features||[])[0];if(f)addr=featLabel(f);}catch(_){}}
+          const val=String(t.name).slice(0,60)+(addr?", "+addr:"");rememberGeo(val,x.lat,x.lon);if(addr)rememberGeo(addr,x.lat,x.lon);
+          box.textContent="";pick(val);}},
+        el("strong",{},t.name),el("small",{},[MID_LAB[t.amenity]||"",t.cuisine?String(t.cuisine).split(";")[0].replace(/_/g," "):"",street].filter(Boolean).join(" · ")),
+        el("span",{class:"mid-km num"},km(x.da)+" km pour toi · "+km(x.db)+" km pour "+onm)));}
+    list.append(el("p",{class:"note"},"Distances à vol d'oiseau, un peu arrondies. Le trajet exact de chacun se calcule en choisissant le lieu."));
+  }catch(_){list.textContent="";list.append(el("p",{class:"note"},"Recherche impossible pour l'instant. Vérifie les deux adresses de départ, ou réessaie."));}
+}
+
+/* Le bilan : par mois ou par année, à partager */
+const MOIS_DE=m=>{const n=new Date(2026,m,15).toLocaleDateString("fr-FR",{month:"long"});return (/^[aeiouyàâéèêîôû]/i.test(n)?"d'":"de ")+n;};
+function bilanLabel(y,mo){return Number.isInteger(mo)?"Notre mois "+MOIS_DE(mo)+(y!==new Date().getFullYear()?" "+y:""):"Notre année "+y;}
+function bilanText(S,lab){
+  const L=[lab+" à deux",S.n+(S.n>1?" sorties ensemble":" sortie ensemble")];
+  if(S.top)L.push("Notre sortie préférée : "+MOTIFS[S.top.k].name.toLowerCase()+" ("+S.top.n+" fois)");
+  if(S.best)L.push("La mieux notée : "+S.best.x.title+" ("+String(Math.round(S.best.avg*10)/10).replace(".",",")+" sur 5)");
+  if(S.fav)L.push("Notre lieu fétiche : "+(shortAddr(S.fav.x.place)||S.fav.x.title));
+  if(S.km)L.push(S.km.toLocaleString("fr-FR")+" km faits ensemble");
+  if(S.photos)L.push(S.photos+(S.photos>1?" photos et vidéos":" photo"));
+  if(S.again)L.push(S.again+(S.again>1?" sorties à refaire":" sortie à refaire"));
+  return L.join("\n")+"\n\nAvec Together";
+}
+async function bilanShare(text){
+  try{if(navigator.share){await navigator.share({text});return;}}catch(e){if(e&&e.name==="AbortError")return;}
+  try{await navigator.clipboard.writeText(text);toast("Bilan copié : colle-le où tu veux");}catch(_){toast("Partage impossible sur ce téléphone");}
+}
+function openBilan(y,mo){
+  const root=$("#sheet-root");root.textContent="";
+  const now=new Date();y=+y||now.getFullYear();const isM=Number.isInteger(mo)&&mo>=0&&mo<12;
+  const from=isM?new Date(y,mo,1):new Date(y,0,1),to=isM?new Date(y,mo+1,1):new Date(y+1,0,1);
+  const S=coupleStats(from.getTime(),to.getTime());
+  const mName=isM?from.toLocaleDateString("fr-FR",{month:"long"}):"",per=isM?"en "+mName+(y!==now.getFullYear()?" "+y:""):"en "+y;
+  // les périodes : ce mois-ci, le mois dernier, puis les années
+  const years=[...new Set(outingItems().map(x=>+String(x.date).slice(0,4)).filter(Boolean))].sort((a,b)=>b-a);if(!years.includes(now.getFullYear()))years.unshift(now.getFullYear());
+  const prev=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const periods=[{y:now.getFullYear(),m:now.getMonth(),l:"Ce mois-ci"},{y:prev.getFullYear(),m:prev.getMonth(),l:prev.toLocaleDateString("fr-FR",{month:"long"}).replace(/^./,c=>c.toUpperCase())},...years.slice(0,3).map(v=>({y:v,m:null,l:String(v)}))];
+  if(isM&&!periods.some(p=>p.y===y&&p.m===mo))periods.splice(2,0,{y,m:mo,l:mName.replace(/^./,c=>c.toUpperCase())+" "+y});
+  const cards=el("div",{class:"bilan"});
+  const card=(cls,big,label,extra,style)=>el("div",{class:"bl-card "+cls,style:style||""},extra||null,el("strong",{},big),el("span",{},label));
+  cards.append(card("bl-n",String(S.n),(S.n>1?"sorties à deux ":"sortie à deux ")+per));
+  if(S.top)cards.append(card("bl-top",MOTIFS[S.top.k].name,"votre sortie préférée ("+S.top.n+" fois)",el("span",{class:"bl-ic",html:motifSvg(S.top.k)}),motifStyle(S.top.k)));
+  if(S.best){const bm=S.best.x.m,pic=bm&&(bm.cover||bm.photo);cards.append(card("bl-best"+(pic?" has-img":""),S.best.x.title,"la mieux notée : "+String(Math.round(S.best.avg*10)/10).replace(".",",")+" sur 5",pic?el("img",{src:pic,alt:""}):null));}
+  if(S.fav)cards.append(card("bl-fav",shortAddr(S.fav.x.place)||S.fav.x.title,"votre lieu fétiche ("+S.fav.n+" fois)"));
+  if(S.km)cards.append(card("bl-km",S.km.toLocaleString("fr-FR")+" km","faits ensemble pour vos sorties"));
+  if(S.photos||S.words)cards.append(card("bl-ph",String(S.photos),(S.photos>1?"photos et vidéos":"photo ou vidéo")+(S.words?", et "+S.words+(S.words>1?" mots écrits":" mot écrit"):"")));
+  if(S.day)cards.append(card("bl-day","Le "+WDAY[S.day.d],"votre jour préféré pour sortir"));
+  if(S.spent)cards.append(card("bl-sp",euro(S.spent),isM?"pour vos sorties du mois":"pour vos sorties de l'année"));
+  if(S.again)cards.append(card("bl-ag",String(S.again),S.again>1?"sorties que vous voulez refaire":"sortie que vous voulez refaire"));
+  const key=isM?y+"-"+pad(mo+1):String(y),mems=memList().filter(m=>m.date.startsWith(key)).reverse(),lab=bilanLabel(y,isM?mo:null);
+  root.append(sheetShell("Votre bilan",[
+    el("div",{class:"sheet-h"},el("h2",{},"Votre bilan à deux"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("div",{class:"pchips bl-per"},...periods.map(p=>{const on=p.y===y&&(p.m==null?!isM:isM&&p.m===mo);return el("button",{type:"button",class:"pchip"+(on?" on":""),"aria-pressed":String(on),onclick:()=>openBilan(p.y,p.m==null?undefined:p.m)},p.l);})),
+    S.n?cards:el("p",{class:"note"},"Pas encore de sortie à deux "+per+". Le bilan se remplit tout seul au fil de vos sorties."),
+    el("div",{class:"pchips bl-act"},
+      mems.some(m=>m.mediaCount||m.photo)?el("button",{type:"button",class:"btn primary",onclick:()=>isM?openFilm(mems,{title:mName.replace(/^./,c=>c.toUpperCase())+" "+y,sub:"Nos sorties du mois",per:5,kind:"month",stats:bilanFilmStats(S)}):yearFilm(y)},isM?"▶ Le film du mois":"▶ Le film de l'année"):null,
+      S.n?el("button",{type:"button",class:"btn bl-share",onclick:()=>bilanShare(bilanText(S,lab))},"Partager le bilan"):null,
+      mems.length?el("button",{type:"button",class:"btn",onclick:()=>openAlbum({y})},"Album à imprimer"):null,
+      S.n?el("button",{type:"button",class:"btn quiet",onclick:()=>openOutingsMap()},"La carte"):null)]));
+  const sh=root.querySelector(".sheet");if(sh)sh.classList.add("sheet-tall");
+}
+// début de mois : le bilan du mois qui vient de finir, dans les souvenirs (10 jours) et en notification le 1er à 10 h
+function monthCard(){
+  const now=new Date();if(now.getDate()>10)return null;
+  const p=new Date(now.getFullYear(),now.getMonth()-1,1),S=coupleStats(p.getTime(),new Date(now.getFullYear(),now.getMonth(),1).getTime());
+  if(S.n<1)return null;
+  return el("button",{type:"button",class:"month-card",onclick:()=>openBilan(p.getFullYear(),p.getMonth())},
+    el("span",{class:"mt-ic",html:MT_ICONS.bilan}),
+    el("span",{class:"mc-t"},el("strong",{},"Votre mois "+MOIS_DE(p.getMonth())),el("small",{},S.n+(S.n>1?" sorties":" sortie")+(S.km?", "+S.km.toLocaleString("fr-FR")+" km":"")+(S.photos?", "+S.photos+" photo"+(S.photos>1?"s":""):"")+" : voir le bilan")));
+}
+function bilanPushes(now,to){
+  if(!to.length)return [];const d=new Date(now);const at=new Date(d.getFullYear(),d.getMonth()+1,1,10,0,0,0);
+  const m=new Date(d.getFullYear(),d.getMonth(),1),k=ymd(m).slice(0,7);
+  const n=[...events.values()].filter(e=>e.date&&e.date.startsWith(k)&&isOuting(e)&&!e.busy).length;
+  if(n<2||at.getTime()-now>35*86400000)return [];
+  return [{id:"bilan:"+k,to,at:at.getTime(),tag:"bilan",title:"Votre mois "+MOIS_DE(m.getMonth())+" à deux",body:n+" sorties ensemble ce mois-ci. Le bilan est prêt dans Souvenirs : à partager si le cœur vous en dit."}];
+}
+
+const APP_V="72";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -9724,7 +10133,7 @@ function tripKindFor(ev){
 function arriveTxt(t,nm){const k=tripKind(t);return k==="meet"?nm+" est là":k==="home"?nm+" est à la maison":nm+" est en bas";}
 // Le conducteur peut partir de 2 h avant l'heure de départ jusqu'à l'heure du rendez-vous
 function canStartTrip(ev){
-  if(!ev||!tripsReady||!tripKindFor(ev))return false;
+  if(!ev||ev._masked||!tripsReady||!tripKindFor(ev))return false;
   const t=trips.get(ev.id);if(tripLive(t)||(t&&t.stage==="together"))return false;
   const now=Date.now();return now>=departOf(ev).getTime()-2*3600000&&now<=startOf(ev).getTime()+30*60000;
 }
@@ -9773,10 +10182,10 @@ async function startTrip(id,btn){
     const r=await tripRoute(fix,target,ev.mode);
     // « due » : l'heure prévue d'arrivée, pour prévenir l'autre d'un retard
     const now=Date.now(),doc={ev:id,by:myId,to,kind,mode:ev.mode||"car",stage:"go",startedAt:now,updatedAt:now,due:kind==="pick"?pickupAt(ev).getTime():startOf(ev).getTime(),
-      title:String(ev.title||"").slice(0,80),target:{...target,addr:String((kind==="pick"?ev.pickup:ev.location)||"").slice(0,200)},...r,near:r.eta-now<=6*60000?now:0};
+      ...learnTag(ev,fix,now,kind),title:String(ev.title||"").slice(0,80),target:{...target,addr:String((kind==="pick"?ev.pickup:ev.location)||"").slice(0,200)},...r,near:r.eta-now<=6*60000?now:0};
     await db.doc("trips/"+id).set(doc);trips.set(id,{id,...doc});
     await db.doc("tripPos/"+id).set({...fix,bg:false});tripPos.set(id,{...fix,bg:false});
-    pushTo([to],firstName(myId)+" est en route","Arrivée prévue vers "+hhmm(new Date(r.eta))+(kind==="pick"?(ev.pickup?", "+shortAddr(ev.pickup):""):" au « "+String(ev.title||"rendez-vous").slice(0,60)+" »")+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id)
+    pushTo([to],firstName(myId)+" est en route","Arrivée prévue vers "+hhmm(new Date(r.eta))+(kind==="pick"?(ev.pickup?", "+shortAddr(ev.pickup):""):" au « "+String(personal(eventsRaw.get(id)||ev,to).title||"rendez-vous").slice(0,60)+" »")+". Touche pour suivre le trajet en direct.","trip-"+id,"./?trip="+id)
       .then(res=>{const ok=!!(res&&res.sent>0),cur=trips.get(id);if(cur)cur.notified=ok?1:-1;
         db.doc("trips/"+id).update({notified:ok?1:-1}).catch(()=>{});
         if(!ok)toast("La notification n'a pas pu partir vers le téléphone de "+firstName(to)+(res&&res.codes&&res.codes.includes(-1)?" : ses notifications ne sont pas activées dans Together.":"."));
@@ -9895,7 +10304,7 @@ function tripEta(t,fix){
 function blendSpeed(vRoute,vObs){if(!(vObs>0.3))return vRoute;return 0.5*vRoute+0.5*Math.max(vRoute*0.45,Math.min(vRoute*1.3,vObs));}
 // « en bas de chez vous » pour la maison, sinon l'adresse (ou le nom du lieu enregistré)
 function waitWhere(addr){const p=addr&&placeFor(addr);return p&&p.kind==="home"?" en bas de chez vous":" en bas"+(addr?", "+shortAddr(addr):"");}
-function tripArrived(t){
+function tripArrivedV71(t){
   if(!t||t.stage!=="go")return;
   const now=Date.now(),nm=firstName(t.by),k=tripKind(t);t.stage="here";t.hereAt=now;t.updatedAt=now;
   db.doc("trips/"+t.id).update({stage:"here",hereAt:now,updatedAt:now}).catch(()=>{});
@@ -10382,7 +10791,7 @@ function saveBoot(){
   bootSaveT=setTimeout(()=>{
     if(firstSnap||!coupleId||!myId)return;
     const from=Date.now()-60*864e5;
-    const ev=[...events.values()].filter(e=>startOf(e).getTime()>from).sort((a,b)=>startOf(a)-startOf(b)).slice(0,600)
+    const ev=[...eventsRaw.values()].filter(e=>startOf(e).getTime()>from).sort((a,b)=>startOf(a)-startOf(b)).slice(0,600)
       .map(e=>{const o={...e};delete o.routeGeo;delete o.route;return o;});
     const data={v:1,c:coupleId,me:myId,at:Date.now(),couple,ev,wi:[...wishes.values()].slice(0,200),pl:[...places.values()].slice(0,100),sh:shopList,mem:[...memories.values()].slice(0,300).map(m=>{const o={...m};delete o.cover;return o;})};
     try{localStorage.setItem(BOOT_KEY,JSON.stringify(data));}
@@ -10395,7 +10804,7 @@ function bootFromCache(){
     const b=JSON.parse(localStorage.getItem(BOOT_KEY)||"null");
     if(!b||b.c!==cid||!Array.isArray(b.ev))return false;
     coupleId=cid;myId=b.me||null;user=userShim;couple=b.couple||null;
-    events=new Map(b.ev.map(e=>[e.id,e]));
+    eventsRaw=new Map(b.ev.map(e=>[e.id,e]));personalize();
     wishes=new Map((b.wi||[]).map(w=>[w.id,w]));
     places=new Map((b.pl||[]).map(x=>[x.id,x]));
     memories=new Map((b.mem||[]).map(x=>[x.id,x]));
@@ -10468,16 +10877,17 @@ function bootFromCache(){
         if(x.updatedBy&&x.updatedBy!==myId&&!ch.doc.metadata.hasPendingWrites){
           const prev=events.get(ch.doc.id);
           const who=(couple&&couple.names&&couple.names[x.updatedBy])||"L'autre";
-          if(!prev) toast(who+" a ajouté « "+x.title+" »");
+          const vt=personal({id:ch.doc.id,...x},myId).title;
+          if(!prev) toast(who+" a ajouté « "+vt+" »");
           else if(prev.updatedAt!==x.updatedAt){
             if(x.shopDone&&!prev.shopDone) toast(who+" a fini les courses");
-            else toast(who+" a modifié « "+x.title+" »");
+            else toast(who+" a modifié « "+vt+" »");
           }
         }
       }
     }
     const wasFirst=firstSnap;firstSnap=false;
-    events=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));
+    eventsRaw=new Map(snap.docs.map(doc=>[doc.id,{id:doc.id,...doc.data()}]));personalize();
     if(wasFirst){maybeCalPopup();setTimeout(checkPush,1500);runPendingLink();setTimeout(()=>checkAdds(true),1500);calSyncSoon(2500);setTimeout(opt12Init,2000);setTimeout(opt13Init,2500);setTimeout(opt14Init,6000);}
     if(shopRefresh)shopRefresh();
     migrateShop(shopRaw);
