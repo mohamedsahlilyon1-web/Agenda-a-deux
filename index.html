@@ -1504,6 +1504,17 @@ html.locked .lock{display:flex;position:fixed;inset:0;z-index:2147483000;backgro
 .month-card .mc-t{display:flex;flex-direction:column;line-height:1.3}
 .month-card small{color:var(--muted)}
 .bl-per{margin-bottom:6px}
+/* Version 73 : la voiture garée (distance, photo), la surprise en souvenir */
+.park-line .park-t{display:flex;flex-direction:column;line-height:1.3}
+.park-line .park-w{color:var(--muted);font-weight:500;font-size:.82rem}
+.park-line .park-act{grid-column:2;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.park-line .park-act .btn{padding:4px 10px;font-size:.84rem}
+.park-thumb{flex:none;width:44px;height:44px;padding:0;border:0;border-radius:10px;overflow:hidden;background:var(--bg);cursor:pointer}
+.park-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.park-bar .park-thumb{width:40px;height:40px}
+.park-big{display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:16px;background:#000}
+.fb-sur{display:block;font-size:.84rem;font-weight:650;color:#C026D3}
+.park-bar .park-t small{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 </style>
 <script>(function(){try{var R=document.documentElement,L=localStorage;if(!L.getItem('a2.look2')){L.setItem('a2.look2','1');L.removeItem('a2.skin');}var _sk=L.getItem('a2.skin');if(/^(lavande|ocean|corail|graphite)$/.test(_sk||'')){L.removeItem('a2.skin');_sk=null;}
 var cc=L.getItem('a2.customCss');if(cc){var st=document.createElement('style');st.id='skin-perso';st.textContent=cc;document.head.appendChild(st);}else if(_sk==='perso')_sk=null;
@@ -2583,6 +2594,7 @@ function wantsWeather(ev){const k=motifOf(ev);const d=(startOf(ev)-Date.now())/8
 async function eventCoords(ev){
   const g=ev.routeGeo&&ev.routeGeo.to;if(g&&Number.isFinite(+g.lat))return {lat:+g.lat,lon:+g.lon};
   if(ev.location){try{const r=await geocode(ev.location);if(r)return {lat:r.lat,lon:r.lon};}catch(_){}}
+  if(ev.location)return null;
   try{return await homeCoords();}catch(_){return null;}
 }
 function wxKind(c){c=+c;if(c===0)return "sun";if(c<=2)return "part";if(c===3)return "cloud";if(c===45||c===48)return "fog";if((c>=51&&c<=67)||(c>=80&&c<=82))return "rain";if((c>=71&&c<=77)||c===85||c===86)return "snow";if(c>=95)return "storm";return "cloud";}
@@ -2705,7 +2717,7 @@ function videoFrames(file,n){
 }
 /* Les souvenirs ne concernent que les sorties à deux */
 const NO_MEM=new Set(["dent","soin","panier","travail","admin","auto","etudes","style","animal","culte"]);
-function souvenirOk(ev){if(!ev)return false;if(ev.who&&ev.who!=="both")return false;const k=motifOf(ev);if(k)return !NO_MEM.has(k);return ev.category==="sortie";}
+function souvenirOkV72(ev){if(!ev)return false;if(ev.who&&ev.who!=="both")return false;const k=motifOf(ev);if(k)return !NO_MEM.has(k);return ev.category==="sortie";}
 function endOf(ev){return new Date(startOf(ev).getTime()+(+ev.durationMin||120)*60000);}
 function ratingsOf(m){const r={...((m&&m.ratings)||{})};if(m&&m.love&&m.by&&!r[m.by])r[m.by]={love:+m.love,note:m.note||""};return r;}
 function feedbackDue(){
@@ -2713,7 +2725,7 @@ function feedbackDue(){
   return [...events.values()].filter(e=>souvenirOk(e)&&endOf(e).getTime()<now&&now-endOf(e).getTime()<21*86400000)
     .filter(e=>{const m=memories.get(e.id);return !ratingsOf(m)[myId]&&!(m&&m.skip&&m.skip[myId]);}).sort((a,b)=>startOf(b)-startOf(a));
 }
-function memBase(ev){const b={eventId:ev.id,title:ev.title||"",date:ev.date,time:ev.time||"",motif:motifOf(ev)||""};
+function memBase(ev){const b={eventId:ev.id,title:ev.title||"",date:ev.date,time:ev.time||"",motif:motifOf(ev)||""};if(ev.surprise&&ev.surprise.by)b.sur=ev.surprise.by;
   if(ev.location)b.place=String(ev.location).slice(0,200);
   const g=ev.routeGeo&&ev.routeGeo.to;if(g&&Number.isFinite(+g.lat)&&Number.isFinite(+g.lon))b.geo={lat:+g.lat,lon:+g.lon};
   return b;}
@@ -2728,7 +2740,7 @@ function heartsRow(n,onPick,small){const box=el("div",{class:"hearts"+(small?" s
 function feedbackCard(ev){
   const k=motifOf(ev),d=new Date(ev.date+"T12:00:00");
   return el("article",{class:"fb",style:motifStyle(k)},
-    el("div",{class:"fb-top"},el("span",{class:"inv-ic",html:k?motifSvg(k):""}),el("div",{},el("small",{},"Comment c'était ?"),el("strong",{class:"fb-title"},ev.title||"Sortie"),el("span",{class:"fb-date"},d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})))),
+    el("div",{class:"fb-top"},el("span",{class:"inv-ic",html:k?motifSvg(k):""}),el("div",{},el("small",{},"Comment c'était ?"),el("strong",{class:"fb-title"},ev.title||"Sortie"),ev.surprise&&ev.surprise.by?el("span",{class:"fb-sur"},"La surprise de "+firstName(ev.surprise.by)):null,el("span",{class:"fb-date"},d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})))),
     heartsRow(0,async n=>{try{await rateOuting(ev,n,"");openMemory(ev);}catch(_){toast("Note non enregistrée. Vérifie ta connexion.");}}),
     el("p",{class:"fb-hint"},"Ta note reste cachée jusqu'à ce que "+firstName(otherId()||myId)+" donne la sienne."),
     el("div",{class:"pchips"},el("button",{type:"button",class:"btn",onclick:()=>openMemory(ev)},"Ajouter des photos"),
@@ -4694,7 +4706,7 @@ function pushItemsBase(){
             title:picked?(leave?dn+" passe te prendre maintenant":dn+" passe te prendre à "+hhmm(pickupAt(ev))):(leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+" à "+ev.time),
             body:picked?(ev.title||"Évènement")+" à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+". Prépare-toi pour "+hhmm(pickupAt(ev))+(ev.pickup?" ("+shortAddr(ev.pickup)+")":"")+".":
               (leave?"Départ maintenant. Tu récupères "+pn+" à "+hhmm(pickupAt(ev))+", puis "+(ev.location?shortAddr(ev.location):"le rendez-vous")+" à "+ev.time+". Touche pour prévenir "+pn+".":"Départ à "+hhmm(departOf(ev))+", "+pn+" à récupérer à "+hhmm(pickupAt(ev))+".")});});}
-      if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
+      if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:ev.surprise&&ev.surprise.by?"Après la surprise : comment c'était ?":"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
       continue;
     }
     if(to.length)liveReminders(ev).forEach((r,i)=>{const at=remWhen(ev,r).getTime();if(at<=now+30000)return;
@@ -4702,7 +4714,7 @@ function pushItemsBase(){
       items.push({id:ev.id+":r"+i+":"+at,to,at,tag:"ev-"+ev.id,
         title:leave?"C'est l'heure de partir : "+(ev.title||"évènement"):(ev.title||"Évènement")+", "+when+(isAllDay(ev)?"":" à "+ev.time),
         body:(leave?"Départ maintenant pour arriver à "+ev.time+(ev.location?", "+shortAddr(ev.location):"")+".":(hasTrip(ev)?"Départ à "+hhmm(departOf(ev))+(ev.location?" pour "+shortAddr(ev.location):"")+".":(ev.location?shortAddr(ev.location):"Rappel")))+(noteLine(ev)?" · "+noteLine(ev):""),lv:leave?1:0,st});});
-    if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
+    if(souvenirOk(ev)){const at=endOf(ev).getTime();if(at>now)items.push({id:ev.id+":fb:"+at,to:mem,at,tag:"fb-"+ev.id,title:ev.surprise&&ev.surprise.by?"Après la surprise : comment c'était ?":"Comment c'était ?",body:(ev.title||"La sortie")+" : notez-la et ajoutez vos photos."});}
   }
   // résumé du matin, pour chacun à son heure : la journée de la personne, avec les heures de départ
   for(const uid of mem){const mt=prefOf(uid).morning;if(!mt)continue;
@@ -6269,6 +6281,7 @@ function buildBody(x,d,overrides){
     ...(d.seriesId||y.seriesId?{seriesId:d.seriesId||y.seriesId}:{}),
     ...((y.motif||d.motif)?{motif:y.motif||d.motif}:{}),
     who:(y.who||d.who||"both"),
+    ...((y.parked||d.parked)&&!(y.parked||d.parked).done?{parked:y.parked||d.parked}:{}),
     ...(y.surprise&&y.surprise.by&&(y.who||d.who||"both")!==y.surprise.by?{surprise:{by:y.surprise.by,hint:String(y.surprise.hint||"").slice(0,120),cover:String(y.surprise.cover||"").slice(0,60),...(y.surprise.open?{open:y.surprise.open}:{})}}:{}),
     ...(y.sep&&typeof y.sep==="object"&&(y.who||d.who||"both")==="both"&&!y.pickup?{sep:sepClean(y)}:{}),
     ...((+y.cost||0)>0?{cost:+y.cost}:{}),
@@ -6520,7 +6533,7 @@ function openEditor(d,info){
     else{depOut.textContent="Pas de trajet";depOut.className="dep";depMeta.textContent="Choisis un lieu pour calculer le départ";}
     learnBox.textContent="";
     {const L=x.travelMin>0?learnedFor(x):null;
-      if(L&&Math.abs(L.min-x.travelMin)>=4)learnBox.append(el("div",{class:"fix learn"},el("div",{},el("strong",{},"D'habitude : "+fmtDur(L.min)),
+      if(L&&Math.abs(L.min-x.travelMin)>=4)learnBox.append(el("div",{class:"fix learn"},el("div",{},el("strong",{},"D'habitude"+(L.h!=null?" vers "+L.h+" h":"")+" : "+fmtDur(L.min)),
         el("div",{class:"small"},"C'est ce que ce trajet vous prend en général ("+L.n+" trajets suivis avec Together), au lieu des "+fmtDur(x.travelMin)+" estimées.")),
         el("div",{class:"fix-act"},el("button",{class:"btn primary",type:"button",id:"e-learn",onclick:()=>{learnUse=true;travel.value=L.min;updateCalc();}},"Utiliser "+fmtDur(L.min)))));
       else if(L&&learnUse)learnBox.append(el("p",{class:"note"},"Durée apprise de vos trajets : "+fmtDur(L.min)+"."));}
@@ -6662,7 +6675,7 @@ function openEditor(d,info){
   function drawSep(){const onm=firstName(otherId());
     pkBox.append(el("label",{for:"e-sep",class:"lab"},"D'où part "+onm+" ?"),autocomplete(sepInp,autoTrip),placeChips(sepInp,true,autoTrip),
       el("p",{class:"note"},"Together calcule l'heure de départ de chacun, depuis son point de départ, pour que vous arriviez ensemble. Chacun reçoit son propre « C'est l'heure de partir », et le trafic est surveillé sur les deux trajets."),
-      (()=>{const mb=el("div",{class:"mid-box"});return el("div",{},el("button",{type:"button",class:"btn",id:"e-mid",onclick:()=>midFind(origin.value.trim()||homeAddr(),sepInp.value.trim(),mb,v=>{loc.value=v;loc.dispatchEvent(new Event("change"));if(tripKey(read())===lastOkKey)autoTrip();})},"Trouver un lieu à mi-chemin"),mb);})());}
+      (()=>{const mb=el("div",{class:"mid-box"});return el("div",{},el("button",{type:"button",class:"btn",id:"e-mid",onclick:()=>midFind(origin.value.trim()||homeAddr(),sepInp.value.trim(),mb,v=>{loc.value=v;loc.dispatchEvent(new Event("change"));if(tripKey(read())===lastOkKey)autoTrip();},"resto",mode.value)},"Trouver un lieu à mi-chemin"),mb);})());}
   async function sepEstimate(x){
     if(!(sepOn&&who==="both"&&otherId()&&sepInp.value.trim()))return;
     const r2=await estimateTrip({...x,origin:sepInp.value.trim(),pickup:""}).catch(()=>null);
@@ -8660,6 +8673,7 @@ function icsSection(){
 
 /* ---------- Aide et nouveautés ---------- */
 const NEWS=[
+  {v:"73",d:"2026-10-27",t:"Plus juste, plus pratique",i:["Lieu à mi-chemin : choisi au temps de trajet en voiture de chacun, les lieux les plus équitables d'abord.","Les temps de trajet appris tiennent compte de l'heure : « D'habitude vers 18 h : 47 min ».","Voiture garée : sa distance à pied depuis le rendez-vous, et une photo de la place.","Après une surprise : « Comment c'était ? », pour la noter et ajouter vos photos.","Corrigé : modifier un rendez-vous gardait mal la voiture garée ; la météo d'une adresse introuvable n'est plus celle de la maison ; la notification du bilan ouvre le bilan."],go:null},
   {v:"72",d:"2026-10-27",t:"Météo, voiture garée, et vos vrais temps de trajet",i:["La météo du rendez-vous s'affiche sur la grande carte du prochain départ.","« Garé ici » note où est la voiture ; vous la retrouvez tous les deux, à pied, depuis l'accueil.","Together apprend la durée réelle de vos trajets suivis en direct et la propose quand elle diffère de l'estimation.","Chacun de son côté : « Trouver un lieu à mi-chemin » propose restaurants, cafés et sorties entre vous deux.","Le bilan existe aussi pour chaque mois, et se partage en un geste."],go:null},
   {v:"71",d:"2026-10-27",t:"Surprise, et arriver ensemble",i:["Rendez-vous surprise : l'autre ne voit que l'heure de départ, un indice et un compte à rebours. Tout se dévoile à l'heure dite.","Chacun de son côté : deux points de départ, deux heures de départ, et vous arrivez ensemble. Chacun reçoit son « C'est l'heure de partir »."],go:null},
   {v:"70",d:"2026-10-26",t:"Le titre de l'évènement en grand",i:["Sur la grande carte du prochain départ, le titre de l'évènement passe juste sous l'heure, en grand, dans la même écriture.","« C'est l'heure de partir » suit, en doré quand le départ approche ; l'heure du rendez-vous est au bout du trajet, à côté de la destination."]},
@@ -9430,7 +9444,7 @@ setInterval(()=>{if(!myId||!eventsRaw.size)return;const sg=maskSigOf(myId);if(sg
 function tfKey(e){return e&&e.sepOwn?e.id+"~"+String(e.sepOwn).slice(0,6):(e&&e.id);}
 
 // Les notifications : quand une surprise ou des départs séparés sont en jeu, chacun reçoit les siennes, calculées avec sa vue
-function pushItems(){
+function pushItemsV71(){
   const now=Date.now(),mem=memberIds();
   const win=e=>{const st=startOf(e).getTime();return st>=now-6*3600000&&st<=now+35*86400000;};
   if(![...eventsRaw.values()].some(e=>win(e)&&(sepActive(e)||surpriseOn(e))))return pushItemsBase();
@@ -9442,7 +9456,7 @@ function pushItems(){
   for(const e of eventsRaw.values()){if(!win(e)||!surpriseOn(e))continue;
     for(const uid of mem){if(uid===e.surprise.by||!(whoOf(e)==="both"||whoOf(e)===uid))continue;
       const at=surpriseRevealAt(e,uid);if(at<=now+30000)continue;
-      out.push({id:e.id+":sr:"+uid.slice(0,6)+":"+at,to:[uid],at,tag:"ev-"+e.id,title:"La surprise est dévoilée",
+      out.push({id:e.id+":sr:"+uid.slice(0,6)+":"+at,to:[uid],at,tag:"ev-"+e.id,u:"./?ev="+e.id,title:"La surprise est dévoilée",
         body:(e.title||"Surprise")+(e.location?" · "+shortAddr(e.location):"")+(isAllDay(e)?"":", à "+e.time)+"."});}}
   return out;
 }
@@ -9543,15 +9557,15 @@ async function parkHere(id,btn){
   catch(_){toast("Impossible pour l'instant. Réessaie.");return false;}
   finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=lbl;}}
 }
-function parkDone(id){const ev=eventsRaw.get(id);if(!ev||!ev.parked||!db)return;db.doc("events/"+id).update({parked:{...ev.parked,done:Date.now()}}).catch(()=>{});}
-function parkLine(ev){
+function parkDoneV72(id){const ev=eventsRaw.get(id);if(!ev||!ev.parked||!db)return;db.doc("events/"+id).update({parked:{...ev.parked,done:Date.now()}}).catch(()=>{});}
+function parkLineV72(ev){
   if(!parkOn(ev))return null;const p=ev.parked;
   return el("div",{class:"park-line"},el("span",{class:"park-ic","aria-hidden":"true"},"P"),
     el("span",{class:"park-t"},"Voiture garée à "+hhmm(new Date(+p.at))+(p.by&&p.by!==myId?" par "+firstName(p.by):"")),
     el("a",{class:"btn quiet park-go",href:parkUrl(p),target:"_blank",rel:"noopener",onclick:e=>e.stopPropagation()},"Retrouver la voiture"));
 }
 // sur l'accueil : la voiture garée pour un rendez-vous qui commence ou qui vient de finir
-function parkBar(){
+function parkBarV72(){
   const now=Date.now();let best=null;
   for(const e of events.values()){if(!parkOn(e))continue;const end=endOf(e).getTime();if(now>end+6*3600000)continue;if(!best||+e.parked.at>+best.parked.at)best=e;}
   let b=document.getElementById("park-bar");
@@ -9569,13 +9583,13 @@ let learnC=null,learnP=null;
 function learnLoad(force){if(learnP&&!force)return learnP;
   learnP=(db?db.doc("config/learn").get().then(s=>(s&&s.exists&&s.data())||{}).catch(()=>({})):Promise.resolve({})).then(d=>(learnC=d||{}));return learnP;}
 function learnKey(o,l,m){const s=norm(o)+"|"+norm(l)+"|"+(m||"car");let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return "k"+(h>>>0).toString(36);}
-function learnedFor(x){
+function learnedForV72(x){
   if(!learnC||!x||!x.location)return null;const o=x.origin||homeAddr();if(!o)return null;
   const r=learnC[learnKey(o,x.location,x.mode)];if(!r||!Array.isArray(r.v))return null;
   const v=r.v.map(Number).filter(n=>n>0).sort((a,b)=>a-b);if(v.length<2)return null;
   return {min:Math.round(v[Math.floor(v.length/2)]),n:v.length};
 }
-async function learnAdd(o,l,m,min){
+async function learnAddV72(o,l,m,min){
   if(!db||!o||!l||!(min>0))return;await learnLoad();
   const k=learnKey(o,l,m),cur=(learnC[k]&&Array.isArray(learnC[k].v)?learnC[k].v:[]),v=[...cur,Math.round(min)].slice(-8),at=Date.now();
   learnC[k]={v,at};try{await db.doc("config/learn").set({[k]:{v,at}},{merge:true});}catch(_){}
@@ -9591,7 +9605,7 @@ function learnTag(ev,fix,now,kind){
 }
 function tripArrived(t){
   const was=!!(t&&t.stage==="go");tripArrivedV71(t);if(!was)return;
-  if(t.by===myId&&t.lk&&+t.startedAt>0){const min=(Date.now()-t.startedAt)/60000;if(min>=3&&min<=300)learnAdd(t.lk.o,t.lk.l,t.lk.m,min);}
+  if(t.by===myId&&t.lk&&+t.startedAt>0){const min=(Date.now()-t.startedAt)/60000;if(min>=3&&min<=300)learnAdd(t.lk.o,t.lk.l,t.lk.m,min,new Date(+t.startedAt).getHours());}
   if(t.by===myId&&tripKind(t)==="meet"&&(t.mode||"car")==="car"){const ev=eventsRaw.get(t.ev||t.id);
     if(ev&&!parkOn(ev))setTimeout(()=>inNote("Tu y es","Touche ici pour noter où la voiture est garée : vous la retrouverez facilement.",()=>parkHere(ev.id),20000),4500);}
 }
@@ -9604,7 +9618,7 @@ async function midOverpass(q){
 }
 const MID_KINDS={resto:{n:"Restaurants",q:'["amenity"~"^(restaurant)$"]'},cafe:{n:"Cafés et bars",q:'["amenity"~"^(cafe|bar|pub)$"]'},sortie:{n:"Sorties",q:'["amenity"~"^(cinema|theatre)$"]'}};
 const MID_LAB={restaurant:"Restaurant",cafe:"Café",bar:"Bar",pub:"Bar",cinema:"Cinéma",theatre:"Théâtre"};
-async function midFind(a,b,box,pick,kind){
+async function midFindV72(a,b,box,pick,kind){
   kind=MID_KINDS[kind]?kind:"resto";box.textContent="";const onm=firstName(otherId());
   if(!a||!b){box.append(el("p",{class:"note"},"Indique d'abord vos deux points de départ."));return;}
   const chips=el("div",{class:"pchips mid-k"},...Object.entries(MID_KINDS).map(([k,v])=>el("button",{type:"button",class:"pchip"+(k===kind?" on":""),onclick:()=>midFind(a,b,box,pick,k)},v.n)));
@@ -9703,10 +9717,130 @@ function bilanPushes(now,to){
   const m=new Date(d.getFullYear(),d.getMonth(),1),k=ymd(m).slice(0,7);
   const n=[...events.values()].filter(e=>e.date&&e.date.startsWith(k)&&isOuting(e)&&!e.busy).length;
   if(n<2||at.getTime()-now>35*86400000)return [];
-  return [{id:"bilan:"+k,to,at:at.getTime(),tag:"bilan",title:"Votre mois "+MOIS_DE(m.getMonth())+" à deux",body:n+" sorties ensemble ce mois-ci. Le bilan est prêt dans Souvenirs : à partager si le cœur vous en dit."}];
+  return [{id:"bilan:"+k,to,at:at.getTime(),tag:"bilan-"+k,u:"./?bilan="+k,title:"Votre mois "+MOIS_DE(m.getMonth())+" à deux",body:n+" sorties ensemble ce mois-ci. Le bilan est prêt dans Souvenirs : à partager si le cœur vous en dit."}];
 }
 
-const APP_V="72";
+/* ---------- Version 73 : corrections (notifications triées, lien du bilan) et améliorations (mi-chemin au temps de trajet, temps appris selon l'heure, voiture garée : distance et photo, souvenir de la surprise) ---------- */
+
+// Les notifications envoyées au serveur : les plus proches d'abord, 200 au plus (le serveur n'en garde pas davantage)
+function pushItems(){return pushItemsV71().sort((a,b)=>a.at-b.at).slice(0,200);}
+
+/* Les temps appris, selon l'heure : un trajet à 18 h ne prend pas le temps d'un trajet à 10 h */
+function hourGap(a,b){const d=Math.abs(a-b)%24;return Math.min(d,24-d);}
+function learnedFor(x){
+  if(!learnC||!x||!x.location)return null;const o=x.origin||homeAddr();if(!o)return null;
+  const r=learnC[learnKey(o,x.location,x.mode)];if(!r||!Array.isArray(r.v))return null;
+  const hs=Array.isArray(r.h)?r.h:[];
+  const all=r.v.map((m,i)=>({m:+m,h:hs[i]==null?null:+hs[i]})).filter(e=>e.m>0);
+  const med=a=>{const v=a.map(e=>e.m).sort((p,q)=>p-q);return Math.round(v[Math.floor(v.length/2)]);};
+  let hx=null;if(x.date&&x.time&&(+x.travelMin||0)>=0){const d=departOf(x);if(!isNaN(d))hx=d.getHours();}
+  if(hx!=null){const near=all.filter(e=>e.h!=null&&hourGap(e.h,hx)<=1);if(near.length>=2)return {min:med(near),n:near.length,h:hx};}
+  if(all.length<2)return null;
+  return {min:med(all),n:all.length};
+}
+async function learnAdd(o,l,m,min,hour){
+  if(!db||!o||!l||!(min>0))return;await learnLoad();
+  const k=learnKey(o,l,m),cur=learnC[k]||{},v0=Array.isArray(cur.v)?cur.v:[],h0=Array.isArray(cur.h)?cur.h:[];
+  const v=[...v0,Math.round(min)].slice(-12),h=[...v0.map((_,i)=>h0[i]==null?null:h0[i]),Number.isInteger(hour)?hour:null].slice(-12),at=Date.now();
+  learnC[k]={v,h,at};try{await db.doc("config/learn").set({[k]:{v,h,at}},{merge:true});}catch(_){}
+}
+
+/* La voiture garée : à quelle distance du rendez-vous, et une photo de la place (étage, numéro de pilier…) */
+function parkWalk(ev,short){
+  const p=ev&&ev.parked,g=ev&&ev.routeGeo&&ev.routeGeo.to;if(!p||!g||!Number.isFinite(+g.lat))return "";
+  const m=Math.round(kmBetween({lat:+p.lat,lon:+p.lon},{lat:+g.lat,lon:+g.lon})*1000);
+  if(m<60)return short?"à côté du rendez-vous":"juste à côté du rendez-vous";
+  const walk=Math.max(1,Math.round(m*1.3/75));
+  const dist=(m<1000?Math.round(m/10)*10+" m":String(Math.round(m/100)/10).replace(".",",")+" km");
+  if(short)return dist+", "+walk+" min à pied";
+  return "à "+(m<1000?Math.round(m/10)*10+" m":String(Math.round(m/100)/10).replace(".",",")+" km")+" du rendez-vous, environ "+walk+" min à pied";
+}
+function parkPhotoView(src){
+  const root=$("#sheet-root");root.textContent="";
+  root.append(sheetShell("La place de la voiture",[el("div",{class:"sheet-h"},el("h2",{},"La place de la voiture"),el("button",{class:"btn quiet",type:"button",onclick:closeSheet},"Fermer")),
+    el("img",{class:"park-big",src,alt:"Photo de la place de la voiture"})]));
+}
+function parkPhotoBtn(id){
+  const inp=el("input",{type:"file",accept:"image/*",capture:"environment",hidden:true});
+  const b=el("button",{type:"button",class:"btn quiet park-ph-add",onclick:e=>{e.stopPropagation();inp.click();}},"Photo de la place");
+  inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;b.disabled=true;b.textContent="Photo…";
+    try{const ev=eventsRaw.get(id);if(!ev||!ev.parked)throw new Error("x");const ph=await compressPhoto(f,720,110000);
+      await db.doc("events/"+id).update({parked:{...ev.parked,ph}});toast("Photo de la place enregistrée");}
+    catch(_){toast("Photo non enregistrée. Réessaie.");b.disabled=false;b.textContent="Photo de la place";}};
+  return el("span",{},b,inp);
+}
+function parkThumb(p){return p&&p.ph?el("button",{type:"button",class:"park-thumb","aria-label":"Voir la photo de la place",onclick:e=>{e.stopPropagation();parkPhotoView(p.ph);}},el("img",{src:p.ph,alt:""})):null;}
+function parkLine(ev){
+  if(!parkOn(ev))return null;const p=ev.parked,raw=eventsRaw.get(ev.id)||ev,wk=parkWalk(raw);
+  return el("div",{class:"park-line"},el("span",{class:"park-ic","aria-hidden":"true"},"P"),
+    el("span",{class:"park-t"},"Voiture garée à "+hhmm(new Date(+p.at))+(p.by&&p.by!==myId?" par "+firstName(p.by):""),wk?el("small",{class:"park-w"},wk):null),
+    el("span",{class:"park-act"},parkThumb(p),el("a",{class:"btn quiet park-go",href:parkUrl(p),target:"_blank",rel:"noopener",onclick:e=>e.stopPropagation()},"Retrouver la voiture"),p.ph?null:parkPhotoBtn(ev.id)));
+}
+function parkBar(){
+  const now=Date.now();let best=null;
+  for(const e of events.values()){if(!parkOn(e))continue;const end=endOf(e).getTime();if(now>end+6*3600000)continue;if(!best||+e.parked.at>+best.parked.at)best=e;}
+  let b=document.getElementById("park-bar");
+  if(!best){if(b)b.remove();return;}
+  if(!b){b=el("div",{id:"park-bar",class:"park-bar"});const n=$("#next");if(n&&n.parentNode)n.parentNode.insertBefore(b,n);else return;}
+  const raw=eventsRaw.get(best.id)||best,wk=parkWalk(raw,true),sig=best.id+":"+best.parked.at+":"+(best.parked.ph?1:0);if(b.dataset.sig===sig)return;b.dataset.sig=sig;b.textContent="";
+  b.append(parkThumb(best.parked)||el("span",{class:"park-ic","aria-hidden":"true"},"P"),
+    el("span",{class:"park-t"},el("strong",{},"Votre voiture"),el("small",{},"Garée à "+hhmm(new Date(+best.parked.at))+(wk?" · "+wk:" pour « "+(best.title||"le rendez-vous")+" »"))),
+    el("a",{class:"btn primary",href:parkUrl(best.parked),target:"_blank",rel:"noopener"},"Y aller"),
+    el("button",{type:"button",class:"park-x","aria-label":"C'est bon, la voiture est retrouvée",onclick:()=>{parkDone(best.id);b.remove();}},"×"));
+}
+// voiture retrouvée : la photo n'a plus besoin d'être gardée
+function parkDone(id){const ev=eventsRaw.get(id);if(!ev||!ev.parked||!db)return;const p={...ev.parked,done:Date.now()};delete p.ph;db.doc("events/"+id).update({parked:p}).catch(()=>{});}
+
+/* Un lieu à mi-chemin, choisi au temps de trajet : en voiture, le temps de chacun (sans trafic), et les lieux les plus équitables d'abord */
+async function midTimes(p,q,rows){
+  const pts=[p,q,...rows].map(x=>(+x.lon).toFixed(5)+","+(+x.lat).toFixed(5)).join(";");
+  const j=await getJson("https://router.project-osrm.org/table/v1/driving/"+pts+"?sources=0;1&annotations=duration",null,12000);
+  const D=j&&j.durations;if(!Array.isArray(D)||D.length<2)return null;
+  return rows.map((_,i)=>{const a=D[0][i+2],b=D[1][i+2];return Number.isFinite(a)&&Number.isFinite(b)?[Math.round(a/60),Math.round(b/60)]:null;});
+}
+async function midFind(a,b,box,pick,kind,mode){
+  kind=MID_KINDS[kind]?kind:"resto";mode=mode||"car";box.textContent="";const onm=firstName(otherId());
+  if(!a||!b){box.append(el("p",{class:"note"},"Indique d'abord vos deux points de départ."));return;}
+  const chips=el("div",{class:"pchips mid-k"},...Object.entries(MID_KINDS).map(([k,v])=>el("button",{type:"button",class:"pchip"+(k===kind?" on":""),onclick:()=>midFind(a,b,box,pick,k,mode)},v.n)));
+  const list=el("div",{class:"mid-list"},el("div",{class:"ac-load"},el("span",{class:"spinner"}),"Recherche entre vous deux…"));
+  box.append(chips,list);
+  try{
+    const [p,q]=await Promise.all([geocode(a),geocode(b)]);if(!okPt(p)||!okPt(q))throw new Error("adresse");
+    const c={lat:(+p.lat+ +q.lat)/2,lon:(+p.lon+ +q.lon)/2},d=kmBetween(p,q);
+    let rows=[];
+    for(const r of [Math.min(6000,Math.max(1200,d*150)),Math.min(12000,Math.max(3000,d*300))]){
+      const j=await midOverpass(`[out:json][timeout:20];nwr${MID_KINDS[kind].q}["name"](around:${Math.round(r)},${c.lat.toFixed(5)},${c.lon.toFixed(5)});out center tags 80;`);
+      rows=((j&&j.elements)||[]).map(e=>{const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon),t=e.tags||{};return {t,lat:+lat,lon:+lon};})
+        .filter(x=>x.t.name&&Number.isFinite(x.lat)&&Number.isFinite(x.lon)).map(x=>({...x,da:kmBetween(p,x)*1.3,db:kmBetween(q,x)*1.3}));
+      if(rows.length>=3)break;
+    }
+    const seen=new Set(),fair=(x,y,u,v)=>(Math.max(x,y)+.5*Math.abs(x-y))-(Math.max(u,v)+.5*Math.abs(u-v));
+    rows=rows.filter(x=>{const k=norm(x.t.name);if(seen.has(k))return false;seen.add(k);return true;}).sort((x,y)=>fair(x.da,x.db,y.da,y.db)).slice(0,12);
+    // en voiture : le vrai temps de trajet de chacun, en une seule demande
+    let timed=false;
+    if(mode==="car"&&rows.length){try{const T=await midTimes(p,q,rows);if(T&&T.some(Boolean)){rows.forEach((x,i)=>{if(T[i]){x.ta=T[i][0];x.tb=T[i][1];}});timed=true;}}catch(_){}}
+    if(timed)rows=rows.filter(x=>x.ta!=null).sort((x,y)=>fair(x.ta,x.tb,y.ta,y.tb));
+    rows=rows.slice(0,6);
+    list.textContent="";
+    if(!rows.length){list.append(el("p",{class:"note"},"Rien trouvé à mi-chemin pour l'instant. Essaie une autre catégorie."));return;}
+    const km=v=>v<10?String(Math.round(v*10)/10).replace(".",","):String(Math.round(v));
+    for(const x of rows){const t=x.t;
+      const street=[t["addr:housenumber"],t["addr:street"]].filter(Boolean).join(" "),city=[t["addr:postcode"],t["addr:city"]].filter(Boolean).join(" ");
+      list.append(el("button",{type:"button",class:"mid-row",onclick:async e=>{const bt=e.currentTarget;bt.disabled=true;
+          let addr=street&&city?street+", "+city:"";
+          if(!addr){try{const r=await getJson(`${BAN}/reverse/?lon=${x.lon}&lat=${x.lat}`,null,8000);const f=(r.features||[])[0];if(f)addr=featLabel(f);}catch(_){}}
+          const val=String(t.name).slice(0,60)+(addr?", "+addr:"");rememberGeo(val,x.lat,x.lon);if(addr)rememberGeo(addr,x.lat,x.lon);
+          box.textContent="";pick(val);}},
+        el("strong",{},t.name),el("small",{},[MID_LAB[t.amenity]||"",t.cuisine?String(t.cuisine).split(";")[0].replace(/_/g," "):"",street].filter(Boolean).join(" · ")),
+        el("span",{class:"mid-km num"},timed?fmtDur(x.ta)+" pour toi · "+fmtDur(x.tb)+" pour "+onm:km(x.da)+" km pour toi · "+km(x.db)+" km pour "+onm)));}
+    list.append(el("p",{class:"note"},timed?"Temps en voiture sans trafic. Les lieux où vous mettez à peu près le même temps passent en premier.":"Distances à vol d'oiseau, un peu arrondies. Le trajet exact de chacun se calcule en choisissant le lieu."));
+  }catch(_){list.textContent="";list.append(el("p",{class:"note"},"Recherche impossible pour l'instant. Vérifie les deux adresses de départ, ou réessaie."));}
+}
+
+/* Après une surprise : la noter et ajouter ses photos, comme une sortie */
+function souvenirOk(ev){if(ev&&ev.surprise&&ev.surprise.by&&(!ev.who||ev.who==="both"))return true;return souvenirOkV72(ev);}
+
+const APP_V="73";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
@@ -10632,11 +10766,11 @@ function tripHero(n,t){
     el("div",{class:"in"},[inT,S.stale&&!here?"dernière position "+agoShort(S.age):""].filter(Boolean).join(" · ")),b);
 }
 /* liens directs (notifications) : ?trip=<id> ouvre le trajet, ?ev=<id> l'évènement */
-let pendingLink=/[?&](trip|ev|add|shop|wishes|mem|check|set|news|gifts)=/.test(location.search)?location.search:null;
+let pendingLink=/[?&](trip|ev|add|shop|wishes|mem|check|set|news|gifts|bilan)=/.test(location.search)?location.search:null;
 function runPendingLink(){
   if(!pendingLink||firstSnap||!tripsReady)return;
   const q=pendingLink;pendingLink=null;
-  try{if(/[?&](trip|ev|add|shop|wishes|mem|check|set|news|gifts)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
+  try{if(/[?&](trip|ev|add|shop|wishes|mem|check|set|news|gifts|bilan)=/.test(location.search))history.replaceState(null,"",location.pathname+location.hash);}catch(_){}
   setTimeout(()=>{if(!handleDeepLink(q))toast("Cet évènement n'existe plus.");},150);
 }
 function handleDeepLink(q){
@@ -10649,6 +10783,7 @@ function handleDeepLink(q){
   if(p.has("set")){openSettings(p.get("set")||"");return true;}
   if(p.has("news")){openSettings("aide","qn-h");return true;}
   if(p.has("gifts")){openGifts();return true;}
+  if(p.has("bilan")){const m=/^(\d{4})-(\d{2})$/.exec(p.get("bilan")||"");closeSheet();setView("mem");if(m)openBilan(+m[1],+m[2]-1);else openBilan();return true;}
   if(p.has("mem")){const id=p.get("mem")||"";closeSheet();setView("mem");
     if(id&&events.has(id))openMemory(events.get(id));else if(id&&memories.has(id)){const m=memories.get(id);openMemory({id,title:m.title,date:m.date,time:m.time,location:m.place||"",motif:m.motif||"",category:"sortie"});}
     return true;}

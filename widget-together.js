@@ -1,7 +1,7 @@
 // Together : le lanceur du widget (chargé par le petit script installé dans Scriptable).
 // Le vrai code (widget-main.js) n'est téléchargé qu'une fois par version, puis gardé sur le téléphone :
 // à chaque mise à jour du widget, seul ce petit fichier passe par le réseau.
-const V="72";
+const V="73";
 const fm0=FileManager.local(),d0=fm0.documentsDirectory(),f0=fm0.joinPath(d0,"together-widget-main-"+V+".js");
 let main=null;
 if(fm0.fileExists(f0)){try{main=fm0.readString(f0);}catch(e){}}

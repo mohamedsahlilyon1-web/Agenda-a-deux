@@ -1,5 +1,5 @@
 // Together : serveur de notifications (Cloudflare Workers, gratuit).
-// Déploiement : 2026-10-26 (carte 3D : l'itinéraire avec les bouchons)
+// Déploiement : 2026-10-27 (rappels : le bon écran à l'ouverture, le trafic pour chacun quand vous partez de deux endroits)
 // Envoie les notifications Web Push aux iPhone, garde les rappels programmés
 // et publie pour chacun un calendrier .ics auquel l'iPhone s'abonne.
 const ORIGIN_OK = (o) => !o || /^https:\/\/mohamedsahlilyon1-web\.github\.io$/i.test(o) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(o);
@@ -689,7 +689,7 @@ export default {
     }
     if (path === "/api/schedule") {
       const now = Date.now(), done = new Set(await getDone(env, id, c));
-      c.sched = (Array.isArray(b.items) ? b.items : []).slice(0, 200).map((x) => ({ id: clean(x.id, 120), to: (Array.isArray(x.to) ? x.to : [x.to]).map((u) => clean(u, 80)).slice(0, 2), at: +x.at || 0, title: clean(x.title, 120), body: clean(x.body, 300), tag: clean(x.tag, 60), ...(x.lv ? { lv: 1 } : {}) }))
+      c.sched = (Array.isArray(b.items) ? b.items : []).slice(0, 200).map((x) => ({ id: clean(x.id, 120), to: (Array.isArray(x.to) ? x.to : [x.to]).map((u) => clean(u, 80)).slice(0, 2), at: +x.at || 0, title: clean(x.title, 120), body: clean(x.body, 300), tag: clean(x.tag, 60), ...(x.lv ? { lv: 1 } : {}), ...(typeof x.u === "string" && /^\.\/\?[a-z]+=[\w~:.-]{1,60}$/.test(x.u) ? { u: x.u } : {}) }))
         .filter((x) => x.id && x.at > now - 60000 && x.at < now + 40 * 86400000 && !done.has(x.id));
       // dernière synchronisation de chaque téléphone, avec la version de l'app (aide au diagnostic)
       const who = clean(b.uid, 80);
@@ -876,8 +876,11 @@ export default {
       // l'alerte « C'est l'heure de partir » avance quand le trafic allonge le trajet (vérifié moins de 3 h avant)
       let TF = null;
       if (list.some((x) => x.lv) && Array.isArray(c.watch) && c.watch.some((w) => w.dep > now - 3600000 && w.dep < now + 4 * 3600000)) TF = (await env.KV.get("tf:" + id, "json")) || {};
-      const shift = (x) => { if (!TF || !x.lv) return 0; const m = /^ev-(.+)$/.exec(x.tag || ""), r = m && TF[m[1]], w = m && c.watch.find((y) => y.id === m[1]);
-        return r && w && r.al && r.dep === w.dep && r.d > 0 ? r.d * 60000 : 0; };
+      // quand chacun part de son côté, chacun a son trajet suivi (« ev~uid ») : son alerte suit son propre trafic
+      const shift = (x) => { if (!TF || !x.lv) return 0; const m = /^ev-(.+)$/.exec(x.tag || ""); if (!m) return 0;
+        const ids = (x.to || []).length === 1 ? [m[1] + "~" + String(x.to[0]).slice(0, 6), m[1]] : [m[1]];
+        for (const k of ids) { const r = TF[k], w = c.watch.find((y) => y.id === k); if (r && w) return r.al && r.dep === w.dep && r.d > 0 ? r.d * 60000 : 0; }
+        return 0; };
       // Le cron n'écrit jamais la fiche du couple : il note seulement ce qui est parti (clé à part)
       const doneList = await getDone(env, id, c), done = new Set(doneList);
       const due = list.filter((x) => x.at - shift(x) <= now + 20000 && !done.has(x.id));
@@ -886,7 +889,7 @@ export default {
       let changed = false;
       const sentCodes = [];
       for (const x of due) { const sh = shift(x), at = x.at - sh;
-        if (now - at < 15 * 60000) { const r = await sendTo(env, subs, x.to, { title: x.title, body: sh ? clean(x.body + " Trafic : +" + Math.round(sh / 60000) + " min.", 300) : x.body, tag: x.tag }); changed = changed || r.changed; for (const cd of r.codes) sentCodes.push({ ...cd, tag: x.tag }); }
+        if (now - at < 15 * 60000) { const r = await sendTo(env, subs, x.to, { title: x.title, body: sh ? clean(x.body + " Trafic : +" + Math.round(sh / 60000) + " min.", 300) : x.body, tag: x.tag, ...(x.u ? { url: x.u } : {}) }); changed = changed || r.changed; for (const cd of r.codes) sentCodes.push({ ...cd, tag: x.tag }); }
         doneList.push(x.id); done.add(x.id); }
       try { await logSends(env, id, "s", sentCodes); } catch (_) {}
       await putDone(env, id, doneList);
