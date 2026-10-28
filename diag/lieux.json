@@ -1,5 +1,5 @@
 {
-  "at": 1793207561,
+  "at": 1793207730,
   "photonCors": "*",
   "overpassCors": "",
   "photon": [
@@ -183,5 +183,12 @@
         }
       }
     }
-  ]
+  ],
+  "overpassBrowser": {
+    "apiJson": "502",
+    "apiAny": "0000",
+    "kumi": "0000",
+    "mailru": "504",
+    "coffee": "0000"
+  }
 }
