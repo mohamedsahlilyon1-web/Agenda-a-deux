@@ -1,0 +1,99 @@
+{
+  "at": 1793207500,
+  "photonCors": "*",
+  "overpassCors": "",
+  "photon": [
+    {
+      "name": "Lidl Outlet",
+      "osm_type": "W",
+      "osm_id": 112734758,
+      "osm_key": "shop",
+      "osm_value": "supermarket",
+      "type": "house",
+      "street": "Rond-Point Willy Brandt",
+      "housenumber": "194",
+      "postcode": "34130",
+      "city": "Mauguio"
+    },
+    {
+      "name": "Lidl Outlet",
+      "osm_type": "N",
+      "osm_id": 13325908082,
+      "osm_key": "shop",
+      "osm_value": "variety_store",
+      "type": "house",
+      "street": "Rue du Lot",
+      "housenumber": "8",
+      "postcode": "78200",
+      "city": "Buchelay"
+    },
+    {
+      "name": "Lidl Outlet",
+      "osm_type": "W",
+      "osm_id": 152070990,
+      "osm_key": "shop",
+      "osm_value": "supermarket",
+      "type": "house",
+      "street": "Rue Lalau",
+      "housenumber": null,
+      "postcode": "59520",
+      "city": "Marquette-lez-Lille"
+    },
+    {
+      "name": "Lidl Outlet",
+      "osm_type": "N",
+      "osm_id": 13701570993,
+      "osm_key": "shop",
+      "osm_value": "supermarket",
+      "type": "house",
+      "street": "Hlučínská",
+      "housenumber": null,
+      "postcode": "725 29",
+      "city": "Ostrava"
+    },
+    {
+      "name": "Lidl Outlet Paivas",
+      "osm_type": "W",
+      "osm_id": 160091676,
+      "osm_key": "shop",
+      "osm_value": "supermarket",
+      "type": "house",
+      "street": "Praceta Quinta do Semião",
+      "housenumber": null,
+      "postcode": "2845-173",
+      "city": "Seixal"
+    }
+  ],
+  "details": [
+    {
+      "osm": "W:112734758",
+      "tags": {
+        "err": 1
+      }
+    },
+    {
+      "osm": "N:13325908082",
+      "tags": {
+        "err": 1
+      }
+    },
+    {
+      "osm": "W:152070990",
+      "tags": {
+        "err": 1
+      }
+    },
+    {
+      "osm": "N:13701570993",
+      "tags": {
+        "err": 1
+      }
+    },
+    {
+      "osm": "W:160091676",
+      "tags": {
+        "err": 1
+      }
+    }
+  ]
+}
