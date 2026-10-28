@@ -1,0 +1,31 @@
+name: Sonde lieux (OpenStreetMap)
+on:
+  push:
+    branches: [main]
+    paths: ["diag/lieux.txt"]
+permissions:
+  contents: write
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ce que Photon et Overpass répondent (données publiques)
+        run: |
+          O="Origin: https://mohamedsahlilyon1-web.github.io"; T="${RUNNER_TEMP:-/tmp}"
+          Q=$(head -1 diag/lieux.txt | cut -d'|' -f2 | sed 's/ /%20/g')
+          curl -s --max-time 30 -H "$O" -D "$T/ph.h" "https://photon.komoot.io/api/?q=$Q&lang=fr&limit=8&lat=43.61&lon=3.88" -o "$T/ph.json" || true
+          PHC=$(grep -i '^access-control-allow-origin' "$T/ph.h" | tr -d '\r' | cut -d' ' -f2 || true)
+          echo "[" > "$T/out.json"; first=1
+          for row in $(jq -r '.features[]?.properties | "\(.osm_type):\(.osm_id)"' "$T/ph.json"); do
+            t=${row%%:*}; id=${row#*:}; case $t in N) k=node;; W) k=way;; R) k=relation;; *) continue;; esac
+            TG=$(curl -s --max-time 30 -H "$O" -D "$T/op.h" --data-urlencode "data=[out:json][timeout:10];$k($id);out tags center 1;" "https://overpass-api.de/api/interpreter" | jq -c '.elements[0].tags//{}' 2>/dev/null || echo '{"err":1}')
+            [ $first = 1 ] || echo "," >> "$T/out.json"; first=0
+            echo "{\"osm\":\"$row\",\"tags\":$TG}" >> "$T/out.json"; sleep 1
+          done
+          echo "]" >> "$T/out.json"
+          OPC=$(grep -i '^access-control-allow-origin' "$T/op.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
+          jq -n --arg phc "$PHC" --arg opc "$OPC" --slurpfile ph "$T/ph.json" --slurpfile tg "$T/out.json" '{at:(now|floor),photonCors:$phc,overpassCors:$opc,
+            photon:[$ph[0].features[]?.properties|{name,osm_type,osm_id,osm_key,osm_value,type,street,housenumber,postcode,city}],details:$tg[0]}' > diag/lieux.json
+          git config user.name "together-diag"; git config user.email "diag@users.noreply.github.com"
+          git add diag/lieux.json && git commit -m "Sonde lieux" && git push || true
