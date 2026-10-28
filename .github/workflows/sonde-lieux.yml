@@ -19,9 +19,12 @@ jobs:
           echo "[" > "$T/out.json"; first=1
           for row in $(jq -r '.features[]?.properties | "\(.osm_type):\(.osm_id)"' "$T/ph.json"); do
             t=${row%%:*}; id=${row#*:}; case $t in N) k=node;; W) k=way;; R) k=relation;; *) continue;; esac
-            TG=$(curl -s --max-time 30 -H "$O" -D "$T/op.h" --data-urlencode "data=[out:json][timeout:10];$k($id);out tags center 1;" "https://overpass-api.de/api/interpreter" | jq -c '.elements[0].tags//{}' 2>/dev/null || echo '{"err":1}')
+            OPS=$(curl -s --max-time 30 -H "$O" -D "$T/op.h" -o "$T/op.json" -w "%{http_code}" --data-urlencode "data=[out:json][timeout:10];$k($id);out tags center 1;" "https://overpass-api.de/api/interpreter" || echo 0)
+            OPT=$(jq -c '.elements[0].tags//{}' "$T/op.json" 2>/dev/null || echo '{}'); OPH=$(head -c 160 "$T/op.json" | tr -d '"\n\r' | tr -cd '[:print:]')
+            OSS=$(curl -s --max-time 30 -H "$O" -D "$T/os.h" -o "$T/os.json" -w "%{http_code}" "https://api.openstreetmap.org/api/0.6/$k/$id.json" || echo 0)
+            OST=$(jq -c '.elements[0].tags//{}' "$T/os.json" 2>/dev/null || echo '{}'); OSC=$(grep -i '^access-control-allow-origin' "$T/os.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
             [ $first = 1 ] || echo "," >> "$T/out.json"; first=0
-            echo "{\"osm\":\"$row\",\"tags\":$TG}" >> "$T/out.json"; sleep 1
+            jq -n --arg row "$row" --arg ops "$OPS" --arg oph "$OPH" --arg oss "$OSS" --arg osc "$OSC" --argjson opt "$OPT" --argjson ost "$OST" '{osm:$row,overpass:{st:$ops,head:$oph,tags:$opt},osmapi:{st:$oss,cors:$osc,tags:$ost}}' >> "$T/out.json"; sleep 1
           done
           echo "]" >> "$T/out.json"
           OPC=$(grep -i '^access-control-allow-origin' "$T/op.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
