@@ -1,5 +1,5 @@
 {
-  "at": 1793207500,
+  "at": 1793207561,
   "photonCors": "*",
   "overpassCors": "",
   "photon": [
@@ -67,32 +67,120 @@
   "details": [
     {
       "osm": "W:112734758",
-      "tags": {
-        "err": 1
+      "overpass": {
+        "st": "406",
+        "head": "<html><head><title>406 Not Acceptable</title></head><body><center><h1>406 Not Acceptable</h1></center><hr><center>nginx</center></body></html>",
+        "tags": {}
+      },
+      "osmapi": {
+        "st": "200",
+        "cors": "https://mohamedsahlilyon1-web.github.io",
+        "tags": {
+          "addr:city": "Mauguio",
+          "addr:housenumber": "194",
+          "addr:postcode": "34130",
+          "addr:street": "Rond-Point Willy Brandt",
+          "air_conditioning": "yes",
+          "brand": "Lidl",
+          "brand:wikidata": "Q151954",
+          "building": "retail",
+          "name": "Lidl Outlet",
+          "opening_hours": "Mo-Sa 10:00-18:00",
+          "shop": "supermarket",
+          "source": "cadastre-dgi-fr source : Direction Générale des Impôts - Cadastre. Mise à jour : 2011",
+          "start_date": "2026-09-18"
+        }
       }
     },
     {
       "osm": "N:13325908082",
-      "tags": {
-        "err": 1
+      "overpass": {
+        "st": "406",
+        "head": "<html><head><title>406 Not Acceptable</title></head><body><center><h1>406 Not Acceptable</h1></center><hr><center>nginx</center></body></html>",
+        "tags": {}
+      },
+      "osmapi": {
+        "st": "200",
+        "cors": "https://mohamedsahlilyon1-web.github.io",
+        "tags": {
+          "addr:housenumber": "8",
+          "addr:street": "Rue du Lot",
+          "brand": "Lidl",
+          "brand:wikidata": "Q151954",
+          "name": "Lidl Outlet",
+          "opening_hours": "Mo-Sa 10:30-18:00",
+          "ref:FR:NAF": "47.11D",
+          "ref:FR:SIREN": "343262622",
+          "ref:FR:SIRET": "34326262227068",
+          "shop": "variety_store",
+          "website": "https://www.lidl.fr/s/fr-FR/supermarches/buchelay/rue-du-lot-8/"
+        }
       }
     },
     {
       "osm": "W:152070990",
-      "tags": {
-        "err": 1
+      "overpass": {
+        "st": "406",
+        "head": "<html><head><title>406 Not Acceptable</title></head><body><center><h1>406 Not Acceptable</h1></center><hr><center>nginx</center></body></html>",
+        "tags": {}
+      },
+      "osmapi": {
+        "st": "200",
+        "cors": "https://mohamedsahlilyon1-web.github.io",
+        "tags": {
+          "addr:street": "Rue Lalau",
+          "brand": "Lidl",
+          "brand:wikidata": "Q151954",
+          "building": "yes",
+          "name": "Lidl Outlet",
+          "ref:FR:NAF": "47.11D",
+          "ref:FR:SIREN": "343262622",
+          "ref:FR:SIRET": "34326262228025",
+          "shop": "supermarket",
+          "source": "cadastre-dgi-fr source : Direction Générale des Impôts - Cadastre. Mise à jour : 2012"
+        }
       }
     },
     {
       "osm": "N:13701570993",
-      "tags": {
-        "err": 1
+      "overpass": {
+        "st": "406",
+        "head": "<html><head><title>406 Not Acceptable</title></head><body><center><h1>406 Not Acceptable</h1></center><hr><center>nginx</center></body></html>",
+        "tags": {}
+      },
+      "osmapi": {
+        "st": "200",
+        "cors": "https://mohamedsahlilyon1-web.github.io",
+        "tags": {
+          "brand": "Lidl",
+          "brand:wikidata": "Q151954",
+          "name": "Lidl Outlet",
+          "opening_hours": "Mo-Su 09:00-20:00",
+          "shop": "supermarket"
+        }
       }
     },
     {
       "osm": "W:160091676",
-      "tags": {
-        "err": 1
+      "overpass": {
+        "st": "406",
+        "head": "<html><head><title>406 Not Acceptable</title></head><body><center><h1>406 Not Acceptable</h1></center><hr><center>nginx</center></body></html>",
+        "tags": {}
+      },
+      "osmapi": {
+        "st": "200",
+        "cors": "https://mohamedsahlilyon1-web.github.io",
+        "tags": {
+          "brand": "Lidl",
+          "brand:wikidata": "Q151954",
+          "brand:wikipedia": "en:Lidl",
+          "building": "yes",
+          "check_date": "2026-04-11",
+          "name": "Lidl Outlet Paivas",
+          "name:fa": "لیدل",
+          "opening_hours": "Fr-Su 10:00-20:00",
+          "shop": "supermarket"
+        }
       }
     }
   ]
