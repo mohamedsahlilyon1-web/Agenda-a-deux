@@ -27,8 +27,16 @@ jobs:
             jq -n --arg row "$row" --arg ops "$OPS" --arg oph "$OPH" --arg oss "$OSS" --arg osc "$OSC" --argjson opt "$OPT" --argjson ost "$OST" '{osm:$row,overpass:{st:$ops,head:$oph,tags:$opt},osmapi:{st:$oss,cors:$osc,tags:$ost}}' >> "$T/out.json"; sleep 1
           done
           echo "]" >> "$T/out.json"
+          UA="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+          DQ="data=[out:json][timeout:10];way(112734758);out tags center 1;"
+          V1=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$O" -H "Accept: application/json" -A "$UA" --data-urlencode "$DQ" "https://overpass-api.de/api/interpreter" || echo 0)
+          V2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$O" -H "Accept: */*" -A "$UA" --data-urlencode "$DQ" "https://overpass-api.de/api/interpreter" || echo 0)
+          V3=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$O" -H "Accept: application/json" -A "$UA" --data-urlencode "$DQ" "https://overpass.kumi.systems/api/interpreter" || echo 0)
+          V4=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$O" -H "Accept: application/json" -A "$UA" --data-urlencode "$DQ" "https://maps.mail.ru/osm/tools/overpass/api/interpreter" || echo 0)
+          V5=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$O" -H "Accept: application/json" -A "$UA" --data-urlencode "$DQ" "https://overpass.private.coffee/api/interpreter" || echo 0)
+          echo "{\"apiJson\":\"$V1\",\"apiAny\":\"$V2\",\"kumi\":\"$V3\",\"mailru\":\"$V4\",\"coffee\":\"$V5\"}" > "$T/ov.json"
           OPC=$(grep -i '^access-control-allow-origin' "$T/op.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
-          jq -n --arg phc "$PHC" --arg opc "$OPC" --slurpfile ph "$T/ph.json" --slurpfile tg "$T/out.json" '{at:(now|floor),photonCors:$phc,overpassCors:$opc,
-            photon:[$ph[0].features[]?.properties|{name,osm_type,osm_id,osm_key,osm_value,type,street,housenumber,postcode,city}],details:$tg[0]}' > diag/lieux.json
+          jq -n --arg phc "$PHC" --arg opc "$OPC" --slurpfile ph "$T/ph.json" --slurpfile tg "$T/out.json" --slurpfile ov "$T/ov.json" '{at:(now|floor),photonCors:$phc,overpassCors:$opc,
+            photon:[$ph[0].features[]?.properties|{name,osm_type,osm_id,osm_key,osm_value,type,street,housenumber,postcode,city}],details:$tg[0],overpassBrowser:$ov[0]}' > diag/lieux.json
           git config user.name "together-diag"; git config user.email "diag@users.noreply.github.com"
           git add diag/lieux.json && git commit -m "Sonde lieux" && git push || true
