@@ -6029,8 +6029,7 @@ async function brandStores(b,home,signal){
   else sel=`nwr["brand"~"^${esc(b)}$",i](around:30000,${c.lat},${c.lon});nwr["name"~"^${esc(b)}",i]["shop"](around:30000,${c.lat},${c.lon});nwr["name"~"^${esc(b)}",i]["amenity"](around:30000,${c.lat},${c.lon});`;
   const q=`[out:json][timeout:20];(${sel});out center tags 60;`;
   let j;
-  try{j=await getJson("https://overpass-api.de/api/interpreter",signal,25000,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}});}
-  catch(e){j=await getJson("https://overpass.kumi.systems/api/interpreter",signal,25000,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}});}
+  j=await overpassPost(q,signal,20000);
   const seen=new Set();
   let list=(j.elements||[]).map(e=>{const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);return {e,lat,lon};})
     .filter(x=>Number.isFinite(x.lat)).map(x=>({...x,km:kmBetween(c,{lat:x.lat,lon:x.lon})})).sort((a,b2)=>a.km-b2.km)
@@ -8718,6 +8717,7 @@ function icsSection(){
 
 /* ---------- Aide et nouveautés ---------- */
 const NEWS=[
+  {v:"76",d:"2026-10-28",t:"Les horaires des lieux",i:["Les fiches de lieux affichent maintenant leurs horaires, leur téléphone et leur site : ils sont lus directement sur OpenStreetMap.","Le lieu à mi-chemin et les magasins de vos enseignes essaient plusieurs serveurs quand le premier est saturé."],go:null},
   {v:"75",d:"2026-10-28",t:"La fiche des lieux",i:["En cherchant un lieu, touche-le : sa fiche s'ouvre avec ouvert ou fermé, l'heure de fermeture, les horaires de la semaine, le téléphone, le site et, quand il y en a, une photo ou le logo de l'enseigne.","« Itinéraire », « Appeler » et « Site web » sont à portée de doigt. « Oui, c'est la bonne adresse » le met dans l'évènement."],go:null},
   {v:"74",d:"2026-10-28",t:"Chercher un lieu, comme sur un moteur de recherche",i:["Tape un nom de lieu, un commerce ou une adresse, même approximatif (« Louis XV Monaco », « Ikea Lattes »), puis touche Entrée ou « Plus de résultats ».","Une page montre les lieux, commerces et adresses trouvés, sur une carte, avec leur distance de la maison.","Touche le bon : il s'affiche sur la carte, et « Oui, c'est la bonne adresse » le met dans l'évènement."],go:null},
   {v:"73",d:"2026-10-27",t:"Plus juste, plus pratique",i:["Lieu à mi-chemin : choisi au temps de trajet en voiture de chacun, les lieux les plus équitables d'abord.","Les temps de trajet appris tiennent compte de l'heure : « D'habitude vers 18 h : 47 min ».","Voiture garée : sa distance à pied depuis le rendez-vous, et une photo de la place.","Après une surprise : « Comment c'était ? », pour la noter et ajouter vos photos.","Corrigé : modifier un rendez-vous gardait mal la voiture garée ; la météo d'une adresse introuvable n'est plus celle de la maison ; la notification du bilan ouvre le bilan."],go:null},
@@ -9658,7 +9658,7 @@ function tripArrived(t){
 }
 
 /* Un lieu à mi-chemin : entre vos deux points de départ, des restaurants, cafés et bars (OpenStreetMap) */
-async function midOverpass(q){
+async function midOverpassV72(q){
   const o={method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}};
   try{return await getJson("https://overpass-api.de/api/interpreter",null,25000,o);}
   catch(_){return await getJson("https://overpass.kumi.systems/api/interpreter",null,25000,o);}
@@ -10033,7 +10033,7 @@ function ohWeek(P,now){const di=((now||new Date()).getDay()+6)%7;
     el("span",{class:"num"},P.w[i].length?(P.w[i].length===1&&P.w[i][0][0]===0&&P.w[i][0][1]>=1440?"24 h/24":P.w[i].map(([a,b])=>ohT(a)+"–"+(b===1440?"24:00":ohT(b))).join(", ")):"Fermé"))));}
 // les détails d'un lieu : ses étiquettes OpenStreetMap (horaires, téléphone, site, photo), gardées pendant la recherche
 const psCache=new Map();
-async function psOsm(osm){
+async function psOsmV75(osm){
   const t={N:"node",W:"way",R:"relation"}[osm.t]||"node";
   const j=await midOverpass(`[out:json][timeout:10];${t}(${+osm.id});out tags center 1;`);
   const e=((j&&j.elements)||[])[0];return (e&&e.tags)||{};
@@ -10099,7 +10099,26 @@ function psDetail(r,near,onYes,onNo){
   return box;
 }
 
-const APP_V="75";
+/* ---------- Version 76 : les fiches de lieux lisent l'API d'OpenStreetMap (Overpass est souvent saturé) ---------- */
+// Overpass : plusieurs serveurs, l'un après l'autre, si le premier est saturé
+const OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+async function overpassPost(q,signal,ms){
+  let err=null;
+  for(const u of OVERPASS){if(signal&&signal.aborted)break;
+    try{return await getJson(u,signal,ms||15000,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}});}catch(e){err=e;}}
+  throw err||new Error("overpass");
+}
+async function midOverpass(q){return overpassPost(q,null,15000);}
+// les étiquettes d'un lieu (horaires, téléphone, site…) : l'API d'OpenStreetMap répond vite et sûrement ; Overpass en secours
+async function psOsm(osm){
+  const t={N:"node",W:"way",R:"relation"}[osm.t]||"node",id=+osm.id;
+  try{const j=await getJson("https://api.openstreetmap.org/api/0.6/"+t+"/"+id+".json",null,8000);
+    const e=((j&&j.elements)||[]).find(x=>x.type===t&&+x.id===id);if(e)return e.tags||{};}catch(_){}
+  const j=await overpassPost(`[out:json][timeout:10];${t}(${id});out tags center 1;`,null,10000);
+  const e=((j&&j.elements)||[])[0];return (e&&e.tags)||{};
+}
+
+const APP_V="76";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
