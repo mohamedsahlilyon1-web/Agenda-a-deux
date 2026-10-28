@@ -1537,6 +1537,27 @@ html.locked .lock{display:flex;position:fixed;inset:0;z-index:2147483000;backgro
 .ps-pin span{display:grid;place-items:center;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#2563EB;color:#fff;font:800 12px/1 var(--f);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .ps-pin.on span{background:#E11D48;width:32px;height:32px;margin:-16px 0 0 -16px;font-size:14px}
 .ac-search .ac-main{color:var(--accent,#2563EB);font-weight:700}
+/* Version 75 : la fiche d'un lieu */
+.ps-det{padding:0 12px 14px 50px;display:flex;flex-direction:column;gap:10px}
+.ps-ph{display:flex;gap:8px;overflow-x:auto;margin-left:-38px}
+.ps-photo{height:150px;max-width:100%;border-radius:14px;object-fit:cover;flex:none}
+.ps-logo{height:64px;width:64px;object-fit:contain;border-radius:12px;background:#fff;padding:6px;flex:none;align-self:flex-start}
+.ps-cat{margin:0;color:var(--muted);font-size:.9rem}
+.ps-open.ok{color:#16A34A;font-weight:650}.ps-open.soon{color:#D97706;font-weight:650}.ps-open.no{color:#DC2626;font-weight:650}
+.ps-acts{display:flex;gap:18px;flex-wrap:wrap}
+.ps-act{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--accent,#2563EB);font-size:.82rem;font-weight:650;text-decoration:none;min-width:64px}
+.ps-act .ps-ic{width:44px;height:44px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center}
+.ps-act .ps-ic svg{width:22px;height:22px}
+.ps-lines{display:flex;flex-direction:column;border-top:1px solid var(--hair)}
+.ps-line{display:flex;align-items:center;gap:12px;padding:10px 0;border:0;border-bottom:1px solid var(--hair);background:none;color:inherit;font:inherit;text-align:left;text-decoration:none;width:100%}
+.ps-line .ps-ic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:color-mix(in oklab,#2563EB 14%,transparent);color:#2563EB}
+.ps-line .ps-ic svg{width:19px;height:19px}
+.ps-line>span:nth-child(2){flex:1;min-width:0;overflow-wrap:anywhere}
+.ps-dim{color:var(--muted)}
+.ps-chev{transition:transform .2s;color:var(--muted)}.ps-hours.open .ps-chev{transform:rotate(180deg)}
+.ps-week{display:flex;flex-direction:column;gap:4px;padding:6px 0 10px 46px;font-size:.9rem;border-bottom:1px solid var(--hair)}
+.ps-day{display:flex;justify-content:space-between;gap:10px}.ps-day.on{font-weight:700}
+.ps-load{padding:4px 0}
 </style>
 <script>(function(){try{var R=document.documentElement,L=localStorage;if(!L.getItem('a2.look2')){L.setItem('a2.look2','1');L.removeItem('a2.skin');}var _sk=L.getItem('a2.skin');if(/^(lavande|ocean|corail|graphite)$/.test(_sk||'')){L.removeItem('a2.skin');_sk=null;}
 var cc=L.getItem('a2.customCss');if(cc){var st=document.createElement('style');st.id='skin-perso';st.textContent=cc;document.head.appendChild(st);}else if(_sk==='perso')_sk=null;
@@ -8697,6 +8718,7 @@ function icsSection(){
 
 /* ---------- Aide et nouveautés ---------- */
 const NEWS=[
+  {v:"75",d:"2026-10-28",t:"La fiche des lieux",i:["En cherchant un lieu, touche-le : sa fiche s'ouvre avec ouvert ou fermé, l'heure de fermeture, les horaires de la semaine, le téléphone, le site et, quand il y en a, une photo ou le logo de l'enseigne.","« Itinéraire », « Appeler » et « Site web » sont à portée de doigt. « Oui, c'est la bonne adresse » le met dans l'évènement."],go:null},
   {v:"74",d:"2026-10-28",t:"Chercher un lieu, comme sur un moteur de recherche",i:["Tape un nom de lieu, un commerce ou une adresse, même approximatif (« Louis XV Monaco », « Ikea Lattes »), puis touche Entrée ou « Plus de résultats ».","Une page montre les lieux, commerces et adresses trouvés, sur une carte, avec leur distance de la maison.","Touche le bon : il s'affiche sur la carte, et « Oui, c'est la bonne adresse » le met dans l'évènement."],go:null},
   {v:"73",d:"2026-10-27",t:"Plus juste, plus pratique",i:["Lieu à mi-chemin : choisi au temps de trajet en voiture de chacun, les lieux les plus équitables d'abord.","Les temps de trajet appris tiennent compte de l'heure : « D'habitude vers 18 h : 47 min ».","Voiture garée : sa distance à pied depuis le rendez-vous, et une photo de la place.","Après une surprise : « Comment c'était ? », pour la noter et ajouter vos photos.","Corrigé : modifier un rendez-vous gardait mal la voiture garée ; la météo d'une adresse introuvable n'est plus celle de la maison ; la notification du bilan ouvre le bilan."],go:null},
   {v:"72",d:"2026-10-27",t:"Météo, voiture garée, et vos vrais temps de trajet",i:["La météo du rendez-vous s'affiche sur la grande carte du prochain départ.","« Garé ici » note où est la voiture ; vous la retrouvez tous les deux, à pied, depuis l'accueil.","Together apprend la durée réelle de vos trajets suivis en direct et la propose quand elle diffère de l'estimation.","Chacun de son côté : « Trouver un lieu à mi-chemin » propose restaurants, cafés et sorties entre vous deux.","Le bilan existe aussi pour chaque mois, et se partage en un geste."],go:null},
@@ -9890,7 +9912,7 @@ async function photonSearch(q,near,signal,limit){
     const place=[street,city,p.countrycode&&p.countrycode!=="FR"?p.country:""].filter(Boolean).join(", ");
     const name=isAddr?"":String(p.name||"");
     const address=(name?name+(place?", "+place:""):(p.name&&!street?[p.name,city].filter(Boolean).join(", "):place)).slice(0,200);
-    return {address,name,lat:+c[1],lon:+c[0],kind:isAddr?"addr":"poi",type:isAddr?"":(PS_TYPES[p.osm_value]||PS_TYPES[p.osm_key]||"")};})
+    return {address,name,lat:+c[1],lon:+c[0],kind:isAddr?"addr":"poi",type:isAddr?"":(PS_TYPES[p.osm_value]||PS_TYPES[p.osm_key]||""),osm:p.osm_id&&/^[NWR]$/.test(p.osm_type||"")?{t:p.osm_type,id:p.osm_id}:null};})
     .filter(r=>r.address&&Number.isFinite(r.lat)&&Number.isFinite(r.lon));
 }
 function psDist(c,r){if(!c||!okPt(c))return "";const k=kmBetween(c,r);return k<1?Math.max(50,Math.round(k*1000/50)*50)+" m":(k<10?String(Math.round(k*10)/10).replace(".",","):String(Math.round(k)))+" km";}
@@ -9935,11 +9957,7 @@ async function openPlaceSearch(q,input,onPick){
           el("span",{class:"ps-t"},el("strong",{},r.name||String(r.address).split(",")[0]),
             el("small",{},[r.type||(r.kind==="addr"?"Adresse":r.tag||"Lieu"),psDist(near,r)?"à "+psDist(near,r)+" de la maison":""].filter(Boolean).join(" · ")),
             el("span",{class:"ps-a"},(r.name&&r.address.startsWith(r.name)?r.address.slice(r.name.length):r.name?r.address:String(r.address).split(",").slice(1).join(",")).replace(/^,\s*/,"").trim()||r.address))));
-      if(on)card.append(el("div",{class:"ps-ok"},
-        el("p",{class:"ps-ask"},"C'est bien ici ?"),
-        el("div",{class:"pchips"},el("button",{type:"button",class:"btn primary ps-yes",onclick:()=>confirm(r)},"Oui, c'est la bonne adresse"),
-          el("button",{type:"button",class:"btn quiet",onclick:()=>choose(-1)},"Non, voir les autres"),
-          el("a",{class:"btn quiet",href:"https://maps.apple.com/?q="+encodeURIComponent(r.name||r.address)+"&ll="+r.lat+","+r.lon,target:"_blank",rel:"noopener"},"Voir dans Plans"))));
+      if(on)card.append(psDetail(r,near,()=>confirm(r),()=>choose(-1)));
       list.append(card);}};
     sec("Vos adresses",rows.filter(r=>r.kind==="mine"));
     sec("Lieux et commerces",rows.filter(r=>r.kind==="poi"));
@@ -9971,7 +9989,117 @@ async function openPlaceSearch(q,input,onPick){
   if(!q)setTimeout(()=>qin.focus(),50);
 }
 
-const APP_V="74";
+/* ---------- Version 75 : la fiche d'un lieu (horaires, ouvert ou fermé, téléphone, site, photo), comme dans un moteur de recherche ----------
+   Tout vient d'OpenStreetMap et de Wikimedia, gratuitement. Les notes et avis ne sont pas disponibles sans service payant. */
+Object.assign(PS_TYPES,{outlet:"Magasin d'usine",variety_store:"Bazar",discount:"Magasin discount",general:"Magasin",garden_centre:"Jardinerie",sports:"Articles de sport",
+  toys:"Jouets",optician:"Opticien",mobile_phone:"Téléphonie",computer:"Informatique",jewelry:"Bijouterie",cosmetics:"Parfumerie",chemist:"Droguerie",pet:"Animalerie",
+  wine:"Cave à vin",alcohol:"Cave",greengrocer:"Primeur",cheese:"Fromagerie",pastry:"Pâtisserie",confectionery:"Confiserie",car:"Concessionnaire",bicycle:"Vélos",
+  kiosk:"Kiosque",tobacco:"Tabac",laundry:"Laverie",dry_cleaning:"Pressing",travel_agency:"Agence de voyages",estate_agent:"Agence immobilière",insurance:"Assurance",
+  physiotherapist:"Kinésithérapeute",nursing_home:"Maison de retraite",childcare:"Garde d'enfants",community_centre:"Salle municipale",conference_centre:"Centre de congrès",
+  exhibition_centre:"Parc des expositions",casino:"Casino",spa:"Spa",sauna:"Sauna",golf_course:"Golf",water_park:"Parc aquatique",ice_rink:"Patinoire",escape_game:"Escape game",
+  miniature_golf:"Minigolf",amusement_arcade:"Salle de jeux",biergarten:"Brasserie",food_court:"Aire de restauration",car_wash:"Lavage auto",car_rental:"Location de voitures"});
+const OH_D=["Mo","Tu","We","Th","Fr","Sa","Su"],OH_JOURS=["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
+// les horaires d'OpenStreetMap (« Mo-Sa 09:00-19:00; Su off ») : les formes courantes ; sinon on affiche le texte tel quel
+function ohParse(s){
+  s=String(s||"").trim();if(!s)return null;
+  if(/^24\/7$/.test(s))return {w:Array.from({length:7},()=>[[0,1440]])};
+  const w=Array.from({length:7},()=>null),D="(?:Mo|Tu|We|Th|Fr|Sa|Su)",DS=new RegExp("^((?:"+D+"(?:-"+D+")?|PH)(?:\\s*,\\s*(?:"+D+"(?:-"+D+")?|PH))*)?\\s*(.*)$");
+  for(let rule of s.split(/\s*;\s*/)){rule=rule.trim();if(!rule)continue;
+    if(/^(PH|SH)\b/.test(rule))continue;
+    const m=DS.exec(rule);if(!m)return null;
+    let days=[0,1,2,3,4,5,6];
+    if(m[1]){days=[];for(const part of m[1].split(/\s*,\s*/)){if(part==="PH")continue;const [a,b]=part.split("-"),i=OH_D.indexOf(a),j=b?OH_D.indexOf(b):i;for(let k=i,n=0;n<7;k=(k+1)%7,n++){days.push(k);if(k===j)break;}}}
+    const t=m[2].trim();
+    if(/^(off|closed|fermé)$/i.test(t)){days.forEach(d=>w[d]=[]);continue;}
+    const ranges=[];
+    for(const seg of t.split(/\s*,\s*/)){const x=/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\+?$/.exec(seg);if(!x)return null;let a=+x[1]*60+ +x[2],b=+x[3]*60+ +x[4];if(b<=a)b+=1440;ranges.push([a,b]);}
+    if(!ranges.length)return null;days.forEach(d=>w[d]=ranges);
+  }
+  return {w:w.map(x=>x||[])};
+}
+const ohT=m=>{m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+":"+pad(m%60);};
+function ohStatus(P,now){
+  if(!P)return null;now=now||new Date();const di=(now.getDay()+6)%7,mn=now.getHours()*60+now.getMinutes(),W=P.w;
+  if(W.every(r=>r.length===1&&r[0][0]===0&&r[0][1]>=1440))return {open:true,txt:"Ouvert 24 h/24"};
+  const yest=W[(di+6)%7].find(([a,b])=>b>1440&&mn+1440<b);
+  const cur=W[di].find(([a,b])=>mn>=a&&mn<b)||(yest?[yest[0]-1440,yest[1]-1440]:null);
+  if(cur){const left=cur[1]-mn;return {open:true,soon:left<=60,txt:(left<=60?"Ferme bientôt":"Ouvert")+" · Ferme à "+ohT(cur[1])};}
+  const later=W[di].find(([a])=>a>mn);if(later)return {open:false,txt:"Fermé · Ouvre à "+ohT(later[0])};
+  for(let k=1;k<=7;k++){const r=W[(di+k)%7][0];if(r)return {open:false,txt:"Fermé · Ouvre "+(k===1?"demain":OH_JOURS[(di+k)%7])+" à "+ohT(r[0])};}
+  return {open:false,txt:"Fermé"};
+}
+function ohWeek(P,now){const di=((now||new Date()).getDay()+6)%7;
+  return el("div",{class:"ps-week"},...OH_JOURS.map((j,i)=>el("div",{class:"ps-day"+(i===di?" on":"")},el("span",{},j.replace(/^./,c=>c.toUpperCase())),
+    el("span",{class:"num"},P.w[i].length?(P.w[i].length===1&&P.w[i][0][0]===0&&P.w[i][0][1]>=1440?"24 h/24":P.w[i].map(([a,b])=>ohT(a)+"–"+(b===1440?"24:00":ohT(b))).join(", ")):"Fermé"))));}
+// les détails d'un lieu : ses étiquettes OpenStreetMap (horaires, téléphone, site, photo), gardées pendant la recherche
+const psCache=new Map();
+async function psOsm(osm){
+  const t={N:"node",W:"way",R:"relation"}[osm.t]||"node";
+  const j=await midOverpass(`[out:json][timeout:10];${t}(${+osm.id});out tags center 1;`);
+  const e=((j&&j.elements)||[])[0];return (e&&e.tags)||{};
+}
+async function wdImage(q,prop){
+  if(!/^Q\d+$/.test(String(q||"")))return "";
+  const j=await getJson("https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json&origin=*&entity="+q+"&property="+prop,null,7000);
+  const v=j&&j.claims&&j.claims[prop]&&j.claims[prop][0]&&j.claims[prop][0].mainsnak&&j.claims[prop][0].mainsnak.datavalue&&j.claims[prop][0].mainsnak.datavalue.value;
+  return typeof v==="string"&&v?"https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(v)+"?width=640":"";
+}
+function commonsUrl(v){v=String(v||"");if(/^https:\/\//.test(v)&&/\.(jpe?g|png|webp)(\?|$)/i.test(v))return v;const m=/^File:(.+)$/i.exec(v);return m?"https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(m[1])+"?width=640":"";}
+async function psDetails(r){
+  const k=r.osm?r.osm.t+r.osm.id:"";if(!k)return null;if(psCache.has(k))return psCache.get(k);
+  const p=(async()=>{const tg=await psOsm(r.osm).catch(()=>({}));
+    let photo=commonsUrl(tg.image)||commonsUrl(tg.wikimedia_commons),logo="";
+    try{if(!photo&&tg.wikidata)photo=await wdImage(tg.wikidata,"P18");}catch(_){}
+    try{const bq=tg["brand:wikidata"]||tg["operator:wikidata"];if(bq)logo=await wdImage(bq,"P154");}catch(_){}
+    const site=tg.website||tg["contact:website"]||tg.url||"";
+    return {tags:tg,hours:tg.opening_hours||"",P:ohParse(tg.opening_hours),phone:tg.phone||tg["contact:phone"]||"",site:/^https?:\/\//.test(site)?site:(site?"https://"+site:""),photo,logo,
+      wheel:tg.wheelchair||"",cuisine:tg.cuisine||"",desc:tg.description||""};})().catch(()=>null);
+  psCache.set(k,p);return p;
+}
+const PS_IC={pin:'<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  phone:'<path d="M6.6 3.5h2.7l1.4 4-1.9 1.3a11 11 0 0 0 6.4 6.4l1.3-1.9 4 1.4v2.7a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/>',
+  web:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.6 3.5 5.4 3.5 8.5s-1.1 5.9-3.5 8.5c-2.4-2.6-3.5-5.4-3.5-8.5s1.1-5.9 3.5-8.5z"/>',
+  go:'<path d="M12 3l9 9-9 9-9-9z"/><path d="M9 13.5V11h5M12 8.5l2.5 2.5L12 13.5"/>',wheel:'<circle cx="11" cy="5" r="1.6"/><path d="M11 8v5h5l2 5"/><path d="M8.5 11a5 5 0 1 0 6.5 6"/>'};
+const psIcon=k=>el("span",{class:"ps-ic",html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+PS_IC[k]+'</svg>'});
+// la fiche d'un lieu dans la page de recherche
+function psDetail(r,near,onYes,onNo){
+  const box=el("div",{class:"ps-det"});
+  const city=(String(r.address).match(/\d{5}\s+([^,]+)/)||[])[1]||"";
+  const head=el("p",{class:"ps-cat"},[r.type||(r.kind==="addr"?"Adresse":"Lieu"),city&&r.kind!=="addr"?" à "+city:""].join(""));
+  const ph=el("div",{class:"ps-ph",hidden:true}),lines=el("div",{class:"ps-lines"}),acts=el("div",{class:"ps-acts"});
+  const dist=psDist(near,r);
+  lines.append(el("div",{class:"ps-line"},psIcon("pin"),el("span",{},r.name&&r.address.startsWith(r.name)?r.address.slice(r.name.length).replace(/^,\s*/,""):r.address,dist?el("span",{class:"ps-dim"}," · "+dist+" de la maison"):null)));
+  const go=el("a",{class:"ps-act",href:"https://maps.apple.com/?daddr="+r.lat+","+r.lon+"&q="+encodeURIComponent(r.name||r.address),target:"_blank",rel:"noopener"},psIcon("go"),el("span",{},"Itinéraire"));
+  acts.append(go);
+  const load=el("div",{class:"ac-load ps-load"},el("span",{class:"spinner"}),"Horaires, téléphone, site…");
+  box.append(ph,head,acts,lines);
+  if(r.osm&&r.kind==="poi")box.append(load);
+  box.append(el("p",{class:"ps-ask"},"C'est bien ici ?"),
+    el("div",{class:"pchips"},el("button",{type:"button",class:"btn primary ps-yes",onclick:onYes},"Oui, c'est la bonne adresse"),
+      el("button",{type:"button",class:"btn quiet",onclick:onNo},"Non, voir les autres")));
+  if(r.osm&&r.kind==="poi")psDetails(r).then(d=>{load.remove();if(!d)return;
+    if(d.photo||d.logo){ph.hidden=false;if(d.photo)ph.append(el("img",{class:"ps-photo",src:d.photo,alt:"Photo du lieu",loading:"lazy",onerror:e=>e.target.remove()}));
+      if(d.logo)ph.append(el("img",{class:"ps-logo",src:d.logo,alt:"Logo",loading:"lazy",onerror:e=>e.target.remove()}));}
+    const st=ohStatus(d.P);
+    if(st)head.append(" · ",el("span",{class:"ps-open "+(st.open?(st.soon?"soon":"ok"):"no")},st.txt.split(" · ")[0]));
+    if(d.phone)acts.append(el("a",{class:"ps-act",href:"tel:"+d.phone.replace(/[^\d+]/g,"")},psIcon("phone"),el("span",{},"Appeler")));
+    if(d.site)acts.append(el("a",{class:"ps-act",href:d.site,target:"_blank",rel:"noopener"},psIcon("web"),el("span",{},"Site web")));
+    if(d.hours){
+      if(d.P){const wk=ohWeek(d.P);wk.hidden=true;
+        const b=el("button",{type:"button",class:"ps-line ps-hours","aria-expanded":"false",onclick:()=>{wk.hidden=!wk.hidden;b.setAttribute("aria-expanded",String(!wk.hidden));b.classList.toggle("open",!wk.hidden);}},
+          psIcon("clock"),el("span",{},el("span",{class:"ps-open "+(st.open?(st.soon?"soon":"ok"):"no")},st.txt.split(" · ")[0]),st.txt.includes(" · ")?" · "+st.txt.split(" · ")[1]:""),el("span",{class:"ps-chev","aria-hidden":"true"},"▾"));
+        lines.append(b,wk);}
+      else lines.append(el("div",{class:"ps-line"},psIcon("clock"),el("span",{},d.hours)));
+    }
+    if(d.phone)lines.append(el("a",{class:"ps-line",href:"tel:"+d.phone.replace(/[^\d+]/g,"")},psIcon("phone"),el("span",{},d.phone)));
+    if(d.site){let h=d.site;try{h=new URL(d.site).hostname.replace(/^www\./,"");}catch(_){}lines.append(el("a",{class:"ps-line",href:d.site,target:"_blank",rel:"noopener"},psIcon("web"),el("span",{},h)));}
+    if(d.wheel==="yes")lines.append(el("div",{class:"ps-line"},psIcon("wheel"),el("span",{},"Accessible en fauteuil roulant")));
+    if(!d.hours&&!d.phone&&!d.site)lines.append(el("p",{class:"note ps-none"},"Pas d'horaires ni de téléphone connus pour ce lieu sur OpenStreetMap."));
+  });
+  return box;
+}
+
+const APP_V="75";
 async function forceUpdate(){
   toast("Mise à jour en cours…");
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs){try{await r.update();}catch(_){}}}catch(_){}
