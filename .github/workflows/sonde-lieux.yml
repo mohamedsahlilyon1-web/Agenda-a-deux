@@ -35,8 +35,15 @@ jobs:
           V4=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$O" -H "Accept: application/json" -A "$UA" --data-urlencode "$DQ" "https://maps.mail.ru/osm/tools/overpass/api/interpreter" || echo 0)
           V5=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$O" -H "Accept: application/json" -A "$UA" --data-urlencode "$DQ" "https://overpass.private.coffee/api/interpreter" || echo 0)
           echo "{\"apiJson\":\"$V1\",\"apiAny\":\"$V2\",\"kumi\":\"$V3\",\"mailru\":\"$V4\",\"coffee\":\"$V5\"}" > "$T/ov.json"
+          LON=$(jq -r '.features[0].geometry.coordinates[0]' "$T/ph.json"); LAT=$(jq -r '.features[0].geometry.coordinates[1]' "$T/ph.json")
+          PX=$(curl -s --max-time 30 -H "$O" -D "$T/px.h" "https://api.panoramax.xyz/api/search?place_position=$LON,$LAT&place_distance=2-50&place_fov_tolerance=60&limit=6" | jq -c '{n:((.features//[])|length),pics:[(.features//[])[]|{id,dt:.properties.datetime,thumb:(.assets.thumb.href//null),sd:(.assets.sd.href//null),prov:(.providers[0].name//null)}]}' 2>/dev/null || echo '{"err":1}')
+          PXB=$(curl -s --max-time 30 -H "$O" "https://api.panoramax.xyz/api/search?bbox=$(python3 -c "print(f'{$LON-0.0008},{$LAT-0.0006},{$LON+0.0008},{$LAT+0.0006}')")&limit=6" | jq -c '{n:((.features//[])|length)}' 2>/dev/null || echo '{"err":1}')
+          PXC=$(grep -i '^access-control-allow-origin' "$T/px.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
+          RT=$(curl -s --max-time 30 -H "$O" -D "$T/rt.h" "https://router.project-osrm.org/route/v1/driving/3.8767,43.6108;$LON,$LAT?overview=false" | jq -c '{code,km:((.routes[0].distance//0)/1000),min:((.routes[0].duration//0)/60)}' 2>/dev/null || echo '{"err":1}')
+          RTC=$(grep -i '^access-control-allow-origin' "$T/rt.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
+          echo "{\"lon\":$LON,\"lat\":$LAT,\"panoramax\":$PX,\"panoramaxBbox\":$PXB,\"panoramaxCors\":\"$PXC\",\"osrm\":$RT,\"osrmCors\":\"$RTC\"}" > "$T/px.json"
           OPC=$(grep -i '^access-control-allow-origin' "$T/op.h" 2>/dev/null | tr -d '\r' | cut -d' ' -f2 || true)
-          jq -n --arg phc "$PHC" --arg opc "$OPC" --slurpfile ph "$T/ph.json" --slurpfile tg "$T/out.json" --slurpfile ov "$T/ov.json" '{at:(now|floor),photonCors:$phc,overpassCors:$opc,
-            photon:[$ph[0].features[]?.properties|{name,osm_type,osm_id,osm_key,osm_value,type,street,housenumber,postcode,city}],details:$tg[0],overpassBrowser:$ov[0]}' > diag/lieux.json
+          jq -n --arg phc "$PHC" --arg opc "$OPC" --slurpfile ph "$T/ph.json" --slurpfile tg "$T/out.json" --slurpfile ov "$T/ov.json" --slurpfile px "$T/px.json" '{at:(now|floor),photonCors:$phc,overpassCors:$opc,
+            photon:[$ph[0].features[]?.properties|{name,osm_type,osm_id,osm_key,osm_value,type,street,housenumber,postcode,city}],details:$tg[0],overpassBrowser:$ov[0],photos:$px[0]}' > diag/lieux.json
           git config user.name "together-diag"; git config user.email "diag@users.noreply.github.com"
           git add diag/lieux.json && git commit -m "Sonde lieux" && git push || true
