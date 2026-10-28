@@ -1,5 +1,5 @@
 {
-  "at": 1793207730,
+  "at": 1793209962,
   "photonCors": "*",
   "overpassCors": "",
   "photon": [
@@ -186,9 +186,27 @@
   ],
   "overpassBrowser": {
     "apiJson": "502",
-    "apiAny": "0000",
+    "apiAny": "502",
     "kumi": "0000",
     "mailru": "504",
     "coffee": "0000"
+  },
+  "photos": {
+    "lon": 4.0055011,
+    "lat": 43.624772,
+    "panoramax": {
+      "n": 0,
+      "pics": []
+    },
+    "panoramaxBbox": {
+      "n": 0
+    },
+    "panoramaxCors": "https://mohamedsahlilyon1-web.github.io",
+    "osrm": {
+      "code": "Ok",
+      "km": 15.959100000000001,
+      "min": 24.095000000000002
+    },
+    "osrmCors": "*"
   }
 }
